@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Container, 
@@ -19,6 +19,15 @@ import PublicIcon from '@mui/icons-material/Public';
 
 function Home() {
   const navigate = useNavigate();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // Check if user is logged in
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+    
+    setIsLoggedIn(!!token && !!user);
+  }, []);
 
   const handleLogin = () => {
     navigate('/login');
@@ -26,6 +35,22 @@ function Home() {
 
   const handleRegister = () => {
     navigate('/register');
+  };
+
+  const handleLogout = () => {
+    // Clear localStorage
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    // Redirect to home page
+    navigate('/');
+    
+    // Update login state
+    setIsLoggedIn(false);
+  };
+
+  const handleDashboard = () => {
+    navigate('/dashboard');
   };
 
   return (
@@ -107,23 +132,47 @@ function Home() {
         </Grid>
         
         <Box sx={{ mt: 4, display: 'flex', gap: 2 }}>
-          <Button 
-            variant="contained" 
-            color="primary" 
-            size="large"
-            onClick={handleLogin}
-          >
-            Login to Your Account
-          </Button>
-          
-          <Button 
-            variant="outlined" 
-            color="primary" 
-            size="large"
-            onClick={handleRegister}
-          >
-            Create New Account
-          </Button>
+          {!isLoggedIn ? (
+            <>
+              <Button 
+                variant="contained" 
+                color="primary" 
+                size="large"
+                onClick={handleLogin}
+              >
+                Login to Your Account
+              </Button>
+              
+              <Button 
+                variant="outlined" 
+                color="primary" 
+                size="large"
+                onClick={handleRegister}
+              >
+                Create New Account
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button 
+                variant="contained" 
+                color="primary" 
+                size="large"
+                onClick={handleDashboard}
+              >
+                Go to Dashboard
+              </Button>
+              
+              <Button 
+                variant="contained" 
+                color="error" 
+                size="large"
+                onClick={handleLogout}
+              >
+                Logout from Your Account
+              </Button>
+            </>
+          )}
         </Box>
       </Box>
     </Container>
