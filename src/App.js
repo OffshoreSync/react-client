@@ -9,6 +9,7 @@ import Login from './components/Login';
 import Register from './components/Register';
 import Dashboard from './components/Dashboard';
 import ProfileSettings from './components/ProfileSettings';
+import EditProfile from './components/EditProfile';
 
 // Create custom theme
 const theme = createTheme({
@@ -98,6 +99,14 @@ function App() {
               element={
                 <PrivateRoute>
                   <ProfileSettings />
+                </PrivateRoute>
+              } 
+            />
+            <Route 
+              path="/edit-profile" 
+              element={
+                <PrivateRoute>
+                  <EditProfile />
                 </PrivateRoute>
               } 
             />

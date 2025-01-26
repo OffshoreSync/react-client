@@ -12,7 +12,8 @@ import {
   DialogTitle, 
   DialogContent, 
   DialogContentText, 
-  DialogActions 
+  DialogActions, 
+  Link 
 } from '@mui/material';
 import { OFFSHORE_COUNTRIES } from '../utils/countries';
 
@@ -163,13 +164,14 @@ const ProfileSettings = () => {
           </Grid>
           
           <Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between' }}>
-            <Button 
-              variant="contained" 
-              color="primary"
-              onClick={() => navigate('/edit-profile')}
-            >
-              Edit Profile
-            </Button>
+            <Link href="/edit-profile" underline="none">
+              <Button 
+                variant="contained" 
+                color="primary"
+              >
+                Edit Profile
+              </Button>
+            </Link>
             
             <Button 
               variant="contained" 
