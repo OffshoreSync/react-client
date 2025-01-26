@@ -164,19 +164,23 @@ const Dashboard = () => {
       for (let i = 0; i < 24; i++) {
         const cyclePosition = i % 2;
         
-        const eventStart = new Date(currentDate);
-        const eventEnd = new Date(currentDate);
-        eventEnd.setDate(eventEnd.getDate() + (cyclePosition === 0 ? onDutyDays : offDutyDays));
+        // Only create events for On Board days
+        if (cyclePosition === 0) {
+          const eventStart = new Date(currentDate);
+          const eventEnd = new Date(currentDate);
+          eventEnd.setDate(eventEnd.getDate() + onDutyDays);
 
-        events.push({
-          title: cyclePosition === 0 ? 'On Board' : 'Off Board',
-          start: eventStart,
-          end: eventEnd,
-          allDay: true,
-          className: cyclePosition === 0 ? 'on-board-event' : 'off-board-event'
-        });
+          events.push({
+            title: 'On Board',
+            start: eventStart,
+            end: eventEnd,
+            allDay: true,
+            className: 'on-board-event'
+          });
+        }
 
-        currentDate = eventEnd;
+        // Move to the next cycle
+        currentDate.setDate(currentDate.getDate() + onDutyDays + offDutyDays);
       }
 
       return events;
