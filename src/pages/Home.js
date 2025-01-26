@@ -1,6 +1,21 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import './Home.css'; 
+import { 
+  Container, 
+  Typography, 
+  Box, 
+  Button, 
+  Grid, 
+  Paper, 
+  List, 
+  ListItem, 
+  ListItemIcon, 
+  ListItemText 
+} from '@mui/material';
+import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
+import WorkIcon from '@mui/icons-material/Work';
+import SecurityIcon from '@mui/icons-material/Security';
+import PublicIcon from '@mui/icons-material/Public';
 
 function Home() {
   const navigate = useNavigate();
@@ -9,66 +24,109 @@ function Home() {
     navigate('/login');
   };
 
+  const handleRegister = () => {
+    navigate('/register');
+  };
+
   return (
-    <div className="home-container">
-      <div className="home-content">
-        <h1>Offshore Worker Calendar</h1>
+    <Container maxWidth="lg">
+      <Box sx={{ 
+        textAlign: 'center', 
+        my: 8, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center' 
+      }}>
+        <Typography variant="h2" gutterBottom>
+          Offshore Worker Calendar
+        </Typography>
         
-        <section className="project-description">
-          <h2>Manage Your Offshore Working Regime</h2>
-          <p>
+        <Paper elevation={3} sx={{ p: 4, mb: 4, maxWidth: 800, width: '100%' }}>
+          <Typography variant="h5" gutterBottom>
+            Manage Your Offshore Working Regime
+          </Typography>
+          
+          <Typography variant="body1" paragraph>
             Our application is designed specifically for offshore industry professionals 
             to track and manage their complex working schedules. Whether you're in drilling, 
             production, maintenance, or support roles, we provide a comprehensive solution 
             for your unique work-life balance.
-          </p>
-        </section>
+          </Typography>
+        </Paper>
         
-        <section className="key-features">
-          <h2>Key Features</h2>
-          <ul>
-            <li>
-              <strong>Flexible Working Regimes</strong>
-              <p>Choose from predefined 7/7, 14/14, 28/28 schedules or create a custom regime</p>
-            </li>
-            <li>
-              <strong>User Authentication</strong>
-              <p>Secure registration and login with personalized dashboards</p>
-            </li>
-            <li>
-              <strong>Role-Based Access</strong>
-              <p>Tailored experience for different offshore roles</p>
-            </li>
-            <li>
-              <strong>Global Offshore Support</strong>
-              <p>Works with offshore professionals from multiple countries</p>
-            </li>
-          </ul>
-        </section>
+        <Grid container spacing={3} justifyContent="center">
+          <Grid item xs={12} md={10}>
+            <Paper elevation={2} sx={{ p: 3 }}>
+              <Typography variant="h5" gutterBottom>
+                Key Features
+              </Typography>
+              
+              <List>
+                <ListItem>
+                  <ListItemIcon>
+                    <CheckCircleOutlineIcon color="primary" />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Flexible Working Regimes" 
+                    secondary="Choose from predefined 7/7, 14/14, 28/28 schedules or create a custom regime"
+                  />
+                </ListItem>
+                
+                <ListItem>
+                  <ListItemIcon>
+                    <SecurityIcon color="primary" />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="User Authentication" 
+                    secondary="Secure registration and login with personalized dashboards"
+                  />
+                </ListItem>
+                
+                <ListItem>
+                  <ListItemIcon>
+                    <WorkIcon color="primary" />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Role-Based Access" 
+                    secondary="Tailored experience for different offshore roles"
+                  />
+                </ListItem>
+                
+                <ListItem>
+                  <ListItemIcon>
+                    <PublicIcon color="primary" />
+                  </ListItemIcon>
+                  <ListItemText 
+                    primary="Global Offshore Support" 
+                    secondary="Works with offshore professionals from multiple countries"
+                  />
+                </ListItem>
+              </List>
+            </Paper>
+          </Grid>
+        </Grid>
         
-        <section className="cta-section">
-          <h2>Ready to Get Started?</h2>
-          <p>
-            Track your offshore working days, manage your schedule, 
-            and bring clarity to your work-life balance.
-          </p>
-          <div className="cta-buttons">
-            <button 
-              className="login-button" 
-              onClick={handleLogin}
-            >
-              Login to Your Account
-            </button>
-            <button 
-              className="register-button" 
-              onClick={() => navigate('/register')}
-            >
-              Create New Account
-            </button>
-          </div>
-        </section>
-      </div>
-    </div>
+        <Box sx={{ mt: 4, display: 'flex', gap: 2 }}>
+          <Button 
+            variant="contained" 
+            color="primary" 
+            size="large"
+            onClick={handleLogin}
+          >
+            Login to Your Account
+          </Button>
+          
+          <Button 
+            variant="outlined" 
+            color="primary" 
+            size="large"
+            onClick={handleRegister}
+          >
+            Create New Account
+          </Button>
+        </Box>
+      </Box>
+    </Container>
   );
 }
 

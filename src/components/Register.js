@@ -1,6 +1,19 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import { 
+  Container, 
+  Typography, 
+  TextField, 
+  Button, 
+  Box, 
+  MenuItem, 
+  Select, 
+  FormControl, 
+  InputLabel, 
+  Paper, 
+  Alert 
+} from '@mui/material';
 import { OFFSHORE_COUNTRIES } from '../utils/countries';
 
 const Register = () => {
@@ -124,133 +137,170 @@ const Register = () => {
   };
 
   return (
-    <div className="register-container">
-      <h2>Offshore Worker Registration</h2>
-      <form onSubmit={onSubmit}>
-        <input
-          type="text"
-          placeholder="Username"
-          name="username"
-          value={username}
-          onChange={onChange}
-          required
-        />
-        <input
-          type="email"
-          placeholder="Email Address"
-          name="email"
-          value={email}
-          onChange={onChange}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          name="password"
-          value={password}
-          onChange={onChange}
-          minLength="6"
-          required
-        />
-        <input
-          type="text"
-          placeholder="Full Name"
-          name="fullName"
-          value={fullName}
-          onChange={onChange}
-          required
-        />
-        <select
-          name="offshoreRole"
-          value={offshoreRole}
-          onChange={onChange}
-          required
-        >
-          <option value="">Select Offshore Role</option>
-          <option value="Drilling">Drilling</option>
-          <option value="Production">Production</option>
-          <option value="Maintenance">Maintenance</option>
-          <option value="Support">Support</option>
-          <option value="Management">Management</option>
-        </select>
-        
-        <select
-          name="workingRegime"
-          value={workingRegime}
-          onChange={onChange}
-          required
-        >
-          <option value="7/7">7 Days On / 7 Days Off</option>
-          <option value="14/14">14 Days On / 14 Days Off</option>
-          <option value="28/28">28 Days On / 28 Days Off</option>
-          <option value="custom">Custom Regime</option>
-        </select>
-        
-        {workingRegime === 'custom' && (
-          <div className="custom-regime-inputs">
-            <input
-              type="number"
-              placeholder="On Duty Days (7-365)"
-              name="customOnDutyDays"
-              value={customOnDutyDays}
-              onChange={onChange}
-              min="7"
-              max="365"
-              required
-            />
-            <input
-              type="number"
-              placeholder="Off Duty Days (7-365)"
-              name="customOffDutyDays"
-              value={customOffDutyDays}
-              onChange={onChange}
-              min="7"
-              max="365"
-              required
-            />
-          </div>
+    <Container maxWidth="sm">
+      <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
+        <Typography variant="h4" gutterBottom align="center">
+          Offshore Worker Registration
+        </Typography>
+
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
         )}
-        
-        <input
-          type="text"
-          placeholder="Company (Optional)"
-          name="company"
-          value={company}
-          onChange={onChange}
-        />
-        <input
-          type="text"
-          placeholder="Unit Name (Optional)"
-          name="unitName"
-          value={unitName}
-          onChange={onChange}
-        />
-        <select
-          name="country"
-          value={country}
-          onChange={onChange}
-          required
-        >
-          <option value="">Select Country</option>
-          {OFFSHORE_COUNTRIES.map(country => (
-            <option key={country.code} value={country.name}>
-              {country.name}
-            </option>
-          ))}
-        </select>
-        
-        {error && <p className="error-message">{error}</p>}
-        
-        <button type="submit">Register</button>
-        
-        <div className="login-prompt">
-          <p>Already have an account? 
-            <Link to="/login"> Login here</Link>
-          </p>
-        </div>
-      </form>
-    </div>
+
+        <Box component="form" onSubmit={onSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <TextField
+            fullWidth
+            label="Username"
+            name="username"
+            value={username}
+            onChange={onChange}
+            required
+            variant="outlined"
+          />
+          
+          <TextField
+            fullWidth
+            type="email"
+            label="Email Address"
+            name="email"
+            value={email}
+            onChange={onChange}
+            required
+            variant="outlined"
+          />
+          
+          <TextField
+            fullWidth
+            type="password"
+            label="Password"
+            name="password"
+            value={password}
+            onChange={onChange}
+            required
+            variant="outlined"
+            inputProps={{ minLength: 6 }}
+          />
+          
+          <TextField
+            fullWidth
+            label="Full Name"
+            name="fullName"
+            value={fullName}
+            onChange={onChange}
+            required
+            variant="outlined"
+          />
+          
+          <FormControl fullWidth required>
+            <InputLabel>Offshore Role</InputLabel>
+            <Select
+              name="offshoreRole"
+              value={offshoreRole}
+              label="Offshore Role"
+              onChange={onChange}
+            >
+              <MenuItem value="Drilling">Drilling</MenuItem>
+              <MenuItem value="Production">Production</MenuItem>
+              <MenuItem value="Maintenance">Maintenance</MenuItem>
+              <MenuItem value="Support">Support</MenuItem>
+              <MenuItem value="Management">Management</MenuItem>
+            </Select>
+          </FormControl>
+          
+          <FormControl fullWidth required>
+            <InputLabel>Working Regime</InputLabel>
+            <Select
+              name="workingRegime"
+              value={workingRegime}
+              label="Working Regime"
+              onChange={onChange}
+            >
+              <MenuItem value="7/7">7 Days On / 7 Days Off</MenuItem>
+              <MenuItem value="14/14">14 Days On / 14 Days Off</MenuItem>
+              <MenuItem value="28/28">28 Days On / 28 Days Off</MenuItem>
+              <MenuItem value="custom">Custom Regime</MenuItem>
+            </Select>
+          </FormControl>
+          
+          {workingRegime === 'custom' && (
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <TextField
+                fullWidth
+                type="number"
+                label="On Duty Days (7-365)"
+                name="customOnDutyDays"
+                value={customOnDutyDays}
+                onChange={onChange}
+                inputProps={{ min: 7, max: 365 }}
+                required
+                variant="outlined"
+              />
+              <TextField
+                fullWidth
+                type="number"
+                label="Off Duty Days (7-365)"
+                name="customOffDutyDays"
+                value={customOffDutyDays}
+                onChange={onChange}
+                inputProps={{ min: 7, max: 365 }}
+                required
+                variant="outlined"
+              />
+            </Box>
+          )}
+          
+          <TextField
+            fullWidth
+            label="Company (Optional)"
+            name="company"
+            value={company}
+            onChange={onChange}
+            variant="outlined"
+          />
+          <TextField
+            fullWidth
+            label="Unit Name (Optional)"
+            name="unitName"
+            value={unitName}
+            onChange={onChange}
+            variant="outlined"
+          />
+          <FormControl fullWidth required>
+            <InputLabel>Country</InputLabel>
+            <Select
+              name="country"
+              value={country}
+              label="Country"
+              onChange={onChange}
+            >
+              <MenuItem value="">Select Country</MenuItem>
+              {OFFSHORE_COUNTRIES.map(country => (
+                <MenuItem key={country.code} value={country.name}>
+                  {country.name}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          
+          <Button 
+            type="submit" 
+            variant="contained" 
+            color="primary" 
+            size="large"
+            sx={{ mt: 2 }}
+          >
+            Register
+          </Button>
+        </Box>
+
+        <Typography variant="body2" align="center" sx={{ mt: 2 }}>
+          Already have an account? <Link to="/login">Login</Link>
+        </Typography>
+      </Paper>
+    </Container>
   );
-};
+}
 
 export default Register;
