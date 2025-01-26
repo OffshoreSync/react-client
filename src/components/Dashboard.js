@@ -1,6 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
 import { 
   Container, 
   Typography, 
@@ -16,7 +19,8 @@ import {
   DialogContentText,
   DialogActions,
   Snackbar,
-  Alert
+  Alert,
+  TextField
 } from '@mui/material';
 import { 
   ChevronLeft as ChevronLeftIcon, 
@@ -24,113 +28,16 @@ import {
 } from '@mui/icons-material';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
-import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
 import { styled } from '@mui/material/styles';
-import { TextField } from '@mui/material';
 
 // Custom styled calendar to match Material-UI theme
-const StyledCalendar = styled(Calendar)`
+const StyledCalendar = styled(FullCalendar)`
   width: 350px !important;
   max-width: 350px !important;
   background: white;
   border-radius: 4px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
-  
-  /* Prevent stretching */
-  .react-calendar__month-view {
-    width: 100% !important;
-  }
-
-  .react-calendar__month-view__days {
-    height: 250px !important;
-  }
-
-  /* Navigation */
-  .react-calendar__navigation {
-    display: flex;
-    height: 44px;
-    margin-bottom: 1em;
-    background-color: transparent;
-    border-bottom: 1px solid #e0e0e0;
-  }
-
-  .react-calendar__navigation button {
-    min-width: 44px;
-    background: none;
-    color: rgba(0, 0, 0, 0.87);
-    border: none;
-    text-transform: uppercase;
-    font-weight: 500;
-    font-size: 0.875rem;
-    transition: background-color 0.3s ease;
-  }
-
-  .react-calendar__navigation button:enabled:hover {
-    background-color: rgba(0, 0, 0, 0.04);
-  }
-
-  .react-calendar__navigation button:disabled {
-    color: rgba(0, 0, 0, 0.26);
-  }
-
-  /* Weekdays */
-  .react-calendar__month-view__weekdays {
-    text-align: center;
-    font-weight: 500;
-    color: rgba(0, 0, 0, 0.54);
-    text-transform: uppercase;
-    font-size: 0.75rem;
-  }
-
-  .react-calendar__month-view__weekdays__weekday {
-    padding: 0.5em;
-  }
-
-  /* Tiles */
-  .react-calendar__tile {
-    max-width: 100%;
-    padding: 10px;
-    background: none;
-    text-align: center;
-    line-height: 16px;
-    border-radius: 50%;
-    transition: all 0.3s ease;
-  }
-
-  .react-calendar__tile:enabled:hover {
-    background-color: rgba(0, 0, 0, 0.08);
-  }
-
-  .react-calendar__tile--now {
-    background-color: rgba(0, 121, 107, 0.1);
-    color: #00796B;
-  }
-
-  .react-calendar__tile--active {
-    background-color: #1976D2 !important;
-    color: white !important;
-  }
-
-  .react-calendar__tile--active:enabled:hover {
-    background-color: #1565C0 !important;
-  }
-
-  .react-calendar__tile--weekend {
-    color: #E53935;
-  }
-
-  /* Custom color classes */
-  .on-board-day {
-    background-color: rgba(244, 67, 54, 0.2) !important; /* Light Red */
-    color: #f44336 !important;
-  }
-
-  .off-board-day {
-    background-color: rgba(76, 175, 80, 0.2) !important; /* Light Green */
-    color: #4CAF50 !important;
-  }
 `;
 
 // Pure function to determine tile class
@@ -178,16 +85,109 @@ const getTileClassName = (date, view, workSchedule, workingRegime) => {
   return null;
 };
 
+// Function to generate calendar events based on work schedule
+const generateCalendarEvents = (user) => {
+  // Default empty array if no valid data
+  const defaultEvents = [];
+
+  // Always attempt to generate events, but return default if no valid data
+  try {
+    // Check if we have the minimum required data
+    if (!user || !user.workSchedule || !user.workSchedule.nextOnBoardDate) {
+      return defaultEvents;
+    }
+
+    const onBoardStart = new Date(user.workSchedule.nextOnBoardDate);
+    const onDutyDays = user.workingRegime?.onDutyDays || 14;
+    const offDutyDays = user.workingRegime?.offDutyDays || 14;
+
+    const events = [];
+    let currentDate = new Date(onBoardStart);
+
+    // Generate events for the next 2 years
+    for (let i = 0; i < 24; i++) {
+      const cyclePosition = i % 2;
+      
+      const eventStart = new Date(currentDate);
+      const eventEnd = new Date(currentDate);
+      eventEnd.setDate(eventEnd.getDate() + (cyclePosition === 0 ? onDutyDays : offDutyDays));
+
+      events.push({
+        title: cyclePosition === 0 ? 'On Board' : 'Off Board',
+        start: eventStart,
+        end: eventEnd,
+        allDay: true,
+        className: cyclePosition === 0 ? 'on-board-event' : 'off-board-event'
+      });
+
+      currentDate = eventEnd;
+    }
+
+    return events;
+  } catch (error) {
+    console.error('Error generating calendar events:', error);
+    return defaultEvents;
+  }
+};
+
 const Dashboard = () => {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [date, setDate] = useState(new Date());
   const [openOnBoardDialog, setOpenOnBoardDialog] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
-  const navigate = useNavigate();
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+
+  // Function to generate calendar events
+  const generateCalendarEvents = () => {
+    // Default empty array if no valid data
+    const defaultEvents = [];
+
+    // Always attempt to generate events, but return default if no valid data
+    try {
+      // Check if we have the minimum required data
+      if (!user || !user.workSchedule || !user.workSchedule.nextOnBoardDate) {
+        return defaultEvents;
+      }
+
+      const onBoardStart = new Date(user.workSchedule.nextOnBoardDate);
+      const onDutyDays = user.workingRegime?.onDutyDays || 14;
+      const offDutyDays = user.workingRegime?.offDutyDays || 14;
+
+      const events = [];
+      let currentDate = new Date(onBoardStart);
+
+      // Generate events for the next 2 years
+      for (let i = 0; i < 24; i++) {
+        const cyclePosition = i % 2;
+        
+        const eventStart = new Date(currentDate);
+        const eventEnd = new Date(currentDate);
+        eventEnd.setDate(eventEnd.getDate() + (cyclePosition === 0 ? onDutyDays : offDutyDays));
+
+        events.push({
+          title: cyclePosition === 0 ? 'On Board' : 'Off Board',
+          start: eventStart,
+          end: eventEnd,
+          allDay: true,
+          className: cyclePosition === 0 ? 'on-board-event' : 'off-board-event'
+        });
+
+        currentDate = eventEnd;
+      }
+
+      return events;
+    } catch (error) {
+      console.error('Error generating calendar events:', error);
+      return defaultEvents;
+    }
+  };
+
+  // Calculate calendar events
+  const calendarEvents = useMemo(() => generateCalendarEvents(user), [user]);
 
   useEffect(() => {
     // Check if user is logged in
@@ -310,17 +310,37 @@ const Dashboard = () => {
               )}
             </Grid>
             
-            <Grid item xs={12} sx={{ display: 'flex', justifyContent: 'center' }}>
-              <StyledCalendar
-                onChange={onChange}
-                value={date}
-                showNeighboringMonth={false}
-                navigationLabel={navigationLabel}
-                prevLabel={<ChevronLeftIcon />}
-                nextLabel={<ChevronRightIcon />}
-                tileClassName={({ date, view }) => 
-                  getTileClassName(date, view, user.workSchedule, user.workingRegime)
-                }
+            <Grid item xs={12}>
+              <FullCalendar
+                plugins={[dayGridPlugin, interactionPlugin]}
+                initialView="dayGridMonth"
+                events={calendarEvents}
+                height="auto"
+                headerToolbar={{
+                  left: 'prev,next today',
+                  center: 'title',
+                  right: ''
+                }}
+                eventContent={(eventInfo) => {
+                  return {
+                    html: `<div style="font-size: 0.8em; font-weight: bold;">${eventInfo.event.title}</div>`
+                  };
+                }}
+                style={{
+                  '--fc-border-color': '#e0e0e0',
+                  '--fc-today-bg-color': 'rgba(0, 0, 0, 0.05)',
+                  '--fc-list-event-hover-bg-color': 'rgba(0, 0, 0, 0.1)',
+                }}
+                eventDidMount={(info) => {
+                  const eventEl = info.el;
+                  if (info.event.classNames.includes('on-board-event')) {
+                    eventEl.style.backgroundColor = 'rgba(244, 67, 54, 0.2)';
+                    eventEl.style.color = '#f44336';
+                  } else if (info.event.classNames.includes('off-board-event')) {
+                    eventEl.style.backgroundColor = 'rgba(76, 175, 80, 0.2)';
+                    eventEl.style.color = '#4CAF50';
+                  }
+                }}
               />
             </Grid>
           </Grid>
