@@ -202,8 +202,8 @@ const Dashboard = () => {
       const parsedUser = JSON.parse(storedUser);
       setUser(parsedUser);
 
-      // Check if user has set their On Board date
-      if (!parsedUser.nextOnBoardDate) {
+      // Automatically open On Board date dialog if no next On Board date is set
+      if (!parsedUser.workSchedule?.nextOnBoardDate) {
         setOpenOnBoardDialog(true);
       }
     } catch (error) {
