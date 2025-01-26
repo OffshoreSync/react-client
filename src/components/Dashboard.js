@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import Calendar from 'react-calendar';
-import 'react-calendar/dist/Calendar.css';
 import { 
   Container, 
   Typography, 
@@ -11,7 +9,6 @@ import {
   Grid,
   Button,
   useMediaQuery,
-  styled,
   useTheme,
   Dialog,
   DialogTitle,
@@ -25,6 +22,12 @@ import {
   ChevronLeft as ChevronLeftIcon, 
   ChevronRight as ChevronRightIcon 
 } from '@mui/icons-material';
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
+import Calendar from 'react-calendar';
+import 'react-calendar/dist/Calendar.css';
+import { styled } from '@mui/material/styles';
+import { TextField } from '@mui/material';
 
 // Custom styled calendar to match Material-UI theme
 const StyledCalendar = styled(Calendar)`
@@ -330,22 +333,35 @@ const Dashboard = () => {
         onClose={() => setOpenOnBoardDialog(false)}
         aria-labelledby="onboard-date-dialog-title"
         aria-describedby="onboard-date-dialog-description"
+        maxWidth="xs"
+        fullWidth
       >
         <DialogTitle id="onboard-date-dialog-title">
           Select Your Next On Board Date
         </DialogTitle>
         <DialogContent>
-          <DialogContentText id="onboard-date-dialog-description">
+          <DialogContentText id="onboard-date-dialog-description" sx={{ mb: 2 }}>
             To help calculate your offshore working schedule, please select the date of your next On Board period.
             This will help us determine your upcoming On and Off dates based on your working regime.
           </DialogContentText>
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2 }}>
-            <StyledCalendar
-              onChange={setDate}
+          
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <DatePicker
+              label="Next On Board Date"
               value={date}
-              showNeighboringMonth={false}
+              onChange={(newValue) => setDate(newValue)}
+              renderInput={(params) => (
+                <TextField 
+                  {...params} 
+                  fullWidth 
+                  variant="outlined" 
+                  sx={{ mt: 1 }}
+                />
+              )}
+              minDate={new Date()}
+              views={['year', 'month', 'day']}
             />
-          </Box>
+          </LocalizationProvider>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenOnBoardDialog(false)} color="primary">
