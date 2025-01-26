@@ -1,6 +1,17 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import { 
+  Container, 
+  Typography, 
+  TextField, 
+  Button, 
+  Box, 
+  Paper, 
+  Link as MuiLink,
+  Alert
+} from '@mui/material';
+import LoginIcon from '@mui/icons-material/Login';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -28,7 +39,6 @@ const Login = () => {
       // Ensure working regime is correctly stored
       const userWithFullData = {
         ...res.data.user,
-        // Extensive logging and fallback
         workingRegime: res.data.user.workingRegime || {
           onDutyDays: 28,  // Default to 28/28 if not present
           offDutyDays: 28
@@ -61,35 +71,85 @@ const Login = () => {
   };
 
   return (
-    <div className="login-container">
-      <h2>Offshore Worker Login</h2>
-      <form onSubmit={onSubmit}>
-        <input
-          type="text"
-          placeholder="Username"
-          name="username"
-          value={username}
-          onChange={onChange}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          name="password"
-          value={password}
-          onChange={onChange}
-          required
-        />
-        {error && <p className="error-message">{error}</p>}
-        <button type="submit">Login</button>
-        
-        <div className="register-prompt">
-          <p>Don't have an account? 
-            <Link to="/register"> Register here</Link>
-          </p>
-        </div>
-      </form>
-    </div>
+    <Container maxWidth="xs">
+      <Box
+        sx={{
+          marginTop: 8,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
+        <Typography component="h1" variant="h5">
+          Offshore Worker Login
+        </Typography>
+        <Paper 
+          elevation={3} 
+          sx={{ 
+            width: '100%', 
+            padding: 3, 
+            marginTop: 2,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+          }}
+        >
+          <Box component="form" onSubmit={onSubmit} noValidate sx={{ mt: 1 }}>
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="username"
+              label="Username"
+              name="username"
+              autoComplete="username"
+              autoFocus
+              value={username}
+              onChange={onChange}
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="password"
+              label="Password"
+              type="password"
+              id="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={onChange}
+            />
+            
+            {error && (
+              <Alert severity="error" sx={{ width: '100%', mt: 2 }}>
+                {error}
+              </Alert>
+            )}
+            
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              startIcon={<LoginIcon />}
+              sx={{ mt: 3, mb: 2 }}
+            >
+              Sign In
+            </Button>
+            
+            <Typography variant="body2" color="text.secondary" align="center">
+              Don't have an account? 
+              <MuiLink 
+                component={Link} 
+                to="/register" 
+                sx={{ ml: 1 }}
+              >
+                Register here
+              </MuiLink>
+            </Typography>
+          </Box>
+        </Paper>
+      </Box>
+    </Container>
   );
 };
 
