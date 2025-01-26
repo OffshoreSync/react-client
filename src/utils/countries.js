@@ -21,3 +21,14 @@ export const OFFSHORE_COUNTRIES = [
   { code: 'DK', name: 'Denmark', rank: 19 },
   { code: 'MY', name: 'Malaysia', rank: 20 }
 ].sort((a, b) => a.name.localeCompare(b.name)); // Alphabetical order for dropdown
+
+// Helper function to get country code for display
+export const getCountryCode = (countryName) => {
+  if (!countryName) return '';
+  
+  const country = OFFSHORE_COUNTRIES.find(c => 
+    c.name.toLowerCase() === countryName.toLowerCase()
+  );
+  
+  return country ? country.code : '';
+};

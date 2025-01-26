@@ -1,21 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import ReactCountryFlag from "react-country-flag";
 import { 
-  Container, 
   Typography, 
   Box, 
-  Button, 
-  Paper, 
   Grid, 
+  Paper, 
+  Button, 
   Dialog, 
   DialogTitle, 
   DialogContent, 
-  DialogContentText, 
+  DialogContentText,
   DialogActions, 
-  Link 
+  Link,
+  Container
 } from '@mui/material';
-import { OFFSHORE_COUNTRIES } from '../utils/countries';
+import { OFFSHORE_COUNTRIES, getCountryCode } from '../utils/countries';
 
 const ProfileSettings = () => {
   const [user, setUser] = useState(null);
@@ -184,8 +185,35 @@ const ProfileSettings = () => {
                     <strong>Unit Name:</strong> {user.unitName}
                   </Typography>
                 )}
-                <Typography variant="body1">
-                  <strong>Country:</strong> {user.country || 'N/A'} ({getCountryCode(user.country)})
+                <Typography variant="body1" sx={{ color: 'black' }}>
+                  {user.country ? (
+                    <Box 
+                      sx={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        justifyContent: 'space-between',
+                        width: '100%'
+                      }}
+                    >
+                      <Box>
+                        <Typography variant="body1" sx={{ color: 'black' }}>
+                          <strong>Country:</strong> {user.country}
+                        </Typography>
+                      </Box>
+                      <ReactCountryFlag
+                        countryCode={getCountryCode(user.country)}
+                        svg
+                        style={{
+                          width: '2em',
+                          height: '1.5em',
+                          borderRadius: '4px'
+                        }}
+                        title={user.country}
+                      />
+                    </Box>
+                  ) : (
+                    'No country selected'
+                  )}
                 </Typography>
               </Box>
             </Grid>
