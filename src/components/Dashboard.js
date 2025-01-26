@@ -88,49 +88,30 @@ const getTileClassName = (date, view, workSchedule, workingRegime) => {
   return null;
 };
 
-// Function to generate calendar events based on work schedule
+// Function to generate calendar events
 const generateCalendarEvents = (user) => {
-  // Default empty array if no valid data
-  const defaultEvents = [];
-
-  // Always attempt to generate events, but return default if no valid data
-  try {
-    // Check if we have the minimum required data
-    if (!user || !user.workSchedule || !user.workSchedule.nextOnBoardDate) {
-      return defaultEvents;
-    }
-
-    const onBoardStart = new Date(user.workSchedule.nextOnBoardDate);
-    const onDutyDays = user.workingRegime?.onDutyDays || 14;
-    const offDutyDays = user.workingRegime?.offDutyDays || 14;
-
-    const events = [];
-    let currentDate = new Date(onBoardStart);
-
-    // Generate events for the next 2 years
-    for (let i = 0; i < 24; i++) {
-      const cyclePosition = i % 2;
-      
-      const eventStart = new Date(currentDate);
-      const eventEnd = new Date(currentDate);
-      eventEnd.setDate(eventEnd.getDate() + (cyclePosition === 0 ? onDutyDays : offDutyDays));
-
-      events.push({
-        title: cyclePosition === 0 ? 'On Board' : 'Off Board',
-        start: eventStart,
-        end: eventEnd,
-        allDay: true,
-        className: cyclePosition === 0 ? 'on-board-event' : 'off-board-event'
-      });
-
-      currentDate = eventEnd;
-    }
-
-    return events;
-  } catch (error) {
-    console.error('Error generating calendar events:', error);
-    return defaultEvents;
+  // If no user or no next On Board date, return empty array
+  if (!user || !user.workSchedule?.nextOnBoardDate) {
+    return [];
   }
+
+  // Fetch work cycles from the user's data
+  const workCycles = user.workCycles || [];
+
+  // Convert work cycles to calendar events
+  const calendarEvents = workCycles.map(cycle => ({
+    start: new Date(cycle.startDate),
+    end: new Date(cycle.endDate),
+    title: cycle.type,
+    allDay: true,
+    className: cycle.type === 'OnBoard' ? 'on-board-event' : 'off-board-event',
+    extendedProps: {
+      type: cycle.type.toLowerCase(),
+      cycleNumber: cycle.cycleNumber
+    }
+  }));
+
+  return calendarEvents;
 };
 
 const Dashboard = () => {
@@ -144,76 +125,10 @@ const Dashboard = () => {
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
-  // Function to generate calendar events
-  const generateCalendarEvents = () => {
-    // Default empty array if no valid data
-    const defaultEvents = [];
-
-    // Always attempt to generate events, but return default if no valid data
-    try {
-      // Check if we have the minimum required data
-      if (!user || !user.workSchedule || !user.workSchedule.nextOnBoardDate) {
-        return defaultEvents;
-      }
-
-      const onBoardStart = new Date(user.workSchedule.nextOnBoardDate);
-      const onDutyDays = user.workingRegime?.onDutyDays || 14;
-      const offDutyDays = user.workingRegime?.offDutyDays || 14;
-
-      const events = [];
-      let currentDate = new Date(onBoardStart);
-
-      // Generate events for the next 2 years
-      for (let i = 0; i < 24; i++) {
-        const cyclePosition = i % 2;
-        
-        if (cyclePosition === 0) {
-          // On Board Event
-          const onBoardEventStart = new Date(currentDate);
-          const onBoardEventEnd = new Date(currentDate);
-          onBoardEventEnd.setDate(onBoardEventEnd.getDate() + onDutyDays);
-
-          events.push({
-            title: 'On Board',
-            start: onBoardEventStart,
-            end: onBoardEventEnd,
-            allDay: true,
-            className: 'on-board-event'
-          });
-
-          // Move to next period
-          currentDate.setDate(currentDate.getDate() + onDutyDays);
-        } else {
-          // Off Board Event
-          const offBoardEventStart = new Date(currentDate);
-          const offBoardEventEnd = new Date(currentDate);
-          offBoardEventEnd.setDate(offBoardEventEnd.getDate() + offDutyDays);
-
-          events.push({
-            title: 'Off Board',
-            start: offBoardEventStart,
-            end: offBoardEventEnd,
-            allDay: true,
-            className: 'off-board-event'
-          });
-
-          // Move to next period
-          currentDate.setDate(currentDate.getDate() + offDutyDays);
-        }
-      }
-
-      return events;
-    } catch (error) {
-      console.error('Error generating calendar events:', error);
-      return defaultEvents;
-    }
-  };
-
   // Calculate calendar events
   const calendarEvents = useMemo(() => generateCalendarEvents(user), [user]);
 
   useEffect(() => {
-    // Check if user is logged in
     const checkAuth = async () => {
       try {
         const token = localStorage.getItem('token');
@@ -235,7 +150,6 @@ const Dashboard = () => {
           }
         };
 
-        // Validate working regime
         if (!userWithFullData.workingRegime || 
             typeof userWithFullData.workingRegime.onDutyDays !== 'number' ||
             typeof userWithFullData.workingRegime.offDutyDays !== 'number') {
@@ -252,10 +166,41 @@ const Dashboard = () => {
         // Set user state
         setUser(userWithFullData);
 
+        // Check if work cycles exist, if not generate them
+        if (!userWithFullData.workCycles || userWithFullData.workCycles.length === 0) {
+          try {
+            const cyclesResponse = await axios.post(
+              'http://localhost:5000/api/auth/generate-work-cycles',
+              {},
+              {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                }
+              }
+            );
+
+            console.log('Generated Work Cycles:', cyclesResponse.data);
+
+            // Update user with generated work cycles
+            const updatedUser = {
+              ...userWithFullData,
+              workCycles: cyclesResponse.data.workCycles
+            };
+
+            // Update local storage and state
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            setUser(updatedUser);
+          } catch (cyclesError) {
+            console.error('Error generating work cycles:', cyclesError);
+          }
+        }
+
         // Automatically open On Board date dialog if no next On Board date is set
         if (!userWithFullData.workSchedule?.nextOnBoardDate) {
           setOpenOnBoardDialog(true);
         }
+
       } catch (error) {
         console.error('Authentication error:', error);
         
@@ -265,19 +210,7 @@ const Dashboard = () => {
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           
-          // Show a notification about token expiration
-          setSnackbarMessage('Your session has expired. Please log in again.');
-          setSnackbarSeverity('warning');
-          setSnackbarOpen(true);
-          
-          // Redirect to login after a short delay
-          setTimeout(() => {
-            navigate('/login');
-          }, 2000);
-        } else {
-          // For other authentication errors
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
+          // Redirect to login
           navigate('/login');
         }
       }
@@ -309,11 +242,33 @@ const Dashboard = () => {
         }
       );
 
-      // Update local storage with new user data
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      console.log('Set On Board Date Response:', response.data);
+
+      // Generate work cycles
+      const cyclesResponse = await axios.post(
+        'http://localhost:5000/api/auth/generate-work-cycles',
+        {},
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      console.log('Generate Work Cycles Response:', cyclesResponse.data);
+
+      // Ensure the user object is complete
+      const updatedUser = {
+        ...response.data.user,
+        workCycles: cyclesResponse.data.workCycles
+      };
+
+      // Update local storage with new user data including work cycles
+      localStorage.setItem('user', JSON.stringify(updatedUser));
       
       // Update local state
-      setUser(response.data.user);
+      setUser(updatedUser);
       
       // Close dialog and show success message
       setOpenOnBoardDialog(false);
@@ -321,7 +276,16 @@ const Dashboard = () => {
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
     } catch (error) {
-      console.error('Error setting On Board date:', error);
+      console.error('Error in handleSetOnBoardDate:', error);
+      
+      // More detailed error logging
+      if (error.response) {
+        console.error('Response Error Details:', {
+          status: error.response.status,
+          data: error.response.data,
+          headers: error.response.headers
+        });
+      }
       
       // Show error message
       setSnackbarMessage(
