@@ -47,17 +47,19 @@ const Login = () => {
 
       // Ensure all expected fields are present
       const safeUser = {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        fullName: user.fullName,
-        offshoreRole: user.offshoreRole,
-        workingRegime: user.workingRegime,
-        company: user.company || null,
-        unitName: user.unitName || null,
-        country: user.country || null,
-        nextOnBoardDate: user.nextOnBoardDate || null,
-        workSchedule: user.workSchedule || {}
+        id: response.data.user.id,
+        username: response.data.user.username,
+        email: response.data.user.email,
+        fullName: response.data.user.fullName,
+        offshoreRole: response.data.user.offshoreRole,
+        workingRegime: response.data.user.workingRegime,
+        company: response.data.user.company || null,
+        workSchedule: response.data.user.workSchedule || {
+          nextOnBoardDate: null,
+          nextOffBoardDate: null
+        },
+        unitName: response.data.user.unitName || null,
+        country: response.data.user.country || null
       };
 
       // Store token and user data

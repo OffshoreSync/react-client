@@ -167,23 +167,39 @@ const Dashboard = () => {
       for (let i = 0; i < 24; i++) {
         const cyclePosition = i % 2;
         
-        // Only create events for On Board days
         if (cyclePosition === 0) {
-          const eventStart = new Date(currentDate);
-          const eventEnd = new Date(currentDate);
-          eventEnd.setDate(eventEnd.getDate() + onDutyDays);
+          // On Board Event
+          const onBoardEventStart = new Date(currentDate);
+          const onBoardEventEnd = new Date(currentDate);
+          onBoardEventEnd.setDate(onBoardEventEnd.getDate() + onDutyDays);
 
           events.push({
             title: 'On Board',
-            start: eventStart,
-            end: eventEnd,
+            start: onBoardEventStart,
+            end: onBoardEventEnd,
             allDay: true,
             className: 'on-board-event'
           });
-        }
 
-        // Move to the next cycle
-        currentDate.setDate(currentDate.getDate() + onDutyDays + offDutyDays);
+          // Move to next period
+          currentDate.setDate(currentDate.getDate() + onDutyDays);
+        } else {
+          // Off Board Event
+          const offBoardEventStart = new Date(currentDate);
+          const offBoardEventEnd = new Date(currentDate);
+          offBoardEventEnd.setDate(offBoardEventEnd.getDate() + offDutyDays);
+
+          events.push({
+            title: 'Off Board',
+            start: offBoardEventStart,
+            end: offBoardEventEnd,
+            allDay: true,
+            className: 'off-board-event'
+          });
+
+          // Move to next period
+          currentDate.setDate(currentDate.getDate() + offDutyDays);
+        }
       }
 
       return events;
@@ -337,8 +353,40 @@ const Dashboard = () => {
     );
   };
 
+  // Responsive layout for smaller screens
+  const responsiveStyles = {
+    container: {
+      padding: isSmallScreen ? theme.spacing(1) : theme.spacing(3),
+      marginTop: isSmallScreen ? theme.spacing(1) : theme.spacing(3)
+    },
+    calendarHeader: {
+      display: 'flex',
+      flexDirection: isSmallScreen ? 'column' : 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: theme.spacing(2)
+    },
+    headerTitle: {
+      fontSize: isSmallScreen ? '1rem' : '1.25rem',
+      fontWeight: 600,
+      textAlign: isSmallScreen ? 'center' : 'left',
+      marginBottom: isSmallScreen ? theme.spacing(1) : 0
+    },
+    headerButtons: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: theme.spacing(1),
+      flexWrap: 'wrap',
+      justifyContent: isSmallScreen ? 'center' : 'flex-end'
+    },
+    calendarContainer: {
+      width: '100%',
+      overflowX: 'auto'
+    }
+  };
+
   return (
-    <Container maxWidth="lg">
+    <Container maxWidth="lg" sx={responsiveStyles.container}>
       <Box sx={{ my: 4 }}>
         <Grid container spacing={3}>
           <Grid item xs={12}>
@@ -374,28 +422,33 @@ const Dashboard = () => {
                   initialView="dayGridMonth"
                   events={calendarEvents}
                   height="auto"
-                  headerToolbar={{
-                    left: 'prev,next today',
-                    center: 'title',
-                    right: ''
-                  }}
-                  buttonText={{
-                    today: 'Today',
-                    month: 'Month',
-                    week: 'Week',
-                    day: 'Day'
-                  }}
-                  customButtons={{
-                    today: {
-                      text: 'Today',
-                      click: function(jsEvent, view) {
-                        // Custom today button behavior if needed
+                  views={{
+                    month: {
+                      titleFormat: { 
+                        year: 'numeric', 
+                        month: isSmallScreen ? 'short' : 'long' 
                       }
                     }
                   }}
-                  buttonIcons={{
-                    prev: 'chevron-left',
-                    next: 'chevron-right'
+                  headerToolbar={{
+                    left: 'prev',
+                    center: 'title',
+                    right: 'next'
+                  }}
+                  buttonText={{
+                    prev: isSmallScreen ? '<' : 'PREVIOUS',
+                    next: isSmallScreen ? '>' : 'NEXT'
+                  }}
+                  style={{
+                    '--fc-border-color': 'rgba(0,0,0,0.12)',
+                    '--fc-today-bg-color': 'rgba(25, 118, 210, 0.1)',
+                    '--fc-list-event-hover-bg-color': 'rgba(0, 0, 0, 0.04)',
+                    '--fc-neutral-bg-color': '#f5f5f5',
+                    '--fc-page-bg-color': 'white',
+                    fontFamily: "'Roboto', 'Helvetica', 'Arial', sans-serif",
+                    borderRadius: '4px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                    fontSize: isSmallScreen ? '0.75rem' : '1rem'
                   }}
                   eventContent={(eventInfo) => {
                     return {
@@ -410,17 +463,20 @@ const Dashboard = () => {
                       html: `<div style="color: #1976D2; font-weight: 500;">+${arg.num} more</div>` 
                     };
                   }}
-                  views={{
-                    month: {
-                      titleFormat: { year: 'numeric', month: 'long' }
-                    }
-                  }}
                   eventDidMount={(info) => {
                     const eventEl = info.el;
                     if (info.event.classNames.includes('on-board-event')) {
                       eventEl.style.backgroundColor = '#D32F2F';  // Material Dark Red
                       eventEl.style.color = 'white';
                       eventEl.style.borderLeft = '4px solid #B71C1C';  // Darker red for border
+                      eventEl.style.borderRadius = '4px';
+                      eventEl.style.textTransform = 'uppercase';
+                      eventEl.style.letterSpacing = '0.5px';
+                    }
+                    if (info.event.classNames.includes('off-board-event')) {
+                      eventEl.style.backgroundColor = '#1976D2';  // Material Blue
+                      eventEl.style.color = 'white';
+                      eventEl.style.borderLeft = '4px solid #0D47A1';  // Darker blue for border
                       eventEl.style.borderRadius = '4px';
                       eventEl.style.textTransform = 'uppercase';
                       eventEl.style.letterSpacing = '0.5px';
@@ -436,18 +492,11 @@ const Dashboard = () => {
                       el.style.color = '#D32F2F';  // Material Dark Red text
                     }
                   }}
-                  style={{
-                    '--fc-border-color': 'rgba(0,0,0,0.12)',
-                    '--fc-today-bg-color': 'rgba(25, 118, 210, 0.1)',
-                    '--fc-list-event-hover-bg-color': 'rgba(0, 0, 0, 0.04)',
-                    '--fc-neutral-bg-color': '#f5f5f5',
-                    '--fc-page-bg-color': 'white',
-                    fontFamily: "'Roboto', 'Helvetica', 'Arial', sans-serif",
-                    borderRadius: '4px',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                  }}
                   viewDidMount={(arg) => {
                     const buttonEls = arg.view.calendar.el.querySelectorAll('.fc-button');
+                    const titleEl = arg.view.calendar.el.querySelector('.fc-toolbar-title');
+                    
+                    // Responsive button styling
                     buttonEls.forEach(button => {
                       button.style.backgroundColor = '#1976D2';  // Material Blue
                       button.style.color = 'white';
@@ -455,8 +504,9 @@ const Dashboard = () => {
                       button.style.borderRadius = '4px';
                       button.style.textTransform = 'uppercase';
                       button.style.letterSpacing = '0.5px';
-                      button.style.padding = '6px 12px';
+                      button.style.padding = isSmallScreen ? '4px 8px' : '6px 12px';
                       button.style.margin = '0 4px';
+                      button.style.fontSize = isSmallScreen ? '0.75rem' : '0.875rem';
                       button.style.transition = 'background-color 0.3s ease';
                       
                       button.addEventListener('mouseenter', () => {
@@ -467,6 +517,13 @@ const Dashboard = () => {
                         button.style.backgroundColor = '#1976D2';
                       });
                     });
+
+                    // Responsive title styling
+                    if (titleEl) {
+                      titleEl.style.fontSize = isSmallScreen ? '0.9rem' : '1.25rem';
+                      titleEl.style.fontWeight = '600';
+                      titleEl.style.textAlign = isSmallScreen ? 'center' : 'left';
+                    }
                   }}
                 />
               </CardContent>

@@ -35,75 +35,37 @@ const EditProfile = () => {
   const navigate = useNavigate();
   const [countryList] = useState(OFFSHORE_COUNTRIES.map(country => country.name));
 
-  useEffect(() => {
-    // Check if user is logged in
-    const storedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
-
-    if (!storedUser || !token) {
-      // Redirect to login if no user or token
-      navigate('/login');
-      return;
+  const handleWorkingRegimeChange = (e) => {
+    const { name, value } = e.target;
+    
+    // If changing working regime dropdown
+    if (name === 'workingRegime') {
+      setFormData(prevState => ({
+        ...prevState,
+        workingRegime: value,
+        // Reset custom days when changing regime
+        customOnDutyDays: value === 'custom' ? '' : '',
+        customOffDutyDays: value === 'custom' ? '' : ''
+      }));
+    } 
+    // If changing custom days
+    else if (name === 'customOnDutyDays' || name === 'customOffDutyDays') {
+      setFormData(prevState => ({
+        ...prevState,
+        [name]: value,
+        // Ensure working regime is set to custom when editing custom days
+        workingRegime: 'custom'
+      }));
     }
-
-    // Parse and set user
-    try {
-      const parsedUser = JSON.parse(storedUser);
-      setOriginalUser(parsedUser);
-      
-      // Populate form with existing user data
-      setFormData({
-        username: parsedUser.username || '',
-        email: parsedUser.email || '',
-        fullName: parsedUser.fullName || '',
-        offshoreRole: parsedUser.offshoreRole || '',
-        workingRegime: parsedUser.workingRegime?.onDutyDays && parsedUser.workingRegime?.offDutyDays 
-          ? `${parsedUser.workingRegime.onDutyDays}/${parsedUser.workingRegime.offDutyDays}` 
-          : '28/28',
-        customOnDutyDays: parsedUser.workingRegime?.onDutyDays || '',
-        customOffDutyDays: parsedUser.workingRegime?.offDutyDays || '',
-        company: parsedUser.company || '',
-        
-        // Explicitly handle country and unitName
-        unitName: parsedUser.unitName || '',
-        country: parsedUser.country || ''
-      });
-
-      console.log('Initial form data:', {
-        unitName: parsedUser.unitName,
-        country: parsedUser.country
-      });
-    } catch (error) {
-      console.error('Error parsing user data', error);
-      // Clear invalid localStorage and redirect
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
-      navigate('/login');
-    }
-  }, [navigate]);
+  };
 
   const onChange = e => {
     const { name, value } = e.target;
-    setFormData(prevState => {
-      // Special handling for working regime
-      if (name === 'workingRegime') {
-        // If predefined regime is selected, reset custom inputs
-        if (value !== 'custom') {
-          return {
-            ...prevState,
-            workingRegime: value,
-            customOnDutyDays: '',
-            customOffDutyDays: ''
-          };
-        }
-      }
-
-      // Normal input handling
-      return {
-        ...prevState,
-        [name]: value
-      };
-    });
+    if (name === 'workingRegime' || name === 'customOnDutyDays' || name === 'customOffDutyDays') {
+      handleWorkingRegimeChange(e);
+    } else {
+      setFormData(prevState => ({ ...prevState, [name]: value }));
+    }
     setError(''); // Clear error when user starts typing
     setSuccess(''); // Clear success message
   };
@@ -129,11 +91,26 @@ const EditProfile = () => {
 
       // Handle working regime
       if (formData.workingRegime === 'custom') {
+        // Validate custom regime
+        const onDutyDays = parseInt(formData.customOnDutyDays);
+        const offDutyDays = parseInt(formData.customOffDutyDays);
+
+        if (isNaN(onDutyDays) || isNaN(offDutyDays)) {
+          setError('Please enter valid custom working days');
+          return;
+        }
+
+        if (onDutyDays < 7 || onDutyDays > 365 || offDutyDays < 7 || offDutyDays > 365) {
+          setError('Custom working days must be between 7 and 365');
+          return;
+        }
+
         updateData.workingRegime = {
-          onDutyDays: parseInt(formData.customOnDutyDays),
-          offDutyDays: parseInt(formData.customOffDutyDays)
+          onDutyDays,
+          offDutyDays
         };
       } else {
+        // For predefined regimes
         const [onDutyDays, offDutyDays] = formData.workingRegime.split('/').map(Number);
         updateData.workingRegime = { onDutyDays, offDutyDays };
       }
@@ -161,14 +138,17 @@ const EditProfile = () => {
         offshoreRole: response.data.user.offshoreRole,
         workingRegime: response.data.user.workingRegime,
         company: response.data.user.company || null,
+        workSchedule: response.data.user.workSchedule || {
+          nextOnBoardDate: null,
+          nextOffBoardDate: null
+        },
         unitName: response.data.user.unitName || null,
         country: response.data.user.country || null,
-        nextOnBoardDate: response.data.user.nextOnBoardDate || null,
-        workSchedule: response.data.user.workSchedule || {}
+        profilePicture: response.data.user.profilePicture || null,
+        coverPicture: response.data.user.coverPicture || null,
+        followers: response.data.user.followers || [],
+        following: response.data.user.following || []
       };
-
-      // Log stored user data for verification
-      console.log('Updated User Data:', JSON.stringify(safeUser, null, 2));
 
       localStorage.setItem('user', JSON.stringify(safeUser));
 
@@ -187,6 +167,82 @@ const EditProfile = () => {
       setError(err.response?.data?.message || 'Profile update failed. Please try again.');
     }
   };
+
+  useEffect(() => {
+    // Check if user is logged in
+    const storedUser = localStorage.getItem('user');
+    const token = localStorage.getItem('token');
+
+    if (!storedUser || !token) {
+      // Redirect to login if no user or token
+      navigate('/login');
+      return;
+    }
+
+    // Parse and set user
+    try {
+      const parsedUser = JSON.parse(storedUser);
+      setOriginalUser(parsedUser);
+      
+      // Populate form with existing user data
+      const workingRegime = parsedUser.workingRegime;
+      let workingRegimeDisplay = '28/28'; // Default
+      let customOnDutyDays = '';
+      let customOffDutyDays = '';
+
+      // Determine working regime display
+      if (workingRegime) {
+        const predefinedRegimes = {
+          '7/7': { onDutyDays: 7, offDutyDays: 7 },
+          '14/14': { onDutyDays: 14, offDutyDays: 14 },
+          '28/28': { onDutyDays: 28, offDutyDays: 28 }
+        };
+
+        const matchedPredefined = Object.entries(predefinedRegimes).find(
+          ([, value]) => value.onDutyDays === workingRegime.onDutyDays && 
+                         value.offDutyDays === workingRegime.offDutyDays
+        );
+
+        if (matchedPredefined) {
+          workingRegimeDisplay = matchedPredefined[0];
+        } else {
+          // Custom regime
+          workingRegimeDisplay = 'custom';
+          customOnDutyDays = workingRegime.onDutyDays;
+          customOffDutyDays = workingRegime.offDutyDays;
+        }
+      }
+
+      setFormData({
+        username: parsedUser.username || '',
+        email: parsedUser.email || '',
+        fullName: parsedUser.fullName || '',
+        offshoreRole: parsedUser.offshoreRole || '',
+        workingRegime: workingRegimeDisplay,
+        customOnDutyDays: customOnDutyDays,
+        customOffDutyDays: customOffDutyDays,
+        company: parsedUser.company || '',
+        
+        // Explicitly handle country and unitName
+        unitName: parsedUser.unitName || '',
+        country: parsedUser.country || ''
+      });
+
+      console.log('Initial form data:', {
+        unitName: parsedUser.unitName,
+        country: parsedUser.country,
+        workingRegime: workingRegimeDisplay,
+        customOnDutyDays,
+        customOffDutyDays
+      });
+    } catch (error) {
+      console.error('Error parsing user data', error);
+      // Clear invalid localStorage and redirect
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      navigate('/login');
+    }
+  }, [navigate]);
 
   if (!originalUser) return null;
 
@@ -271,7 +327,7 @@ const EditProfile = () => {
                 name="workingRegime"
                 value={formData.workingRegime}
                 label="Working Regime"
-                onChange={onChange}
+                onChange={handleWorkingRegimeChange}
               >
                 <MenuItem value="7/7">7 Days On / 7 Days Off</MenuItem>
                 <MenuItem value="14/14">14 Days On / 14 Days Off</MenuItem>
@@ -288,7 +344,7 @@ const EditProfile = () => {
                   label="On Duty Days (7-365)"
                   name="customOnDutyDays"
                   value={formData.customOnDutyDays}
-                  onChange={onChange}
+                  onChange={handleWorkingRegimeChange}
                   inputProps={{ min: 7, max: 365 }}
                   required
                   variant="outlined"
@@ -299,7 +355,7 @@ const EditProfile = () => {
                   label="Off Duty Days (7-365)"
                   name="customOffDutyDays"
                   value={formData.customOffDutyDays}
-                  onChange={onChange}
+                  onChange={handleWorkingRegimeChange}
                   inputProps={{ min: 7, max: 365 }}
                   required
                   variant="outlined"
