@@ -35,10 +35,38 @@ const ProfileSettings = () => {
 
     // Parse and set user
     try {
+      // Detailed logging of stored user data
+      console.log('Raw Stored User JSON:', storedUser);
+      
       const parsedUser = JSON.parse(storedUser);
-      setUser(parsedUser);
+      
+      // Add comprehensive logging to verify user data
+      console.log('Parsed User Data:', JSON.stringify(parsedUser, null, 2));
+      
+      // Explicitly check and log specific fields
+      console.log('Specific Field Check:', {
+        hasUnitName: 'unitName' in parsedUser,
+        hasCountry: 'country' in parsedUser,
+        unitNameValue: parsedUser.unitName,
+        countryValue: parsedUser.country,
+        unitNameType: typeof parsedUser.unitName,
+        countryType: typeof parsedUser.country
+      });
+
+      // Defensive parsing to ensure fields are present
+      const safeUser = {
+        ...parsedUser,
+        unitName: parsedUser.unitName || null,
+        country: parsedUser.country || null
+      };
+      
+      setUser(safeUser);
     } catch (error) {
       console.error('Error parsing user data', error);
+      
+      // Log the raw stored user data for investigation
+      console.error('Stored User Data:', storedUser);
+      
       // Clear invalid localStorage and redirect
       localStorage.removeItem('user');
       localStorage.removeItem('token');

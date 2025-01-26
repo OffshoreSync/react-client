@@ -20,7 +20,10 @@ import {
   DialogActions,
   Snackbar,
   Alert,
-  TextField
+  TextField,
+  Card,
+  CardHeader,
+  CardContent
 } from '@mui/material';
 import { 
   ChevronLeft as ChevronLeftIcon, 
@@ -195,31 +198,76 @@ const Dashboard = () => {
 
   useEffect(() => {
     // Check if user is logged in
-    const storedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
+    const checkAuth = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          navigate('/login');
+          return;
+        }
 
-    if (!storedUser || !token) {
-      // Redirect to login if no user or token
-      navigate('/login');
-      return;
-    }
+        const response = await axios.get('http://localhost:5000/api/auth/profile', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
 
-    // Parse and set user
-    try {
-      const parsedUser = JSON.parse(storedUser);
-      setUser(parsedUser);
+        // Ensure working regime is correctly stored
+        const userWithFullData = {
+          ...response.data.user,
+          workingRegime: response.data.user.workingRegime || {
+            onDutyDays: 28,  // Default to 28/28 if not present
+            offDutyDays: 28
+          }
+        };
 
-      // Automatically open On Board date dialog if no next On Board date is set
-      if (!parsedUser.workSchedule?.nextOnBoardDate) {
-        setOpenOnBoardDialog(true);
+        // Validate working regime
+        if (!userWithFullData.workingRegime || 
+            typeof userWithFullData.workingRegime.onDutyDays !== 'number' ||
+            typeof userWithFullData.workingRegime.offDutyDays !== 'number') {
+          console.warn('Invalid working regime detected, using default');
+          userWithFullData.workingRegime = {
+            onDutyDays: 28,
+            offDutyDays: 28
+          };
+        }
+
+        // Update localStorage with fresh user data
+        localStorage.setItem('user', JSON.stringify(userWithFullData));
+        
+        // Set user state
+        setUser(userWithFullData);
+
+        // Automatically open On Board date dialog if no next On Board date is set
+        if (!userWithFullData.workSchedule?.nextOnBoardDate) {
+          setOpenOnBoardDialog(true);
+        }
+      } catch (error) {
+        console.error('Authentication error:', error);
+        
+        // Handle token expiration specifically
+        if (error.response && error.response.data.error === 'TokenExpiredError') {
+          // Clear existing token and user data
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          
+          // Show a notification about token expiration
+          setSnackbarMessage('Your session has expired. Please log in again.');
+          setSnackbarSeverity('warning');
+          setSnackbarOpen(true);
+          
+          // Redirect to login after a short delay
+          setTimeout(() => {
+            navigate('/login');
+          }, 2000);
+        } else {
+          // For other authentication errors
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          navigate('/login');
+        }
       }
-    } catch (error) {
-      console.error('Error parsing user data', error);
-      // Clear invalid localStorage and redirect
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
-      navigate('/login');
-    }
+    };
+
+    checkAuth();
   }, [navigate]);
 
   // If no user, return null to prevent rendering
@@ -292,63 +340,139 @@ const Dashboard = () => {
   return (
     <Container maxWidth="lg">
       <Box sx={{ my: 4 }}>
-        <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography variant="h4" gutterBottom>
-            Dashboard
-          </Typography>
-          
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6">
-                Welcome, {user.fullName || 'User'}!
-              </Typography>
-              <Typography variant="body1" paragraph>
-                Your Offshore Working Calendar
-              </Typography>
-              {user.workSchedule?.nextOnBoardDate && (
-                <Typography variant="body2" color="textSecondary">
-                  Next On Board: {new Date(user.workSchedule.nextOnBoardDate).toLocaleDateString()}
-                  <br />
-                  Next Off Board: {new Date(user.workSchedule.nextOffBoardDate).toLocaleDateString()}
-                </Typography>
-              )}
-            </Grid>
-            
-            <Grid item xs={12}>
-              <FullCalendar
-                plugins={[dayGridPlugin, interactionPlugin]}
-                initialView="dayGridMonth"
-                events={calendarEvents}
-                height="auto"
-                headerToolbar={{
-                  left: 'prev,next today',
-                  center: 'title',
-                  right: ''
+        <Grid container spacing={3}>
+          <Grid item xs={12}>
+            <Card 
+              elevation={4} 
+              sx={{
+                borderRadius: 2,
+                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                height: '100%'
+              }}
+            >
+              <CardHeader
+                title="Work Schedule"
+                subheader="Your Offshore Work Calendar"
+                titleTypographyProps={{
+                  variant: 'h6',
+                  color: 'primary',
+                  fontWeight: 600
                 }}
-                eventContent={(eventInfo) => {
-                  return {
-                    html: `<div style="font-size: 0.8em; font-weight: bold;">${eventInfo.event.title}</div>`
-                  };
+                subheaderTypographyProps={{
+                  variant: 'body2',
+                  color: 'text.secondary'
                 }}
-                style={{
-                  '--fc-border-color': '#e0e0e0',
-                  '--fc-today-bg-color': 'rgba(0, 0, 0, 0.05)',
-                  '--fc-list-event-hover-bg-color': 'rgba(0, 0, 0, 0.1)',
-                }}
-                eventDidMount={(info) => {
-                  const eventEl = info.el;
-                  if (info.event.classNames.includes('on-board-event')) {
-                    eventEl.style.backgroundColor = 'rgba(244, 67, 54, 0.2)';
-                    eventEl.style.color = '#f44336';
-                  } else if (info.event.classNames.includes('off-board-event')) {
-                    eventEl.style.backgroundColor = 'rgba(76, 175, 80, 0.2)';
-                    eventEl.style.color = '#4CAF50';
-                  }
+                sx={{
+                  borderBottom: '1px solid rgba(0,0,0,0.12)',
+                  paddingBottom: 2
                 }}
               />
-            </Grid>
+              <CardContent sx={{ flexGrow: 1, padding: 2 }}>
+                <FullCalendar
+                  themeSystem="standard"
+                  plugins={[dayGridPlugin, interactionPlugin]}
+                  initialView="dayGridMonth"
+                  events={calendarEvents}
+                  height="auto"
+                  headerToolbar={{
+                    left: 'prev,next today',
+                    center: 'title',
+                    right: ''
+                  }}
+                  buttonText={{
+                    today: 'Today',
+                    month: 'Month',
+                    week: 'Week',
+                    day: 'Day'
+                  }}
+                  customButtons={{
+                    today: {
+                      text: 'Today',
+                      click: function(jsEvent, view) {
+                        // Custom today button behavior if needed
+                      }
+                    }
+                  }}
+                  buttonIcons={{
+                    prev: 'chevron-left',
+                    next: 'chevron-right'
+                  }}
+                  eventContent={(eventInfo) => {
+                    return {
+                      html: `<div style="font-size: 0.8em; font-weight: 500; color: white; text-transform: uppercase; letter-spacing: 0.5px;">${eventInfo.event.title}</div>`
+                    };
+                  }}
+                  dayHeaderFormat={{ 
+                    weekday: 'short' 
+                  }}
+                  moreLinkContent={(arg) => {
+                    return { 
+                      html: `<div style="color: #1976D2; font-weight: 500;">+${arg.num} more</div>` 
+                    };
+                  }}
+                  views={{
+                    month: {
+                      titleFormat: { year: 'numeric', month: 'long' }
+                    }
+                  }}
+                  eventDidMount={(info) => {
+                    const eventEl = info.el;
+                    if (info.event.classNames.includes('on-board-event')) {
+                      eventEl.style.backgroundColor = '#D32F2F';  // Material Dark Red
+                      eventEl.style.color = 'white';
+                      eventEl.style.borderLeft = '4px solid #B71C1C';  // Darker red for border
+                      eventEl.style.borderRadius = '4px';
+                      eventEl.style.textTransform = 'uppercase';
+                      eventEl.style.letterSpacing = '0.5px';
+                    }
+                  }}
+                  dayCellDidMount={(arg) => {
+                    const date = arg.date;
+                    const el = arg.el;
+                    
+                    // Check if the day is a weekend (0 = Sunday, 6 = Saturday)
+                    if (date.getDay() === 0 || date.getDay() === 6) {
+                      el.style.backgroundColor = 'rgba(211, 47, 47, 0.1)';  // Light red background
+                      el.style.color = '#D32F2F';  // Material Dark Red text
+                    }
+                  }}
+                  style={{
+                    '--fc-border-color': 'rgba(0,0,0,0.12)',
+                    '--fc-today-bg-color': 'rgba(25, 118, 210, 0.1)',
+                    '--fc-list-event-hover-bg-color': 'rgba(0, 0, 0, 0.04)',
+                    '--fc-neutral-bg-color': '#f5f5f5',
+                    '--fc-page-bg-color': 'white',
+                    fontFamily: "'Roboto', 'Helvetica', 'Arial', sans-serif",
+                    borderRadius: '4px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }}
+                  viewDidMount={(arg) => {
+                    const buttonEls = arg.view.calendar.el.querySelectorAll('.fc-button');
+                    buttonEls.forEach(button => {
+                      button.style.backgroundColor = '#1976D2';  // Material Blue
+                      button.style.color = 'white';
+                      button.style.border = 'none';
+                      button.style.borderRadius = '4px';
+                      button.style.textTransform = 'uppercase';
+                      button.style.letterSpacing = '0.5px';
+                      button.style.padding = '6px 12px';
+                      button.style.margin = '0 4px';
+                      button.style.transition = 'background-color 0.3s ease';
+                      
+                      button.addEventListener('mouseenter', () => {
+                        button.style.backgroundColor = '#1565C0';  // Darker blue on hover
+                      });
+                      
+                      button.addEventListener('mouseleave', () => {
+                        button.style.backgroundColor = '#1976D2';
+                      });
+                    });
+                  }}
+                />
+              </CardContent>
+            </Card>
           </Grid>
-        </Paper>
+        </Grid>
       </Box>
 
       {/* On Board Date Selection Dialog */}

@@ -29,40 +29,45 @@ const Login = () => {
     setError(''); // Clear error when user starts typing
   };
 
-  const onSubmit = async e => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', formData);
-      
-      console.log('Full login response:', res.data);
-      
-      // Ensure working regime is correctly stored
-      const userWithFullData = {
-        ...res.data.user,
-        workingRegime: res.data.user.workingRegime || {
-          onDutyDays: 28,  // Default to 28/28 if not present
-          offDutyDays: 28
-        }
-      };
-      
-      console.log('Processed user data:', userWithFullData);
-      
-      // Validate working regime
-      if (!userWithFullData.workingRegime || 
-          typeof userWithFullData.workingRegime.onDutyDays !== 'number' ||
-          typeof userWithFullData.workingRegime.offDutyDays !== 'number') {
-        console.warn('Invalid working regime detected, using default');
-        userWithFullData.workingRegime = {
-          onDutyDays: 28,
-          offDutyDays: 28
-        };
-      }
-      
-      // Store user token and info in localStorage
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(userWithFullData));
+    setError('');
 
-      // Redirect to dashboard or main app page
+    try {
+      const response = await axios.post('http://localhost:5000/api/auth/login', {
+        username,
+        password
+      });
+
+      // Log the entire response for debugging
+      console.log('Login Response:', JSON.stringify(response.data, null, 2));
+
+      // Destructure and ensure all fields are present
+      const { token, user } = response.data;
+
+      // Ensure all expected fields are present
+      const safeUser = {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        fullName: user.fullName,
+        offshoreRole: user.offshoreRole,
+        workingRegime: user.workingRegime,
+        company: user.company || null,
+        unitName: user.unitName || null,
+        country: user.country || null,
+        nextOnBoardDate: user.nextOnBoardDate || null,
+        workSchedule: user.workSchedule || {}
+      };
+
+      // Store token and user data
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(safeUser));
+
+      // Log stored user data for verification
+      console.log('Stored User Data:', JSON.stringify(safeUser, null, 2));
+
+      // Redirect to dashboard
       navigate('/dashboard');
     } catch (err) {
       console.error('Login error:', err.response?.data || err.message);
