@@ -21,6 +21,7 @@ import HomeIcon from '@mui/icons-material/Home';
 import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
 import WavesIcon from '@mui/icons-material/Waves';
+import SettingsIcon from '@mui/icons-material/Settings';
 
 function Navbar() {
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -42,7 +43,7 @@ function Navbar() {
 
   const menuItems = isLoggedIn ? [
     { text: 'Home', icon: <HomeIcon />, onClick: () => handleNavigation('/') },
-    { text: 'Profile Settings', icon: <PersonIcon />, onClick: () => handleNavigation('/settings') },
+    { text: 'Settings', icon: <SettingsIcon />, onClick: () => handleNavigation('/settings') },
     { text: 'Logout', icon: <LogoutIcon />, onClick: handleLogout }
   ] : [
     { text: 'Home', icon: <HomeIcon />, onClick: () => handleNavigation('/') },

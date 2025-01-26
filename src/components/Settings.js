@@ -16,9 +16,9 @@ import {
   Link,
   Container
 } from '@mui/material';
-import { OFFSHORE_COUNTRIES, getCountryCode } from '../utils/countries';
+import { getCountryCode } from '../utils/countries';
 
-const ProfileSettings = () => {
+const Settings = () => {
   const [user, setUser] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const navigate = useNavigate();
@@ -101,13 +101,6 @@ const ProfileSettings = () => {
     }
   };
 
-  // Find country code for display
-  const getCountryCode = (countryName) => {
-    if (!countryName) return 'N/A';
-    const country = OFFSHORE_COUNTRIES.find(c => c.name === countryName);
-    return country ? country.code : 'N/A';
-  };
-
   // Format working regime display
   const formatWorkingRegime = (regime) => {
     // Defensive check for regime
@@ -145,9 +138,9 @@ const ProfileSettings = () => {
   return (
     <Container maxWidth="md">
       <Box sx={{ my: 4 }}>
-        <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography variant="h4" gutterBottom>
-            Profile Settings
+        <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
+          <Typography variant="h6" gutterBottom>
+            Personal Profile
           </Typography>
           
           <Grid container spacing={3}>
@@ -271,4 +264,4 @@ const ProfileSettings = () => {
   );
 };
 
-export default ProfileSettings;
+export default Settings;
