@@ -21,9 +21,13 @@ const Dashboard = () => {
 
     // Parse and set user
     try {
-      setUser(JSON.parse(storedUser));
+      const parsedUser = JSON.parse(storedUser);
+      setUser(parsedUser);
     } catch (error) {
       console.error('Error parsing user data', error);
+      // Clear invalid localStorage and redirect
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
       navigate('/login');
     }
   }, [navigate]);
@@ -56,12 +60,18 @@ const Dashboard = () => {
 
   // Find country code for display
   const getCountryCode = (countryName) => {
+    if (!countryName) return 'N/A';
     const country = OFFSHORE_COUNTRIES.find(c => c.name === countryName);
-    return country ? country.code : countryName;
+    return country ? country.code : 'N/A';
   };
 
   // Format working regime display
   const formatWorkingRegime = (regime) => {
+    // Defensive check for regime
+    if (!regime || typeof regime !== 'object') {
+      return 'Not Specified';
+    }
+
     // Check if it's a predefined regime
     const predefinedRegimes = {
       '7/7': { onDutyDays: 7, offDutyDays: 7 },
@@ -78,6 +88,11 @@ const Dashboard = () => {
       return `${matchedPredefined[0]} (Predefined)`;
     }
 
+    // Validate custom regime
+    if (!regime.onDutyDays || !regime.offDutyDays) {
+      return 'Invalid Regime';
+    }
+
     return `${regime.onDutyDays} Days On / ${regime.offDutyDays} Days Off (Custom)`;
   };
 
@@ -86,17 +101,17 @@ const Dashboard = () => {
 
   return (
     <div className="dashboard-container">
-      <h1>Hello, {user.fullName}!</h1>
+      <h1>Hello, {user.fullName || 'User'}!</h1>
       <p>Welcome to Offshore Working Regime Calculator</p>
       <div className="user-details">
         <h2>Your Profile</h2>
-        <p>Username: {user.username}</p>
-        <p>Email: {user.email}</p>
-        <p>Offshore Role: {user.offshoreRole}</p>
+        <p>Username: {user.username || 'N/A'}</p>
+        <p>Email: {user.email || 'N/A'}</p>
+        <p>Offshore Role: {user.offshoreRole || 'Not Specified'}</p>
         <p>Working Regime: {formatWorkingRegime(user.workingRegime)}</p>
         {user.company && <p>Company: {user.company}</p>}
         {user.unitName && <p>Unit Name: {user.unitName}</p>}
-        <p>Country: {user.country} ({getCountryCode(user.country)})</p>
+        <p>Country: {user.country || 'N/A'} ({getCountryCode(user.country)})</p>
       </div>
       
       <div className="dashboard-actions">

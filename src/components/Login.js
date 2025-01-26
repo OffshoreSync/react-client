@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-// import { OFFSHORE_COUNTRIES } from '../utils/countries'; Unused
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -24,13 +23,39 @@ const Login = () => {
     try {
       const res = await axios.post('http://localhost:5000/api/auth/login', formData);
       
+      console.log('Full login response:', res.data);
+      
+      // Ensure working regime is correctly stored
+      const userWithFullData = {
+        ...res.data.user,
+        // Extensive logging and fallback
+        workingRegime: res.data.user.workingRegime || {
+          onDutyDays: 28,  // Default to 28/28 if not present
+          offDutyDays: 28
+        }
+      };
+      
+      console.log('Processed user data:', userWithFullData);
+      
+      // Validate working regime
+      if (!userWithFullData.workingRegime || 
+          typeof userWithFullData.workingRegime.onDutyDays !== 'number' ||
+          typeof userWithFullData.workingRegime.offDutyDays !== 'number') {
+        console.warn('Invalid working regime detected, using default');
+        userWithFullData.workingRegime = {
+          onDutyDays: 28,
+          offDutyDays: 28
+        };
+      }
+      
       // Store user token and info in localStorage
       localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data.user));
+      localStorage.setItem('user', JSON.stringify(userWithFullData));
 
       // Redirect to dashboard or main app page
       navigate('/dashboard');
     } catch (err) {
+      console.error('Login error:', err.response?.data || err.message);
       setError(err.response?.data?.message || 'Login failed. Please try again.');
     }
   };
