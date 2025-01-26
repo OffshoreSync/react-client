@@ -61,11 +61,24 @@ const Dashboard = () => {
   };
 
   // Format working regime display
-  const formatWorkingRegime = (days) => {
-    if (days === 7 || days === 14 || days === 28) {
-      return `${days} Days (Predefined)`;
+  const formatWorkingRegime = (regime) => {
+    // Check if it's a predefined regime
+    const predefinedRegimes = {
+      '7/7': { onDutyDays: 7, offDutyDays: 7 },
+      '14/14': { onDutyDays: 14, offDutyDays: 14 },
+      '28/28': { onDutyDays: 28, offDutyDays: 28 }
+    };
+
+    const matchedPredefined = Object.entries(predefinedRegimes).find(
+      ([, value]) => value.onDutyDays === regime.onDutyDays && 
+                     value.offDutyDays === regime.offDutyDays
+    );
+
+    if (matchedPredefined) {
+      return `${matchedPredefined[0]} (Predefined)`;
     }
-    return `${days} Days (Custom)`;
+
+    return `${regime.onDutyDays} Days On / ${regime.offDutyDays} Days Off (Custom)`;
   };
 
   // If no user, return null to prevent rendering

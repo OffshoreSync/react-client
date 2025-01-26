@@ -10,8 +10,9 @@ const Register = () => {
     password: '',
     fullName: '',
     offshoreRole: '',
-    workingRegime: '',
-    customWorkingRegime: '',
+    workingRegime: '28/28', // Default to 28/28
+    customOnDutyDays: '',
+    customOffDutyDays: '',
     company: '',
     unitName: '',
     country: ''
@@ -27,7 +28,8 @@ const Register = () => {
     fullName, 
     offshoreRole, 
     workingRegime,
-    customWorkingRegime,
+    customOnDutyDays,
+    customOffDutyDays,
     company, 
     unitName,
     country 
@@ -35,30 +37,65 @@ const Register = () => {
 
   const onChange = e => {
     const { name, value } = e.target;
-    setFormData(prevState => ({
-      ...prevState,
-      [name]: value,
-      // Reset custom working regime if predefined option is selected
-      ...(name === 'workingRegime' && value !== 'custom' 
-        ? { customWorkingRegime: '' } 
-        : {})
-    }));
+    setFormData(prevState => {
+      // Special handling for working regime
+      if (name === 'workingRegime') {
+        // If predefined regime is selected, reset custom inputs
+        if (value !== 'custom') {
+          return {
+            ...prevState,
+            workingRegime: value,
+            customOnDutyDays: '',
+            customOffDutyDays: ''
+          };
+        }
+      }
+
+      // Normal input handling
+      return {
+        ...prevState,
+        [name]: value
+      };
+    });
     setError(''); // Clear error when user starts typing
   };
 
   const onSubmit = async e => {
     e.preventDefault();
     try {
-      // Determine the final working regime value
-      const finalWorkingRegime = workingRegime === 'custom' 
-        ? parseInt(customWorkingRegime, 10) 
-        : parseInt(workingRegime, 10);
+      // Determine working regime
+      let finalWorkingRegime;
+      if (workingRegime === 'custom') {
+        const onDutyDays = parseInt(customOnDutyDays, 10);
+        const offDutyDays = parseInt(customOffDutyDays, 10);
 
-      // Validate custom working regime
-      if (workingRegime === 'custom' && 
-          (isNaN(finalWorkingRegime) || finalWorkingRegime < 29 || finalWorkingRegime > 365)) {
-        setError('Custom working regime must be a number between 29 and 365');
-        return;
+        // Validate custom working regime
+        if (isNaN(onDutyDays) || isNaN(offDutyDays)) {
+          setError('Please enter valid numbers for On and Off Duty days');
+          return;
+        }
+
+        if (onDutyDays < 7 || offDutyDays < 7) {
+          setError('On and Off Duty days must be at least 7');
+          return;
+        }
+
+        if (onDutyDays + offDutyDays > 365) {
+          setError('Total On and Off Duty days must not exceed 365');
+          return;
+        }
+
+        finalWorkingRegime = { 
+          onDutyDays, 
+          offDutyDays 
+        };
+      } else {
+        // Predefined regimes
+        const [onDutyDays, offDutyDays] = workingRegime.split('/').map(Number);
+        finalWorkingRegime = { 
+          onDutyDays, 
+          offDutyDays 
+        };
       }
 
       // Remove empty strings for optional fields
@@ -69,8 +106,9 @@ const Register = () => {
         unitName: unitName.trim() || null
       };
 
-      // Remove custom working regime from submitted data
-      delete submitData.customWorkingRegime;
+      // Remove custom working regime inputs from submitted data
+      delete submitData.customOnDutyDays;
+      delete submitData.customOffDutyDays;
 
       const res = await axios.post('http://localhost:5000/api/auth/register', submitData);
       
@@ -142,24 +180,35 @@ const Register = () => {
           onChange={onChange}
           required
         >
-          <option value="">Select Working Regime</option>
-          <option value="7">7 Days</option>
-          <option value="14">14 Days</option>
-          <option value="28">28 Days</option>
-          <option value="custom">Custom</option>
+          <option value="7/7">7 Days On / 7 Days Off</option>
+          <option value="14/14">14 Days On / 14 Days Off</option>
+          <option value="28/28">28 Days On / 28 Days Off</option>
+          <option value="custom">Custom Regime</option>
         </select>
         
         {workingRegime === 'custom' && (
-          <input
-            type="number"
-            placeholder="Enter Custom Days (29-365)"
-            name="customWorkingRegime"
-            value={customWorkingRegime}
-            onChange={onChange}
-            min="29"
-            max="365"
-            required
-          />
+          <div className="custom-regime-inputs">
+            <input
+              type="number"
+              placeholder="On Duty Days (7-365)"
+              name="customOnDutyDays"
+              value={customOnDutyDays}
+              onChange={onChange}
+              min="7"
+              max="365"
+              required
+            />
+            <input
+              type="number"
+              placeholder="Off Duty Days (7-365)"
+              name="customOffDutyDays"
+              value={customOffDutyDays}
+              onChange={onChange}
+              min="7"
+              max="365"
+              required
+            />
+          </div>
         )}
         
         <input
