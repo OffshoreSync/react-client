@@ -69,12 +69,6 @@ const PrivateRoute = ({ children }) => {
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
-// Home route component with authentication logic
-const HomeRoute = () => {
-  const isAuthenticated = !!localStorage.getItem('token');
-  return isAuthenticated ? <Home /> : <Home />;
-};
-
 function App() {
   return (
     <ThemeProvider theme={theme}>
@@ -83,7 +77,9 @@ function App() {
         <div className="App">
           <Navbar />
           <Routes>
-            <Route path="/" element={<HomeRoute />} />
+            <Route path="/" element={
+              localStorage.getItem('token') ? <Navigate to="/dashboard" /> : <Home />
+            } />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route 

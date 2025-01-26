@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { 
   AppBar, 
   Toolbar, 
@@ -18,7 +18,6 @@ import {
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
-import DashboardIcon from '@mui/icons-material/Dashboard';
 import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
 import WavesIcon from '@mui/icons-material/Waves';
@@ -26,7 +25,6 @@ import WavesIcon from '@mui/icons-material/Waves';
 function Navbar() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
   const isLoggedIn = !!localStorage.getItem('token');
@@ -44,7 +42,6 @@ function Navbar() {
 
   const menuItems = isLoggedIn ? [
     { text: 'Home', icon: <HomeIcon />, onClick: () => handleNavigation('/') },
-    { text: 'Dashboard', icon: <DashboardIcon />, onClick: () => handleNavigation('/dashboard') },
     { text: 'Profile Settings', icon: <PersonIcon />, onClick: () => handleNavigation('/settings') },
     { text: 'Logout', icon: <LogoutIcon />, onClick: handleLogout }
   ] : [

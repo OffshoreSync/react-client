@@ -62,10 +62,6 @@ function Home() {
         flexDirection: 'column', 
         alignItems: 'center' 
       }}>
-        <Typography variant="h2" gutterBottom>
-          Offshore Worker Calendar
-        </Typography>
-        
         <Paper elevation={3} sx={{ p: 4, mb: 4, maxWidth: 800, width: '100%' }}>
           <Typography variant="h5" gutterBottom>
             Manage Your Offshore Working Regime
