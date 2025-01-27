@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import { blue, green } from '@mui/material/colors';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -72,46 +73,48 @@ const PrivateRoute = ({ children }) => {
 
 function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Router>
-        <div className="App">
-          <Navbar />
-          <Routes>
-            <Route path="/" element={
-              localStorage.getItem('token') ? <Navigate to="/dashboard" /> : <Home />
-            } />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route 
-              path="/dashboard" 
-              element={
-                <PrivateRoute>
-                  <Dashboard />
-                </PrivateRoute>
-              } 
-            />
-            <Route 
-              path="/settings" 
-              element={
-                <PrivateRoute>
-                  <Settings />
-                </PrivateRoute>
-              } 
-            />
-            <Route 
-              path="/edit-profile" 
-              element={
-                <PrivateRoute>
-                  <EditProfile />
-                </PrivateRoute>
-              } 
-            />
-            <Route path="/sync" element={<PrivateRoute><Sync /></PrivateRoute>} />
-          </Routes>
-        </div>
-      </Router>
-    </ThemeProvider>
+    <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Router>
+          <div className="App">
+            <Navbar />
+            <Routes>
+              <Route path="/" element={
+                localStorage.getItem('token') ? <Navigate to="/dashboard" /> : <Home />
+              } />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route 
+                path="/dashboard" 
+                element={
+                  <PrivateRoute>
+                    <Dashboard />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/settings" 
+                element={
+                  <PrivateRoute>
+                    <Settings />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/edit-profile" 
+                element={
+                  <PrivateRoute>
+                    <EditProfile />
+                  </PrivateRoute>
+                } 
+              />
+              <Route path="/sync" element={<PrivateRoute><Sync /></PrivateRoute>} />
+            </Routes>
+          </div>
+        </Router>
+      </ThemeProvider>
+    </GoogleOAuthProvider>
   );
 }
 

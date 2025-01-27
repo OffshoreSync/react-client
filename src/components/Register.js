@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { 
   Container, 
@@ -17,6 +17,10 @@ import {
 import { OFFSHORE_COUNTRIES } from '../utils/countries';
 
 const Register = () => {
+  const location = useLocation();
+  const [isGoogleLogin, setIsGoogleLogin] = useState(false);
+  const [googleUserData, setGoogleUserData] = useState(null);
+
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -48,7 +52,28 @@ const Register = () => {
     country 
   } = formData;
 
+  useEffect(() => {
+    // Check if there's Google login data passed from Login component
+    const googleData = location.state?.googleUserData;
+    if (googleData) {
+      setIsGoogleLogin(true);
+      setGoogleUserData(googleData);
+      
+      // Pre-fill form with Google data
+      setFormData(prevState => ({
+        ...prevState,
+        email: googleData.email,
+        fullName: googleData.name,
+        username: googleData.email.split('@')[0], // Use email prefix as username
+      }));
+    }
+  }, [location.state]);
+
   const onChange = e => {
+    // Disable changes if Google login
+    if (isGoogleLogin && e.target.name !== 'password' && e.target.name !== 'offshoreRole' && e.target.name !== 'workingRegime' && e.target.name !== 'customOnDutyDays' && e.target.name !== 'customOffDutyDays' && e.target.name !== 'company' && e.target.name !== 'unitName' && e.target.name !== 'country') {
+      return;
+    }
     const { name, value } = e.target;
     setFormData(prevState => {
       // Special handling for working regime
@@ -123,7 +148,10 @@ const Register = () => {
       delete submitData.customOnDutyDays;
       delete submitData.customOffDutyDays;
 
-      const res = await axios.post('http://localhost:5000/api/auth/register', submitData);
+      const res = await axios.post('http://localhost:5000/api/auth/register', {
+        ...submitData,
+        googleLogin: isGoogleLogin
+      });
       
       // Store user token and info in localStorage
       localStorage.setItem('token', res.data.token);
@@ -140,7 +168,7 @@ const Register = () => {
     <Container maxWidth="sm">
       <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
         <Typography variant="h4" gutterBottom align="center">
-          Offshore Worker Registration
+          {isGoogleLogin ? 'Complete Your Profile' : 'Offshore Worker Registration'}
         </Typography>
 
         {error && (
@@ -152,23 +180,44 @@ const Register = () => {
         <Box component="form" onSubmit={onSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <TextField
             fullWidth
-            label="Username"
-            name="username"
-            value={username}
-            onChange={onChange}
-            required
-            variant="outlined"
-          />
-          
-          <TextField
-            fullWidth
-            type="email"
             label="Email Address"
             name="email"
             value={email}
             onChange={onChange}
             required
             variant="outlined"
+            disabled={isGoogleLogin}
+            InputProps={{
+              readOnly: isGoogleLogin
+            }}
+          />
+          
+          <TextField
+            fullWidth
+            label="Full Name"
+            name="fullName"
+            value={fullName}
+            onChange={onChange}
+            required
+            variant="outlined"
+            disabled={isGoogleLogin}
+            InputProps={{
+              readOnly: isGoogleLogin
+            }}
+          />
+          
+          <TextField
+            fullWidth
+            label="Username"
+            name="username"
+            value={username}
+            onChange={onChange}
+            required
+            variant="outlined"
+            disabled={isGoogleLogin}
+            InputProps={{
+              readOnly: isGoogleLogin
+            }}
           />
           
           <TextField
@@ -185,29 +234,13 @@ const Register = () => {
           
           <TextField
             fullWidth
-            label="Full Name"
-            name="fullName"
-            value={fullName}
+            label="Offshore Role"
+            name="offshoreRole"
+            value={offshoreRole}
             onChange={onChange}
             required
             variant="outlined"
           />
-          
-          <FormControl fullWidth required>
-            <InputLabel>Offshore Role</InputLabel>
-            <Select
-              name="offshoreRole"
-              value={offshoreRole}
-              label="Offshore Role"
-              onChange={onChange}
-            >
-              <MenuItem value="Drilling">Drilling</MenuItem>
-              <MenuItem value="Production">Production</MenuItem>
-              <MenuItem value="Maintenance">Maintenance</MenuItem>
-              <MenuItem value="Support">Support</MenuItem>
-              <MenuItem value="Management">Management</MenuItem>
-            </Select>
-          </FormControl>
           
           <FormControl fullWidth required>
             <InputLabel>Working Regime</InputLabel>
@@ -291,7 +324,7 @@ const Register = () => {
             size="large"
             sx={{ mt: 2 }}
           >
-            Register
+            {isGoogleLogin ? 'Complete Profile' : 'Register'}
           </Button>
         </Box>
 

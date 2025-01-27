@@ -38,6 +38,7 @@ import {
 } from 'recharts';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { GoogleLogin, useGoogleLogin } from '@react-oauth/google';
 
 // Utility function to format dates consistently
 const formatDate = (date) => {
@@ -177,11 +178,17 @@ const Sync = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('info');
+  const [openProfileToast, setOpenProfileToast] = useState(false);
   
   // Add media query for responsive design
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
+
+  const handleGoToSettings = () => {
+    setOpenProfileToast(false);
+    navigate('/settings');
+  };
 
   // Fetch available users on component mount
   useEffect(() => {
@@ -321,6 +328,73 @@ const Sync = () => {
   // State for selected date in modal
   const [selectedDate, setSelectedDate] = useState(null);
 
+  // Google Calendar event creation
+  const [googleAccessToken, setGoogleAccessToken] = useState(null);
+
+  // Function to create Google Calendar event
+  const createGoogleCalendarEvent = async (date) => {
+    if (!googleAccessToken) {
+      console.error('No Google access token');
+      return;
+    }
+
+    try {
+      const event = {
+        summary: 'Off-Board Day',
+        description: 'Team member off-board day',
+        start: {
+          date: date, // Full-day event
+          timeZone: 'UTC'
+        },
+        end: {
+          date: date, // Same date for full-day event
+          timeZone: 'UTC'
+        }
+      };
+
+      const response = await axios.post(
+        'https://www.googleapis.com/calendar/v3/calendars/primary/events',
+        event,
+        {
+          headers: {
+            Authorization: `Bearer ${googleAccessToken}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      // Show success snackbar
+      setSnackbarOpen(true);
+      setSnackbarMessage('Event created successfully!');
+      setSnackbarSeverity('success');
+
+      return response.data;
+    } catch (error) {
+      console.error('Error creating Google Calendar event:', error);
+      
+      // Show error snackbar
+      setSnackbarOpen(true);
+      setSnackbarMessage('Failed to create event. Please try again.');
+      setSnackbarSeverity('error');
+    }
+  };
+
+  // Google OAuth login handler
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: (codeResponse) => {
+      setGoogleAccessToken(codeResponse.access_token);
+    },
+    onError: (error) => {
+      console.error('Google Login Failed:', error);
+      
+      // Show error snackbar
+      setSnackbarOpen(true);
+      setSnackbarMessage('Google login failed. Please try again.');
+      setSnackbarSeverity('error');
+    },
+    scope: 'https://www.googleapis.com/auth/calendar.events'
+  });
+
   // Handle user selection
   const handleUserChange = (event) => {
     setSelectedUsers(event.target.value);
@@ -375,6 +449,45 @@ const Sync = () => {
       }
 
       setSnackbarMessage(errorMessage);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    }
+  };
+
+  const handleSaveWorkCycle = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const userId = JSON.parse(localStorage.getItem('user')).id;
+
+      const response = await axios.post(
+        'http://localhost:5000/api/auth/generate-work-cycles', 
+        { 
+          userId, 
+          workCycles: extractCommonOffBoardDates 
+        },
+        {
+          headers: { 
+            Authorization: `Bearer ${token}` 
+          }
+        }
+      );
+
+      // Existing success handling
+      setSnackbarMessage('Work cycles saved successfully!');
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
+
+      // Check if user is a Google user and schedule profile toast
+      const user = JSON.parse(localStorage.getItem('user'));
+      if (user && user.isGoogleUser) {
+        // Schedule profile toast after the current snackbar closes
+        setTimeout(() => {
+          setOpenProfileToast(true);
+        }, 6500); // Slightly longer than default snackbar duration
+      }
+    } catch (error) {
+      console.error('Error saving work cycles:', error);
+      setSnackbarMessage('Failed to save work cycles');
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     }
@@ -742,13 +855,29 @@ const Sync = () => {
                 disabled={!selectedDate}
                 startIcon={<EventIcon />}
                 onClick={() => {
-                  // TODO: Implement event creation logic
-                  console.log('Selected date:', selectedDate);
-                  handleCloseDateModal();
+                  if (!googleAccessToken) {
+                    // Trigger Google login if no access token
+                    handleGoogleLogin();
+                  } else {
+                    // Create event with selected date
+                    createGoogleCalendarEvent(selectedDate);
+                    handleCloseDateModal();
+                  }
                 }}
               >
-                Create Event
+                {googleAccessToken ? 'Create Event' : 'Login with Google'}
               </Button>
+              <GoogleLogin
+                size="large"
+                shape="pill"
+                type="icon"
+                theme="filled"
+                text="Sign in with Google"
+                onSuccess={handleGoogleLogin}
+                onError={() => {
+                  console.log('Login Failed');
+                }}
+              />
             </Box>
           ) : (
             <Typography variant="body2" color="text.secondary">
@@ -775,6 +904,22 @@ const Sync = () => {
           {snackbarMessage}
         </Alert>
       </Snackbar>
+      <Snackbar
+        open={openProfileToast}
+        autoHideDuration={6000}
+        onClose={() => setOpenProfileToast(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        message="Complete your profile"
+        action={
+          <Button 
+            color="secondary" 
+            size="small" 
+            onClick={handleGoToSettings}
+          >
+            Update Profile
+          </Button>
+        }
+      />
     </Container>
   );
 };

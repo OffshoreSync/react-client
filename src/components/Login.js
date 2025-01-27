@@ -12,6 +12,7 @@ import {
   Alert
 } from '@mui/material';
 import LoginIcon from '@mui/icons-material/Login';
+import { GoogleLogin } from '@react-oauth/google';
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -74,6 +75,52 @@ const Login = () => {
     } catch (err) {
       console.error('Login error:', err.response?.data || err.message);
       setError(err.response?.data?.message || 'Login failed. Please try again.');
+    }
+  };
+
+  const handleGoogleLogin = async (credentialResponse) => {
+    try {
+      // Send full Google token to backend for verification
+      const response = await axios.post('http://localhost:5000/api/auth/google-login', {
+        googleToken: credentialResponse.credential
+      });
+
+      // Log the entire response for debugging
+      console.log('Google Login Response:', JSON.stringify(response.data, null, 2));
+
+      // Destructure and ensure all fields are present
+      const { token, user } = response.data;
+
+      // Ensure all expected fields are present
+      const safeUser = {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        fullName: user.fullName,
+        offshoreRole: user.offshoreRole,
+        workingRegime: user.workingRegime,
+        company: user.company || null,
+        workSchedule: user.workSchedule || {
+          nextOnBoardDate: null,
+          nextOffBoardDate: null
+        },
+        unitName: user.unitName || null,
+        country: user.country || null,
+        profilePicture: user.profilePicture || null
+      };
+
+      // Store token and user data
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(safeUser));
+
+      // Log stored user data for verification
+      console.log('Stored User Data:', JSON.stringify(safeUser, null, 2));
+
+      // Redirect to dashboard or complete profile
+      navigate('/dashboard');
+    } catch (err) {
+      console.error('Google Login error:', err.response?.data || err.message);
+      setError(err.response?.data?.message || 'Google Login failed. Please try again.');
     }
   };
 
@@ -142,6 +189,13 @@ const Login = () => {
             >
               Sign In
             </Button>
+            
+            <GoogleLogin
+              onSuccess={handleGoogleLogin}
+              onError={() => {
+                console.log('Login Failed');
+              }}
+            />
             
             <Typography variant="body2" color="text.secondary" align="center">
               Don't have an account? 
