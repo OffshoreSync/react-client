@@ -99,17 +99,78 @@ const generateCalendarEvents = (user) => {
   const workCycles = user.workCycles || [];
 
   // Convert work cycles to calendar events
-  const calendarEvents = workCycles.map(cycle => ({
-    start: new Date(cycle.startDate),
-    end: new Date(cycle.endDate),
-    title: cycle.type,
-    allDay: true,
-    className: cycle.type === 'OnBoard' ? 'on-board-event' : 'off-board-event',
-    extendedProps: {
-      type: cycle.type.toLowerCase(),
-      cycleNumber: cycle.cycleNumber
+  const calendarEvents = [];
+
+  workCycles.forEach((cycle, index) => {
+    // Add the main cycle event
+    calendarEvents.push({
+      start: new Date(cycle.startDate),
+      end: new Date(cycle.endDate),
+      title: cycle.type,
+      allDay: true,
+      className: cycle.type === 'OnBoard' ? 'on-board-event' : 'off-board-event',
+      extendedProps: {
+        type: cycle.type.toLowerCase(),
+        cycleNumber: cycle.cycleNumber
+      }
+    });
+
+    // Special handling for the case where off-board start date is incremented
+    if (index > 0) {
+      const prevCycle = workCycles[index - 1];
+      const currentCycle = cycle;
+
+      // Check if the current cycle's start date is exactly one day after the previous cycle's end date
+      const prevCycleEnd = new Date(prevCycle.endDate);
+      const currentCycleStart = new Date(currentCycle.startDate);
+
+      if (
+        currentCycleStart.getTime() === new Date(prevCycleEnd.getTime() + 24 * 60 * 60 * 1000).getTime() &&
+        prevCycle.type === 'OnBoard' &&
+        currentCycle.type === 'OffBoard'
+      ) {
+        // Add an additional OnBoard event for this special day
+        calendarEvents.push({
+          start: prevCycleEnd,
+          end: currentCycleStart,
+          title: 'GET OFF',
+          allDay: true,
+          className: 'get-off-event',
+          extendedProps: {
+            type: 'get-off',
+            cycleNumber: prevCycle.cycleNumber
+          }
+        });
+      }
+
+      // Special handling for the case where off-board end date is exactly the same as next on-board start date
+      if (
+        index < workCycles.length - 1 &&
+        prevCycle.type === 'OffBoard' &&
+        currentCycle.type === 'OnBoard'
+      ) {
+        const prevCycleEnd = new Date(prevCycle.endDate);
+        const currentCycleStart = new Date(currentCycle.startDate);
+
+        if (
+          currentCycleStart.getTime() === new Date(prevCycleEnd.getTime() + 24 * 60 * 60 * 1000).getTime()
+        ) {
+          // Add an additional OnBoard event for this special day
+          calendarEvents.push({
+            start: prevCycleEnd,
+            end: currentCycleStart,
+            title: 'GET ON',
+            allDay: true,
+            className: 'get-on-event',
+            extendedProps: {
+              type: 'get-on',
+              cycleNumber: currentCycle.cycleNumber
+            }
+          });
+        }
+      }
     }
-  }));
+  });
 
   return calendarEvents;
 };
@@ -441,6 +502,22 @@ const Dashboard = () => {
                       eventEl.style.backgroundColor = '#1976D2';  // Material Blue
                       eventEl.style.color = 'white';
                       eventEl.style.borderLeft = '4px solid #0D47A1';  // Darker blue for border
+                      eventEl.style.borderRadius = '4px';
+                      eventEl.style.textTransform = 'uppercase';
+                      eventEl.style.letterSpacing = '0.5px';
+                    }
+                    if (info.event.classNames.includes('get-off-event')) {
+                      eventEl.style.backgroundColor = '#34C759';  // Material Green
+                      eventEl.style.color = 'white';
+                      eventEl.style.borderLeft = '4px solid #2E865F';  // Darker green for border
+                      eventEl.style.borderRadius = '4px';
+                      eventEl.style.textTransform = 'uppercase';
+                      eventEl.style.letterSpacing = '0.5px';
+                    }
+                    if (info.event.classNames.includes('get-on-event')) {
+                      eventEl.style.backgroundColor = '#FF3B30';  // Material Red
+                      eventEl.style.color = 'white';
+                      eventEl.style.borderLeft = '4px solid #D9534F';  // Darker red for border
                       eventEl.style.borderRadius = '4px';
                       eventEl.style.textTransform = 'uppercase';
                       eventEl.style.letterSpacing = '0.5px';
