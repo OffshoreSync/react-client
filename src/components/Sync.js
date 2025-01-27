@@ -588,9 +588,32 @@ const Sync = () => {
                 <Brush 
                   dataKey="date" 
                   height={isMobile ? 20 : 30} 
-                  stroke="#8884d8"
+                  stroke="#E91E63"  // Material Pink
+                  fill="rgba(233, 30, 99, 0.1)"  // Soft Material Pink background
                   startIndex={0}
-                  endIndex={Math.min(isMobile ? 15 : 30, graphData.length - 1)}  
+                  endIndex={Math.min(isMobile ? 15 : 30, graphData.length - 1)}
+                  travellerWidth={15}
+                  sx={{
+                    '& .recharts-brush-traveller': {
+                      borderRadius: '50%',
+                      boxShadow: theme.shadows[2],
+                      border: `2px solid #E91E63`,
+                      backgroundColor: theme.palette.background.paper,
+                      transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                      '&:hover': {
+                        boxShadow: theme.shadows[4],
+                        transform: 'scale(1.1)'
+                      }
+                    },
+                    '& .recharts-brush-slide': {
+                      fill: '#F48FB1',  // Material Pink Light
+                      fillOpacity: 0.2
+                    },
+                    '& .recharts-brush-text': {
+                      fill: theme.palette.text.secondary,
+                      fontWeight: 500
+                    }
+                  }}
                 />
               </LineChart>
             </ResponsiveContainer>
