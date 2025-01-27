@@ -1,79 +1,144 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import {
-  Container,
-  Typography,
-  Box,
+import React, { useState, useMemo, useEffect } from 'react';
+import { 
+  Container, 
+  Typography, 
+  Box, 
+  Select, 
+  MenuItem, 
+  FormControl, 
+  InputLabel, 
+  Button, 
   Grid,
-  Button,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  Card,
-  CardContent,
+  useMediaQuery,
+  useTheme,
   Snackbar,
   Alert,
-  useMediaQuery,
-  useTheme
+  Chip,
+  Card,
+  CardContent
 } from '@mui/material';
+import PersonIcon from '@mui/icons-material/Person';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer,
+  Brush
+} from 'recharts';
+import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+
+// Utility function to format dates consistently
+const formatDate = (date) => {
+  return date instanceof Date 
+    ? date.toISOString().split('T')[0] 
+    : new Date(date).toISOString().split('T')[0];
+};
+
+// Mathematical graph approach to find matching Off Board periods
+const findMatchingOffBoardPeriods = (userCycles) => {
+  // Filter only Off Board cycles for each user
+  const offBoardCyclesByUser = userCycles.map(cycles => 
+    cycles.filter(cycle => cycle.type === 'OffBoard')
+  );
+
+  // Find the earliest and latest Off Board dates across all users
+  const allOffBoardDates = offBoardCyclesByUser.flatMap(userCycles => 
+    userCycles.flatMap(cycle => [new Date(cycle.startDate), new Date(cycle.endDate)])
+  );
+  
+  const earliestDate = new Date(Math.min(...allOffBoardDates));
+  const latestDate = new Date(Math.max(...allOffBoardDates));
+
+  // Create a mapping function for each user's Off Board periods
+  const createOffBoardMapping = (cycles, userName) => {
+    const mapping = [];
+    
+    // Iterate through each day from earliest to latest date
+    for (let currentDate = new Date(earliestDate); currentDate <= latestDate; currentDate.setDate(currentDate.getDate() + 1)) {
+      // Check if any cycle covers this date
+      const isOffBoard = cycles.some(cycle => {
+        const startDate = new Date(cycle.startDate);
+        const endDate = new Date(cycle.endDate);
+        return currentDate >= startDate && currentDate <= endDate;
+      });
+
+      mapping.push({
+        date: formatDate(currentDate),
+        [userName]: isOffBoard ? 1 : 0
+      });
+    }
+
+    return mapping;
+  };
+
+  // Create mappings for all users
+  const userMappings = offBoardCyclesByUser.map((cycles, index) => 
+    createOffBoardMapping(cycles, `User${index + 1}`)
+  );
+
+  // Merge mappings
+  const mergedMapping = userMappings[0].map(baseItem => {
+    const mergedItem = { ...baseItem };
+
+    // Add data for each user
+    userMappings.forEach((userMapping, index) => {
+      const userItem = userMapping.find(u => u.date === baseItem.date);
+      mergedItem[`User${index + 1}`] = userItem ? userItem[`User${index + 1}`] : 0;
+    });
+
+    // Calculate match (all users Off Board)
+    mergedItem.Match = userMappings.every(userMapping => 
+      userMapping.find(u => u.date === baseItem.date)?.[`User${userMappings.indexOf(userMapping) + 1}`] === 1
+    ) ? 1 : 0;
+
+    return mergedItem;
+  });
+
+  return mergedMapping;
+};
+
+// Generate a color palette for dynamic line colors
+const generateColorPalette = (numUsers) => {
+  const baseColors = [
+    '#8884d8', // Purple
+    '#82ca9d', // Green
+    '#ffc658', // Gold
+    '#ff7300', // Orange
+    '#ff0000', // Red
+    '#0088fe', // Blue
+    '#00c49f', // Teal
+    '#8884d8'  // Repeat colors if more users
+  ];
+  return baseColors.slice(0, numUsers);
+};
 
 const Sync = () => {
   const [availableUsers, setAvailableUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
-  const [userWorkCycles, setUserWorkCycles] = useState({});
-  const [syncResults, setSyncResults] = useState([]);
+  const [graphData, setGraphData] = useState([]);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('info');
-
-  const navigate = useNavigate();
+  
+  // Add media query for responsive design
   const theme = useTheme();
-  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const navigate = useNavigate();
 
-  // Utility function to format dates consistently
-  const formatDate = (date) => {
-    if (!(date instanceof Date)) {
-      date = new Date(date);
-    }
-    
-    // Ensure valid date
-    if (isNaN(date.getTime())) {
-      return 'Invalid Date';
-    }
-
-    // Format: YYYY-MM-DD
-    return date.toISOString().split('T')[0];
-  };
-
-  // Utility function to safely convert dates and objects to strings
-  const safeStringify = (value) => {
-    if (value === null || value === undefined) return 'N/A';
-    
-    // If it's a Date object, convert to formatted string
-    if (value instanceof Date) {
-      return formatDate(value);
-    }
-    
-    // If it's an object, try to get a meaningful string representation
-    if (typeof value === 'object') {
-      // Try to use a specific property or convert to JSON
-      return value.startDate 
-        ? formatDate(value.startDate) 
-        : JSON.stringify(value);
-    }
-    
-    // For other types, convert to string
-    return String(value);
-  };
-
-  // Fetch available users
+  // Fetch available users on component mount
   useEffect(() => {
     const fetchAvailableUsers = async () => {
       try {
         const token = localStorage.getItem('token');
-        if (!token) {
+        const currentUser = JSON.parse(localStorage.getItem('user'));
+        
+        if (!token || !currentUser) {
           navigate('/login');
           return;
         }
@@ -82,23 +147,22 @@ const Sync = () => {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        // Validate response data
-        if (!response.data || !response.data.users || !Array.isArray(response.data.users)) {
-          throw new Error('Invalid users data received');
-        }
-
-        // Filter out users without necessary information
+        // Validate and filter users
         const validUsers = response.data.users.filter(user => 
-          user.id && user.fullName && user.username
+          user.id && user.fullName && user.id !== currentUser.id
         );
 
-        if (validUsers.length === 0) {
-          setSnackbarMessage('No available users found');
-          setSnackbarSeverity('warning');
-          setSnackbarOpen(true);
-        }
+        // Add current user with a special "You" label
+        const usersWithCurrentUser = [
+          {
+            ...currentUser,
+            fullName: `${currentUser.fullName} (You)`,
+            isCurrentUser: true
+          },
+          ...validUsers
+        ];
 
-        setAvailableUsers(validUsers);
+        setAvailableUsers(usersWithCurrentUser);
       } catch (error) {
         console.error('Error fetching available users:', error);
         
@@ -106,8 +170,6 @@ const Sync = () => {
         let errorMessage = 'Failed to fetch available users';
         
         if (error.response) {
-          // The request was made and the server responded with a status code
-          // that falls out of the range of 2xx
           if (error.response.status === 401) {
             errorMessage = 'Unauthorized. Please log in again.';
             localStorage.removeItem('token');
@@ -119,7 +181,6 @@ const Sync = () => {
             errorMessage = 'Server error. Please try again later.';
           }
         } else if (error.request) {
-          // The request was made but no response was received
           errorMessage = 'No response from server. Please check your connection.';
         }
 
@@ -132,487 +193,370 @@ const Sync = () => {
     fetchAvailableUsers();
   }, [navigate]);
 
-  // Fetch work cycles for selected users
-  const fetchUserWorkCycles = async (usersToCompare) => {
-    try {
-      const token = localStorage.getItem('token');
-      const cyclesPromises = usersToCompare.map(async (userId) => {
-        try {
-          const response = await axios.get(`http://localhost:5000/api/auth/user-work-cycles/${userId}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-
-          // Validate response data
-          if (!response.data || !response.data.workCycles || !Array.isArray(response.data.workCycles)) {
-            throw new Error(`Invalid work cycles data for user ${userId}`);
-          }
-
-          return { 
-            userId, 
-            workCycles: response.data.workCycles,
-            fullName: response.data.fullName
-          };
-        } catch (userError) {
-          console.error(`Error fetching work cycles for user ${userId}:`, userError);
-          
-          // Decide whether to throw or return a partial result
-          return { 
-            userId, 
-            workCycles: [], 
-            error: userError.response?.data?.message || 'Failed to fetch work cycles'
-          };
-        }
-      });
-
-      const userCyclesResults = await Promise.allSettled(cyclesPromises);
-      
-      // Filter out successful results and log any errors
-      const successfulResults = userCyclesResults
-        .filter(result => result.status === 'fulfilled')
-        .map(result => result.value);
-
-      // Check for any errors
-      const erroredResults = userCyclesResults
-        .filter(result => result.status === 'rejected')
-        .map(result => result.reason);
-
-      if (erroredResults.length > 0) {
-        console.error('Errors fetching work cycles:', erroredResults);
-        setSnackbarMessage(`Failed to fetch work cycles for ${erroredResults.length} users`);
-        setSnackbarSeverity('warning');
-        setSnackbarOpen(true);
-      }
-
-      // Convert to object for easier access
-      const cyclesMap = successfulResults.reduce((acc, { userId, workCycles }) => {
-        acc[userId] = workCycles;
-        return acc;
-      }, {});
-
-      // If no valid work cycles found
-      if (Object.keys(cyclesMap).length === 0) {
-        setSnackbarMessage('No valid work cycles found for selected users');
-        setSnackbarSeverity('warning');
-        setSnackbarOpen(true);
-        return;
-      }
-
-      setUserWorkCycles(cyclesMap);
-      compareWorkCycles(cyclesMap);
-    } catch (error) {
-      console.error('Unexpected error in fetchUserWorkCycles:', error);
-      setSnackbarMessage('An unexpected error occurred while fetching work cycles');
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
-    }
-  };
-
-  // Find common Off Board periods across all selected users
-  const findCommonOffBoardPeriods = (workCycles) => {
-    // Get current user
-    const currentUser = JSON.parse(localStorage.getItem('user'));
-
-    // Convert work cycles to a more manageable format
-    const userOffBoardPeriods = Object.keys(workCycles).map(userId => {
-      // Filter and transform Off Board cycles
-      const offBoardCycles = workCycles[userId]
-        .filter(cycle => cycle.type === 'OffBoard')
-        .map(cycle => ({
-          userId,
-          startDate: new Date(cycle.startDate),
-          endDate: new Date(cycle.endDate)
-        }));
-      
-      return {
-        userId,
-        name: userId === currentUser.id ? 'You' : 
-          availableUsers.find(u => u.id === userId)?.fullName || userId,
-        offBoardPeriods: offBoardCycles
-      };
-    });
-
-    // Find common periods across all users
-    const commonPeriods = [];
-
-    // Check each Off Board period of the first user against others
-    userOffBoardPeriods[0].offBoardPeriods.forEach(basePeriod => {
-      // Check if this period overlaps with all other users' Off Board periods
-      const isCommonPeriod = userOffBoardPeriods.slice(1).every(userPeriods => 
-        userPeriods.offBoardPeriods.some(otherPeriod => 
-          // Check for overlap
-          basePeriod.startDate <= otherPeriod.endDate && 
-          basePeriod.endDate >= otherPeriod.startDate
-        )
-      );
-
-      if (isCommonPeriod) {
-        // Calculate the actual overlap start and end
-        const overlapStart = new Date(basePeriod.startDate);
-        const overlapEnd = new Date(basePeriod.endDate);
-
-        // Calculate overlap details for each user
-        const userOverlaps = userOffBoardPeriods.map(userPeriods => {
-          const userPeriod = userPeriods.offBoardPeriods.find(p => 
-            p.startDate <= overlapEnd && p.endDate >= overlapStart
-          );
-
-          return {
-            userId: userPeriods.userId,
-            name: userPeriods.name,
-            overlapStart: userPeriod ? new Date(Math.max(userPeriod.startDate, overlapStart)) : null,
-            overlapEnd: userPeriod ? new Date(Math.min(userPeriod.endDate, overlapEnd)) : null
-          };
-        });
-
-        commonPeriods.push({
-          overlapStart: formatDate(overlapStart),
-          overlapEnd: formatDate(overlapEnd),
-          overlapDays: Math.ceil((overlapEnd - overlapStart) / (1000 * 60 * 60 * 24)) + 1,
-          users: userOverlaps
-        });
-      }
-    });
-
-    return commonPeriods;
-  };
-
-  // Compare work cycles
-  const compareWorkCycles = (workCycles) => {
-    const userIds = Object.keys(workCycles);
-    const syncMatches = [];
-
-    // Find pairwise matches (existing logic)
-    const getUserCombinations = (users) => {
-      const combinations = [];
-      for (let i = 0; i < users.length; i++) {
-        for (let j = i + 1; j < users.length; j++) {
-          combinations.push([users[i], users[j]]);
-        }
-      }
-      return combinations;
-    };
-
-    // Pairwise matches
-    const userCombinations = getUserCombinations(userIds);
-
-    userCombinations.forEach(([user1Id, user2Id]) => {
-      const user1Cycles = workCycles[user1Id];
-      const user2Cycles = workCycles[user2Id];
-
-      const matchingOffBoardPeriods = findMatchingOffBoardPeriods(user1Cycles, user2Cycles);
-
-      if (matchingOffBoardPeriods.length > 0) {
-        // Get current user
-        const currentUser = JSON.parse(localStorage.getItem('user'));
-
-        // Determine user names, marking current user as "You"
-        const user1 = user1Id === currentUser.id 
-          ? { id: user1Id, name: 'You' } 
-          : availableUsers.find(u => u.id === user1Id) || { fullName: user1Id };
-        
-        const user2 = user2Id === currentUser.id 
-          ? { id: user2Id, name: 'You' } 
-          : availableUsers.find(u => u.id === user2Id) || { fullName: user2Id };
-
-        syncMatches.push({
-          type: 'pairwise',
-          users: [
-            { id: user1.id, name: user1.name || user1.fullName },
-            { id: user2.id, name: user2.name || user2.fullName }
-          ],
-          matches: matchingOffBoardPeriods
-        });
-      }
-    });
-
-    // Find common periods across all users
-    if (userIds.length > 1) {
-      const commonPeriods = findCommonOffBoardPeriods(workCycles);
-      
-      if (commonPeriods.length > 0) {
-        syncMatches.push({
-          type: 'common',
-          matches: commonPeriods
-        });
-      }
-    }
-
-    setSyncResults(syncMatches);
-  };
-
-  // Find matching Off Board periods with detailed analysis
-  const findMatchingOffBoardPeriods = (cycles1, cycles2) => {
-    const matches = [];
-
-    cycles1.forEach(cycle1 => {
-      if (cycle1.type !== 'OffBoard') return;
-
-      cycles2.forEach(cycle2 => {
-        if (cycle2.type !== 'OffBoard') return;
-
-        // Parse dates
-        const start1 = new Date(cycle1.startDate);
-        const end1 = new Date(cycle1.endDate);
-        const start2 = new Date(cycle2.startDate);
-        const end2 = new Date(cycle2.endDate);
-
-        // Calculate overlap
-        const overlapStart = new Date(Math.max(start1, start2));
-        const overlapEnd = new Date(Math.min(end1, end2));
-
-        // Check for actual overlap
-        if (overlapStart <= overlapEnd) {
-          // Calculate overlap duration
-          const overlapDays = Math.ceil((overlapEnd - overlapStart) / (1000 * 60 * 60 * 24)) + 1;
-
-          matches.push({
-            user1Cycle: {
-              ...cycle1,
-              startDate: formatDate(start1),
-              endDate: formatDate(end1)
-            },
-            user2Cycle: {
-              ...cycle2,
-              startDate: formatDate(start2),
-              endDate: formatDate(end2)
-            },
-            overlapStart: formatDate(overlapStart),
-            overlapEnd: formatDate(overlapEnd),
-            overlapDays: overlapDays,
-            // Calculate percentage of overlap for each user's cycle
-            user1OverlapPercentage: Math.round((overlapDays / ((end1 - start1) / (1000 * 60 * 60 * 24) + 1)) * 100),
-            user2OverlapPercentage: Math.round((overlapDays / ((end2 - start2) / (1000 * 60 * 60 * 24) + 1)) * 100)
-          });
-        }
-      });
-    });
-
-    return matches;
-  };
-
-  // Render sync results with detailed analysis
-  const renderSyncResults = () => {
-    // Ensure syncResults is always an array
-    const safeSyncResults = syncResults || [];
-
-    // If no matches found
-    if (safeSyncResults.length === 0) {
-      return (
-        <Typography variant="body1" color="textSecondary" align="center">
-          No matching Off Board periods found among selected users.
-        </Typography>
-      );
-    }
-
-    return (
-      <Box>
-        <Typography variant="h5" gutterBottom>
-          Sync Opportunities
-        </Typography>
-        {safeSyncResults.map((result, index) => (
-          <Card key={index} variant="outlined" sx={{ mb: 2 }}>
-            <CardContent>
-              {result.type === 'pairwise' ? (
-                <>
-                  <Typography variant="h6" color="primary" sx={{ mb: 2 }}>
-                    Sync Match {index + 1}
-                  </Typography>
-                  <Typography variant="subtitle1" sx={{ mb: 2 }}>
-                    Between {safeStringify(result.users[0].name)} and {safeStringify(result.users[1].name)}
-                  </Typography>
-                  {result.matches && result.matches.length > 0 ? (
-                    result.matches.map((match, matchIndex) => (
-                      <Box key={matchIndex} sx={{ mb: 2, p: 2, bgcolor: 'background.paper', borderRadius: 2 }}>
-                        <Grid container spacing={2}>
-                          <Grid item xs={12} sm={6}>
-                            <Typography variant="body1">
-                              <strong>{safeStringify(result.users[0].name)}'s Cycle:</strong>
-                              <br />
-                              {safeStringify(match.user1Cycle?.startDate)} - 
-                              {safeStringify(match.user1Cycle?.endDate)}
-                            </Typography>
-                          </Grid>
-                          
-                          <Grid item xs={12} sm={6}>
-                            <Typography variant="body1">
-                              <strong>{safeStringify(result.users[1].name)}'s Cycle:</strong>
-                              <br />
-                              {safeStringify(match.user2Cycle?.startDate)} - 
-                              {safeStringify(match.user2Cycle?.endDate)}
-                            </Typography>
-                          </Grid>
-                          
-                          <Grid item xs={12}>
-                            <Typography variant="body1">
-                              <strong>Overlap Period:</strong>
-                              {safeStringify(match.overlapStart)} - 
-                              {safeStringify(match.overlapEnd)}
-                            </Typography>
-                          </Grid>
-                          
-                          <Grid item xs={12} sm={6}>
-                            <Typography variant="body2">
-                              <strong>Overlap Duration:</strong> {safeStringify(match.overlapDays)} days
-                            </Typography>
-                          </Grid>
-                          
-                          <Grid item xs={12} sm={6}>
-                            <Typography variant="body2">
-                              <strong>Overlap Percentage:</strong>
-                              <br />
-                              {safeStringify(result.users[0].name)}: {safeStringify(match.user1OverlapPercentage)}%
-                              <br />
-                              {safeStringify(result.users[1].name)}: {safeStringify(match.user2OverlapPercentage)}%
-                            </Typography>
-                          </Grid>
-                        </Grid>
-                      </Box>
-                    ))
-                  ) : (
-                    <Typography variant="body2" color="textSecondary">
-                      No matching periods found for this pair.
-                    </Typography>
-                  )}
-                </>
-              ) : (
-                <>
-                  <Typography variant="h6" color="primary" sx={{ mb: 2 }}>
-                    Common Off Board Period
-                  </Typography>
-                  {result.matches && result.matches.length > 0 ? (
-                    result.matches.map((match, matchIndex) => (
-                      <Box key={matchIndex} sx={{ mb: 2, p: 2, bgcolor: 'background.paper', borderRadius: 2 }}>
-                        <Grid container spacing={2}>
-                          <Grid item xs={12}>
-                            <Typography variant="body1">
-                              <strong>Common Overlap Period:</strong>
-                              {safeStringify(match.overlapStart)} - 
-                              {safeStringify(match.overlapEnd)}
-                            </Typography>
-                          </Grid>
-                          
-                          <Grid item xs={12} sm={6}>
-                            <Typography variant="body2">
-                              <strong>Overlap Duration:</strong> {safeStringify(match.overlapDays)} days
-                            </Typography>
-                          </Grid>
-                          
-                          <Grid item xs={12}>
-                            <Typography variant="body2">
-                              <strong>Users in this Period:</strong>
-                            </Typography>
-                            {match.users ? (
-                              match.users.map((user, userIndex) => (
-                                <Typography key={userIndex} variant="body2">
-                                  {safeStringify(user.name)}: {safeStringify(user.overlapStart)} - {safeStringify(user.overlapEnd)}
-                                </Typography>
-                              ))
-                            ) : (
-                              <Typography variant="body2" color="textSecondary">
-                                No user information available
-                              </Typography>
-                            )}
-                          </Grid>
-                        </Grid>
-                      </Box>
-                    ))
-                  ) : (
-                    <Typography variant="body2" color="textSecondary">
-                      No common periods found.
-                    </Typography>
-                  )}
-                </>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </Box>
-    );
-  };
+  // Adjust line rendering for mobile
+  const renderLines = useMemo(() => {
+    const colors = generateColorPalette(selectedUsers.length);
+    
+    return [
+      ...selectedUsers.map((userId, index) => {
+        const userName = `User${index + 1}`;
+        const user = availableUsers.find(u => u.id === userId);
+        return (
+          <Line 
+            key={userId} 
+            type="monotone" 
+            dataKey={userName} 
+            stroke={colors[index]} 
+            activeDot={isMobile ? false : { r: 8 }} 
+            dot={isMobile ? false : true}
+            name={user ? user.fullName : userName}
+          />
+        );
+      }),
+      <Line 
+        key="match" 
+        type="monotone" 
+        dataKey="Match" 
+        stroke="#000000" 
+        strokeWidth={3} 
+        dot={false} 
+        name="All"
+      />
+    ];
+  }, [selectedUsers, isMobile, availableUsers]);
 
   // Handle user selection
-  const handleUserSelect = (event) => {
-    const selectedUserIds = event.target.value;
-    setSelectedUsers(selectedUserIds);
+  const handleUserChange = (event) => {
+    setSelectedUsers(event.target.value);
   };
 
-  // Handle sync button click
-  const handleSync = () => {
-    // Get the current logged-in user
-    const currentUser = JSON.parse(localStorage.getItem('user'));
-
-    if (!currentUser) {
-      setSnackbarMessage('Please log in to use Sync');
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
-      return;
-    }
-
-    // Ensure at least 1 additional user is selected
-    if (selectedUsers.length === 0) {
-      setSnackbarMessage('Please select at least 1 user to compare');
+  // Find matching periods when users are selected
+  const findMatches = async () => {
+    if (selectedUsers.length < 2) {
+      setSnackbarMessage('Please select at least two users');
       setSnackbarSeverity('warning');
       setSnackbarOpen(true);
       return;
     }
 
-    // Automatically include the current user in comparison
-    const usersToCompare = [currentUser.id, ...selectedUsers];
+    try {
+      const token = localStorage.getItem('token');
+      
+      // Fetch work cycles for selected users
+      const cyclesPromises = selectedUsers.map(async (userId) => {
+        const response = await axios.get(
+          `http://localhost:5000/api/auth/user-work-cycles/${userId}`, 
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        return response.data.workCycles;
+      });
 
-    // Update selectedUsers to include current user
-    setSelectedUsers(usersToCompare);
+      // Wait for all cycles to be fetched
+      const selectedCycles = await Promise.all(cyclesPromises);
 
-    fetchUserWorkCycles(usersToCompare);
+      // Use the mathematical graph approach to find matches
+      const mergedMapping = findMatchingOffBoardPeriods(selectedCycles);
+      
+      setGraphData(mergedMapping);
+    } catch (error) {
+      console.error('Error fetching work cycles:', error);
+      
+      let errorMessage = 'Failed to fetch work cycles';
+      
+      if (error.response) {
+        if (error.response.status === 401) {
+          errorMessage = 'Unauthorized. Please log in again.';
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          navigate('/login');
+        } else if (error.response.status === 403) {
+          errorMessage = 'Access forbidden. You may not have permission.';
+        } else if (error.response.status >= 500) {
+          errorMessage = 'Server error. Please try again later.';
+        }
+      } else if (error.request) {
+        errorMessage = 'No response from server. Please check your connection.';
+      }
+
+      setSnackbarMessage(errorMessage);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    }
   };
 
   return (
-    <Container maxWidth="md" sx={{ mt: 4 }}>
-      <Typography variant="h4" gutterBottom>
-        Sync Off Board Periods
-      </Typography>
-
-      <Grid container spacing={2}>
-        <Grid item xs={12}>
-          <FormControl fullWidth>
-            <InputLabel>Select Users</InputLabel>
-            <Select
-              multiple
-              value={selectedUsers}
-              label="Select Users"
-              onChange={handleUserSelect}
-            >
-              {availableUsers.map((user) => (
-                <MenuItem key={user.id} value={user.id}>
-                  {user.fullName}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-
-        <Grid item xs={12}>
-          <Button 
-            variant="contained" 
-            color="primary" 
-            fullWidth 
-            onClick={handleSync}
+    <Container 
+      maxWidth="lg" 
+      sx={{ 
+        px: { 
+          xs: 1,   // Minimal padding on mobile
+          sm: 2,   // Slightly more on small screens
+          md: 3    // Standard padding on larger screens
+        } 
+      }}
+    >
+      <Box sx={{ my: { xs: 2, md: 4 } }}>
+        <Card 
+          elevation={2}
+          sx={{ 
+            mb: { xs: 2, md: 3 },
+            borderRadius: 2,
+            backgroundColor: 'background.paper'
+          }}
+        >
+          <CardContent 
+            sx={{ 
+              textAlign: 'center',
+              py: { xs: 2, md: 3 },
+              px: { xs: 2, md: 4 }
+            }}
           >
-            Find Sync Opportunities
-          </Button>
-        </Grid>
-
-        <Grid item xs={12}>
-          {syncResults.length > 0 ? (
-            renderSyncResults()
-          ) : (
-            <Typography variant="body2" color="textSecondary" align="center">
-              {selectedUsers.length > 0 
-                ? 'No matching Off Board periods found' 
-                : 'Select at least 1 user to find sync opportunities'}
+            <Typography variant="h4" gutterBottom sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
+              Off Board Periods Sync
             </Typography>
-          )}
-        </Grid>
-      </Grid>
+            <Typography 
+              variant="subtitle1" 
+              color="text.secondary" 
+              sx={{ 
+                fontSize: { xs: '0.875rem', md: '1rem' },
+                maxWidth: 600,
+                mx: 'auto'
+              }}
+            >
+              Visualize and compare Off Board periods across team members. Select multiple users to see when everyone is simultaneously off board.
+            </Typography>
+          </CardContent>
+        </Card>
+
+        <FormControl 
+          fullWidth 
+          variant="outlined"
+          sx={{ 
+            mb: 2,
+            '& .MuiOutlinedInput-root': {
+              borderRadius: 2,
+              '& .MuiSelect-select': {
+                py: { xs: 1.5, md: 2 },
+                px: { xs: 2, md: 3 },
+                fontSize: { xs: '0.875rem', md: '1rem' },
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1.5
+              },
+              '&:hover .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'primary.main',
+              },
+              '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                borderColor: 'primary.main',
+                borderWidth: 2,
+              }
+            },
+            '& .MuiInputLabel-outlined': {
+              transform: 'translate(14px, -9px) scale(0.75)',
+              backgroundColor: 'transparent',
+              px: 0.5,
+              color: 'text.secondary',
+              fontWeight: 400,
+              fontSize: '1rem'
+            }
+          }}
+        >
+          <Select
+            multiple
+            value={selectedUsers}
+            onChange={handleUserChange}
+            renderValue={(selected) => (
+              <Box sx={{ 
+                display: 'flex', 
+                flexWrap: 'wrap', 
+                gap: 0.5,
+                maxHeight: 100,
+                overflowY: 'auto'
+              }}>
+                {selected.map((id) => {
+                  const user = availableUsers.find(user => user.id === id);
+                  return user ? (
+                    <Chip
+                      key={id}
+                      label={user.fullName}
+                      size="small"
+                      sx={{
+                        backgroundColor: 'primary.light',
+                        color: 'primary.contrastText',
+                        '& .MuiChip-deleteIcon': {
+                          color: 'primary.contrastText',
+                          opacity: 0.7
+                        }
+                      }}
+                      onDelete={() => {
+                        setSelectedUsers(selectedUsers.filter(userId => userId !== id));
+                      }}
+                    />
+                  ) : null;
+                })}
+              </Box>
+            )}
+            MenuProps={{
+              PaperProps: {
+                sx: {
+                  backgroundColor: 'background.paper',
+                  borderRadius: 2,
+                  maxHeight: 300,
+                  width: 250,
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                }
+              },
+              anchorOrigin: {
+                vertical: 'bottom',
+                horizontal: 'center'
+              },
+              transformOrigin: {
+                vertical: 'top',
+                horizontal: 'center'
+              }
+            }}
+          >
+            {availableUsers.map((user) => (
+              <MenuItem 
+                key={user.id} 
+                value={user.id}
+                sx={{ 
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  fontSize: { xs: '0.875rem', md: '1rem' },
+                  '&:hover': {
+                    backgroundColor: 'action.hover'
+                  },
+                  '&.Mui-selected': {
+                    backgroundColor: 'transparent',
+                    color: 'inherit',
+                    '&:hover': {
+                      backgroundColor: 'action.hover'
+                    }
+                  }
+                }}
+              >
+                {user.isCurrentUser ? (
+                  <PersonIcon sx={{ color: 'primary.main', mr: 1 }} />
+                ) : (
+                  <AccountCircleIcon sx={{ color: 'text.secondary', mr: 1 }} />
+                )}
+                {user.fullName}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+        <Button 
+          variant="contained" 
+          onClick={findMatches}
+          disabled={selectedUsers.length < 2}
+          sx={{
+            width: '100%',
+            py: { xs: 1, md: 1.5 },
+            fontSize: { xs: '0.875rem', md: '1rem' }
+          }}
+        >
+          Find Matching Periods
+        </Button>
+
+        {graphData.length > 0 && (
+          <Box sx={{ 
+            width: '100%', 
+            height: { xs: 400, md: 600 },  // Reduced height on mobile
+            mt: { xs: 2, md: 4 },
+            mb: { xs: 2, md: 4 },
+            border: '1px solid rgba(0,0,0,0.12)',
+            borderRadius: 2,
+            padding: { xs: 1, md: 2 },
+            backgroundColor: 'background.paper',
+            overflow: 'hidden'
+          }}>
+            <Typography variant="h6" gutterBottom sx={{ 
+              mb: 3, 
+              fontSize: { xs: '1rem', md: '1.25rem' } 
+            }}>
+              Off Board Periods Graph
+            </Typography>
+            <ResponsiveContainer width="100%" height="90%">
+              <LineChart
+                data={graphData}
+                margin={{ 
+                  top: isMobile ? 10 : 20,    
+                  right: isMobile ? 20 : 40,  
+                  left: isMobile ? 20 : 40,   
+                  bottom: isMobile ? 20 : 40  
+                }}
+              >
+                <CartesianGrid 
+                  strokeDasharray="3 3" 
+                  stroke="rgba(0,0,0,0.1)"
+                />
+                <XAxis 
+                  dataKey="date" 
+                  angle={-45} 
+                  textAnchor="end" 
+                  interval={isMobile ? 'preserveStartEnd' : 0}  
+                  height={isMobile ? 50 : 70}  
+                  tick={{ 
+                    fontSize: isMobile ? 8 : 10,
+                    angle: isMobile ? -30 : -45
+                  }}
+                  allowDataOverflow={true}
+                  domain={['dataMin', 'dataMax']}
+                  scale="auto"
+                />
+                <YAxis 
+                  domain={[0, 1]} 
+                  ticks={[0, 1]} 
+                  width={isMobile ? 40 : 80}  
+                  label={{ 
+                    value: 'Off Board Status', 
+                    angle: -90, 
+                    position: 'insideLeft',
+                    offset: isMobile ? 5 : 10,
+                    fontSize: isMobile ? 10 : 12
+                  }}
+                />
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: 'white', 
+                    border: '1px solid rgba(0,0,0,0.2)',
+                    borderRadius: 8,
+                    fontSize: isMobile ? '0.75rem' : '1rem'
+                  }}
+                  labelStyle={{ 
+                    color: 'black', 
+                    fontWeight: 'bold',
+                    fontSize: isMobile ? '0.75rem' : '1rem'
+                  }}
+                  formatter={(value, name) => [
+                    value === 1 ? 'Off Board' : 'On Board', 
+                    name
+                  ]}
+                />
+                <Legend 
+                  verticalAlign="top" 
+                  height={isMobile ? 60 : 75}  
+                  iconSize={isMobile ? 15 : 20}
+                  wrapperStyle={{ 
+                    fontSize: isMobile ? '0.75rem' : '1rem'
+                  }}
+                />
+                {renderLines}
+                <Brush 
+                  dataKey="date" 
+                  height={isMobile ? 20 : 30} 
+                  stroke="#8884d8"
+                  startIndex={0}
+                  endIndex={Math.min(isMobile ? 15 : 30, graphData.length - 1)}  
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </Box>
+        )}
+      </Box>
 
       <Snackbar
         open={snackbarOpen}
