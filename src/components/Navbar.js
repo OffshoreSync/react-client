@@ -43,6 +43,7 @@ function Navbar() {
 
   const menuItems = isLoggedIn ? [
     { text: 'Home', icon: <HomeIcon />, onClick: () => handleNavigation('/') },
+    { text: 'Sync', icon: <WavesIcon />, onClick: () => handleNavigation('/sync') },
     { text: 'Settings', icon: <SettingsIcon />, onClick: () => handleNavigation('/settings') },
     { text: 'Logout', icon: <LogoutIcon />, onClick: handleLogout }
   ] : [

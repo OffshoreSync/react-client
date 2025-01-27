@@ -10,6 +10,7 @@ import Register from './components/Register';
 import Dashboard from './components/Dashboard';
 import Settings from './components/Settings';
 import EditProfile from './components/EditProfile';
+import Sync from './components/Sync';
 
 // Create custom theme
 const theme = createTheme({
@@ -106,6 +107,7 @@ function App() {
                 </PrivateRoute>
               } 
             />
+            <Route path="/sync" element={<PrivateRoute><Sync /></PrivateRoute>} />
           </Routes>
         </div>
       </Router>
