@@ -318,6 +318,9 @@ const Sync = () => {
     borderRadius: 2,
   };
 
+  // State for selected date in modal
+  const [selectedDate, setSelectedDate] = useState(null);
+
   // Handle user selection
   const handleUserChange = (event) => {
     setSelectedUsers(event.target.value);
@@ -697,42 +700,62 @@ const Sync = () => {
         open={isDateModalOpen}
         onClose={handleCloseDateModal}
         aria-labelledby="common-dates-modal"
-        aria-describedby="list-of-common-off-board-dates"
       >
         <Box sx={modalStyle}>
           <Typography id="common-dates-modal" variant="h6" component="h2" gutterBottom>
             Common Off-Board Dates
           </Typography>
+          
           {extractCommonOffBoardDates.length > 0 ? (
-            <List>
-              {extractCommonOffBoardDates.map((date, index) => (
-                <ListItem 
-                  key={date} 
-                  divider={index < extractCommonOffBoardDates.length - 1}
-                  secondaryAction={
-                    <Button 
-                      variant="outlined" 
-                      color="primary" 
-                      size="small"
-                      onClick={() => {
-                        // TODO: Implement event creation logic
-                        console.log(`Create event for ${date}`);
-                        handleCloseDateModal();
-                      }}
-                    >
-                      Create Event
-                    </Button>
-                  }
+            <Box sx={{ 
+              display: 'flex', 
+              flexDirection: 'column', 
+              gap: 2, 
+              width: '100%' 
+            }}>
+              <FormControl fullWidth>
+                <InputLabel id="common-dates-select-label">Select Date</InputLabel>
+                <Select
+                  labelId="common-dates-select-label"
+                  id="common-dates-select"
+                  value={selectedDate || ''}
+                  label="Select Date"
+                  onChange={(event) => {
+                    setSelectedDate(event.target.value);
+                  }}
                 >
-                  <ListItemText primary={date} />
-                </ListItem>
-              ))}
-            </List>
+                  {extractCommonOffBoardDates
+                    .sort((a, b) => new Date(a) - new Date(b))
+                    .map((date) => (
+                      <MenuItem key={date} value={date}>
+                        {date}
+                      </MenuItem>
+                    ))
+                  }
+                </Select>
+              </FormControl>
+              
+              <Button 
+                fullWidth
+                variant="contained" 
+                color="primary"
+                disabled={!selectedDate}
+                startIcon={<EventIcon />}
+                onClick={() => {
+                  // TODO: Implement event creation logic
+                  console.log('Selected date:', selectedDate);
+                  handleCloseDateModal();
+                }}
+              >
+                Create Event
+              </Button>
+            </Box>
           ) : (
             <Typography variant="body2" color="text.secondary">
               No common off-board dates found.
             </Typography>
           )}
+          
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
             <Button onClick={handleCloseDateModal}>Close</Button>
           </Box>
