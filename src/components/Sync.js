@@ -103,19 +103,65 @@ const findMatchingOffBoardPeriods = (userCycles) => {
   return mergedMapping;
 };
 
-// Generate a color palette for dynamic line colors
+// Generate a more Material Design color palette
 const generateColorPalette = (numUsers) => {
-  const baseColors = [
-    '#8884d8', // Purple
-    '#82ca9d', // Green
-    '#ffc658', // Gold
-    '#ff7300', // Orange
-    '#ff0000', // Red
-    '#0088fe', // Blue
-    '#00c49f', // Teal
-    '#8884d8'  // Repeat colors if more users
+  const materialColors = [
+    '#1976D2',   // Material Blue
+    '#D32F2F',   // Material Red
+    '#388E3C',   // Material Green
+    '#FFA000',   // Material Amber
+    '#7B1FA2',   // Material Purple
+    '#0288D1',   // Material Light Blue
+    '#455A64',   // Material Blue Grey
+    '#00796B'    // Material Teal
   ];
-  return baseColors.slice(0, numUsers);
+  return materialColors.slice(0, numUsers);
+};
+
+// Custom Material Design tooltip
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <Card 
+        elevation={4} 
+        sx={{ 
+          backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+          borderRadius: 2, 
+          p: 2 
+        }}
+      >
+        <CardContent>
+          <Typography variant="h6" color="text.primary" gutterBottom>
+            {label}
+          </Typography>
+          {payload.map((entry, index) => (
+            <Box 
+              key={`item-${index}`} 
+              sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                mb: 1 
+              }}
+            >
+              <Box 
+                sx={{ 
+                  width: 12, 
+                  height: 12, 
+                  borderRadius: '50%', 
+                  backgroundColor: entry.color, 
+                  mr: 1 
+                }} 
+              />
+              <Typography variant="body2" color="text.secondary">
+                {entry.name}: {entry.value === 1 ? 'Off Board' : 'On Board'}
+              </Typography>
+            </Box>
+          ))}
+        </CardContent>
+      </Card>
+    );
+  }
+  return null;
 };
 
 const Sync = () => {
@@ -213,14 +259,17 @@ const Sync = () => {
           />
         );
       }),
-      <Line 
-        key="match" 
-        type="monotone" 
-        dataKey="Match" 
-        stroke="#000000" 
-        strokeWidth={3} 
-        dot={false} 
-        name="All"
+      <Line
+        type="monotone"
+        dataKey="Match"
+        stroke="#E91E63"  // Material Pink
+        strokeWidth={3}
+        activeDot={{ 
+          r: 10, 
+          fill: '#E91E63',
+          stroke: 'white',
+          strokeWidth: 2
+        }}
       />
     ];
   }, [selectedUsers, isMobile, availableUsers]);
@@ -285,16 +334,7 @@ const Sync = () => {
   };
 
   return (
-    <Container 
-      maxWidth="lg" 
-      sx={{ 
-        px: { 
-          xs: 1,   // Minimal padding on mobile
-          sm: 2,   // Slightly more on small screens
-          md: 3    // Standard padding on larger screens
-        } 
-      }}
-    >
+    <Container maxWidth="lg">
       <Box sx={{ my: { xs: 2, md: 4 } }}>
         <Card 
           elevation={2}
