@@ -15,10 +15,16 @@ import {
   Alert,
   Chip,
   Card,
-  CardContent
+  CardContent,
+  Slider,
+  Modal,
+  List,
+  ListItem,
+  ListItemText
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import EventIcon from '@mui/icons-material/Event';
 import { 
   LineChart, 
   Line, 
@@ -274,6 +280,44 @@ const Sync = () => {
     ];
   }, [selectedUsers, isMobile, availableUsers]);
 
+  // Function to extract common off-board dates
+  const extractCommonOffBoardDates = useMemo(() => {
+    if (!graphData || graphData.length === 0) return [];
+
+    // Filter dates where Match is 1 (all users off board)
+    const commonOffBoardDates = graphData
+      .filter(item => item.Match === 1)
+      .map(item => item.date);
+
+    return commonOffBoardDates;
+  }, [graphData]);
+
+  // State for dates modal
+  const [isDateModalOpen, setIsDateModalOpen] = useState(false);
+
+  // Function to open dates modal
+  const handleOpenDateModal = () => {
+    setIsDateModalOpen(true);
+  };
+
+  // Function to close dates modal
+  const handleCloseDateModal = () => {
+    setIsDateModalOpen(false);
+  };
+
+  // Modal style
+  const modalStyle = {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: { xs: '90%', md: 400 },
+    bgcolor: 'background.paper',
+    boxShadow: 24,
+    p: 4,
+    borderRadius: 2,
+  };
+
   // Handle user selection
   const handleUserChange = (event) => {
     setSelectedUsers(event.target.value);
@@ -501,6 +545,39 @@ const Sync = () => {
           Find Matching Periods
         </Button>
 
+        {selectedUsers.length > 1 && (
+          <Box sx={{ 
+            display: 'flex', 
+            justifyContent: 'space-between', 
+            alignItems: 'center', 
+            my: 2 
+          }}>
+            <Typography variant="h6">
+              Off Board Periods Graph
+            </Typography>
+            <Button 
+              variant="contained" 
+              color="primary" 
+              onClick={() => {
+                // Copy dates to clipboard
+                const dateString = extractCommonOffBoardDates.join(', ');
+                navigator.clipboard.writeText(dateString).then(() => {
+                  setSnackbarMessage(`Copied ${extractCommonOffBoardDates.length} common off-board dates`);
+                  setSnackbarSeverity('success');
+                  setSnackbarOpen(true);
+                });
+                
+                // Open modal
+                setIsDateModalOpen(true);
+              }}
+              disabled={extractCommonOffBoardDates.length === 0}
+              startIcon={<EventIcon />}
+            >
+              Export Common Dates ({extractCommonOffBoardDates.length})
+            </Button>
+          </Box>
+        )}
+
         {graphData.length > 0 && (
           <Box sx={{ 
             width: '100%', 
@@ -513,12 +590,6 @@ const Sync = () => {
             backgroundColor: 'background.paper',
             overflow: 'hidden'
           }}>
-            <Typography variant="h6" gutterBottom sx={{ 
-              mb: 3, 
-              fontSize: { xs: '1rem', md: '1.25rem' } 
-            }}>
-              Off Board Periods Graph
-            </Typography>
             <ResponsiveContainer width="100%" height="90%">
               <LineChart
                 data={graphData}
@@ -620,6 +691,53 @@ const Sync = () => {
           </Box>
         )}
       </Box>
+
+      {/* Modal for exported dates */}
+      <Modal
+        open={isDateModalOpen}
+        onClose={handleCloseDateModal}
+        aria-labelledby="common-dates-modal"
+        aria-describedby="list-of-common-off-board-dates"
+      >
+        <Box sx={modalStyle}>
+          <Typography id="common-dates-modal" variant="h6" component="h2" gutterBottom>
+            Common Off-Board Dates
+          </Typography>
+          {extractCommonOffBoardDates.length > 0 ? (
+            <List>
+              {extractCommonOffBoardDates.map((date, index) => (
+                <ListItem 
+                  key={date} 
+                  divider={index < extractCommonOffBoardDates.length - 1}
+                  secondaryAction={
+                    <Button 
+                      variant="outlined" 
+                      color="primary" 
+                      size="small"
+                      onClick={() => {
+                        // TODO: Implement event creation logic
+                        console.log(`Create event for ${date}`);
+                        handleCloseDateModal();
+                      }}
+                    >
+                      Create Event
+                    </Button>
+                  }
+                >
+                  <ListItemText primary={date} />
+                </ListItem>
+              ))}
+            </List>
+          ) : (
+            <Typography variant="body2" color="text.secondary">
+              No common off-board dates found.
+            </Typography>
+          )}
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+            <Button onClick={handleCloseDateModal}>Close</Button>
+          </Box>
+        </Box>
+      </Modal>
 
       <Snackbar
         open={snackbarOpen}
