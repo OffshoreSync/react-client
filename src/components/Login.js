@@ -153,6 +153,21 @@ const Login = () => {
                 Register here
               </MuiLink>
             </Typography>
+            <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>
+              <MuiLink 
+                component={Link} 
+                to="/" 
+                sx={{ 
+                  textDecoration: 'none', 
+                  color: 'text.secondary',
+                  '&:hover': {
+                    textDecoration: 'underline'
+                  }
+                }}
+              >
+                Continue to Home Page
+              </MuiLink>
+            </Typography>
           </Box>
         </Paper>
       </Box>
