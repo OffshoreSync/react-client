@@ -872,17 +872,6 @@ const Sync = () => {
               >
                 {googleAccessToken ? 'Create Event' : 'Login with Google'}
               </Button>
-              <GoogleLogin
-                size="large"
-                shape="pill"
-                type="icon"
-                theme="filled"
-                text="Sign in with Google"
-                onSuccess={handleGoogleLogin}
-                onError={() => {
-                  console.log('Login Failed');
-                }}
-              />
             </Box>
           ) : (
             <Typography variant="body2" color="text.secondary">

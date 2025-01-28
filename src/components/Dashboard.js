@@ -24,11 +24,13 @@ import {
   Card,
   CardHeader,
   CardContent,
-  AlertTitle
+  AlertTitle,
+  IconButton
 } from '@mui/material';
 import { 
   ChevronLeft as ChevronLeftIcon, 
-  ChevronRight as ChevronRightIcon 
+  ChevronRight as ChevronRightIcon,
+  Edit as EditIcon 
 } from '@mui/icons-material';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
@@ -386,6 +388,34 @@ const Dashboard = () => {
     }
   };
 
+  const handleResetOnBoardDate = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      const response = await axios.put(
+        'http://localhost:5000/api/auth/reset-next-onboard-date', 
+        {}, 
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      // Update user in localStorage with new nextOnBoardDate
+      const currentUser = JSON.parse(localStorage.getItem('user'));
+      currentUser.nextOnBoardDate = response.data.nextOnBoardDate;
+      localStorage.setItem('user', JSON.stringify(currentUser));
+
+      // Optionally, refresh the page or update state to reflect changes
+      window.location.reload();
+    } catch (error) {
+      console.error('Error resetting next On Board date:', error);
+      // Optionally show an error message to the user
+      alert('Failed to reset next On Board date. Please try again.');
+    }
+  };
+
   const handleSnackbarClose = (event, reason) => {
     if (reason === 'clickaway') {
       return;
@@ -476,9 +506,22 @@ const Dashboard = () => {
               sx={{
                 borderRadius: 2,
                 boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                height: '100%'
+                height: '100%',
+                position: 'relative'
               }}
             >
+              <IconButton 
+                onClick={handleResetOnBoardDate}
+                sx={{ 
+                  position: 'absolute', 
+                  top: 10, 
+                  right: 10,
+                  color: 'primary.main'
+                }}
+                title="Reset Next On Board Date"
+              >
+                <EditIcon />
+              </IconButton>
               <CardHeader
                 title="Work Schedule"
                 subheader="Your Offshore Work Calendar"
