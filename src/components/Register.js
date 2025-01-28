@@ -15,6 +15,7 @@ import {
   Alert 
 } from '@mui/material';
 import { OFFSHORE_COUNTRIES } from '../utils/countries';
+import { OFFSHORE_ROLES } from '../utils/offshoreRoles';
 
 const Register = () => {
   const location = useLocation();
@@ -232,17 +233,24 @@ const Register = () => {
             inputProps={{ minLength: 6 }}
           />
           
-          <TextField
-            fullWidth
-            label="Offshore Role"
-            name="offshoreRole"
-            value={offshoreRole}
-            onChange={onChange}
-            required
-            variant="outlined"
-          />
+          <FormControl fullWidth required sx={{ mb: 2 }}>
+            <InputLabel>Offshore Role</InputLabel>
+            <Select
+              name="offshoreRole"
+              value={offshoreRole}
+              label="Offshore Role"
+              onChange={onChange}
+              required
+            >
+              {OFFSHORE_ROLES.map((role) => (
+                <MenuItem key={role} value={role}>
+                  {role}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
           
-          <FormControl fullWidth required>
+          <FormControl fullWidth required sx={{ mb: 2 }}>
             <InputLabel>Working Regime</InputLabel>
             <Select
               name="workingRegime"
@@ -300,7 +308,7 @@ const Register = () => {
             onChange={onChange}
             variant="outlined"
           />
-          <FormControl fullWidth required>
+          <FormControl fullWidth required sx={{ mb: 2 }}>
             <InputLabel>Country</InputLabel>
             <Select
               name="country"

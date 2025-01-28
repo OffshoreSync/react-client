@@ -15,6 +15,7 @@ import {
   Alert 
 } from '@mui/material';
 import { OFFSHORE_COUNTRIES } from '../utils/countries';
+import { OFFSHORE_ROLES } from '../utils/offshoreRoles';
 
 const EditProfile = () => {
   const [formData, setFormData] = useState({
@@ -305,7 +306,7 @@ const EditProfile = () => {
               sx={{ mb: 2 }}
             />
             
-            <FormControl fullWidth required sx={{ mb: 2 }}>
+            <FormControl fullWidth sx={{ mb: 2 }}>
               <InputLabel>Offshore Role</InputLabel>
               <Select
                 name="offshoreRole"
@@ -313,11 +314,11 @@ const EditProfile = () => {
                 label="Offshore Role"
                 onChange={onChange}
               >
-                <MenuItem value="Drilling">Drilling</MenuItem>
-                <MenuItem value="Production">Production</MenuItem>
-                <MenuItem value="Maintenance">Maintenance</MenuItem>
-                <MenuItem value="Support">Support</MenuItem>
-                <MenuItem value="Management">Management</MenuItem>
+                {OFFSHORE_ROLES.map((role) => (
+                  <MenuItem key={role} value={role}>
+                    {role}
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
             
@@ -383,7 +384,7 @@ const EditProfile = () => {
               sx={{ mb: 2 }}
             />
             
-            <FormControl fullWidth required sx={{ mb: 2 }}>
+            <FormControl fullWidth sx={{ mb: 2 }}>
               <InputLabel>Country</InputLabel>
               <Select
                 name="country"
