@@ -20,7 +20,8 @@ import {
   Modal,
   List,
   ListItem,
-  ListItemText
+  ListItemText,
+  TextField
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -331,23 +332,39 @@ const Sync = () => {
   // Google Calendar event creation
   const [googleAccessToken, setGoogleAccessToken] = useState(null);
 
+  // Add state for custom event details
+  const [eventDetails, setEventDetails] = useState({
+    summary: '',
+    description: ''
+  });
+
+  // Update event details handler
+  const handleEventDetailsChange = (e) => {
+    const { name, value } = e.target;
+    setEventDetails(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
   // Function to create Google Calendar event
   const createGoogleCalendarEvent = async (date) => {
-    if (!googleAccessToken) {
-      console.error('No Google access token');
-      return;
-    }
-
     try {
+      // Validate input
+      if (!eventDetails.summary.trim()) {
+        alert('Please provide an event summary');
+        return;
+      }
+
       const event = {
-        summary: 'Off-Board Day',
-        description: 'Team member off-board day',
+        summary: eventDetails.summary,
+        description: eventDetails.description || 'Offshore Work Off Board Day',
         start: {
-          date: date, // Full-day event
+          date, // Full-day event
           timeZone: 'UTC'
         },
         end: {
-          date: date, // Same date for full-day event
+          date, // Same date for full-day event
           timeZone: 'UTC'
         }
       };
@@ -853,25 +870,52 @@ const Sync = () => {
                 </Select>
               </FormControl>
               
-              <Button 
-                fullWidth
-                variant="contained" 
-                color="primary"
-                disabled={!selectedDate}
-                startIcon={<EventIcon />}
-                onClick={() => {
-                  if (!googleAccessToken) {
-                    // Trigger Google login if no access token
-                    handleGoogleLogin();
-                  } else {
-                    // Create event with selected date
-                    createGoogleCalendarEvent(selectedDate);
-                    handleCloseDateModal();
-                  }
-                }}
-              >
-                {googleAccessToken ? 'Create Event' : 'Login with Google'}
-              </Button>
+              {selectedDate && (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+                  {googleAccessToken ? (
+                    <>
+                      <TextField
+                        fullWidth
+                        label="Event Summary"
+                        name="summary"
+                        value={eventDetails.summary}
+                        onChange={handleEventDetailsChange}
+                        required
+                        placeholder="Enter event summary"
+                      />
+                      <TextField
+                        fullWidth
+                        label="Event Description (Optional)"
+                        name="description"
+                        value={eventDetails.description}
+                        onChange={handleEventDetailsChange}
+                        multiline
+                        rows={3}
+                        placeholder="Enter event description"
+                      />
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        onClick={() => {
+                          createGoogleCalendarEvent(selectedDate);
+                          handleCloseDateModal();
+                        }}
+                        disabled={!eventDetails.summary.trim()}
+                      >
+                        Create Off Board Day Event
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={handleGoogleLogin}
+                    >
+                      Login with Google to Create Event
+                    </Button>
+                  )}
+                </Box>
+              )}
             </Box>
           ) : (
             <Typography variant="body2" color="text.secondary">
