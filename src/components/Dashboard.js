@@ -23,7 +23,8 @@ import {
   TextField,
   Card,
   CardHeader,
-  CardContent
+  CardContent,
+  AlertTitle
 } from '@mui/material';
 import { 
   ChevronLeft as ChevronLeftIcon, 
@@ -183,6 +184,7 @@ const Dashboard = () => {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  const [showProfileAlert, setShowProfileAlert] = useState(false);
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
@@ -262,6 +264,33 @@ const Dashboard = () => {
           setOpenOnBoardDialog(true);
         }
 
+        // Retrieve user from localStorage
+        const storedUser = JSON.parse(localStorage.getItem('user'));
+        console.log('Stored User:', storedUser);
+        setUser(storedUser);
+
+        // Check if user is a Google user and needs profile completion
+        if (storedUser) {
+          console.log('User exists');
+          
+          // Explicitly check for Google user and critical fields
+          const isGoogleUser = storedUser.isGoogleUser === true;
+          const criticalFieldsMissing = 
+            isGoogleUser && (
+              storedUser.company === null || 
+              storedUser.unitName === null
+            );
+
+          console.log('Is Google User:', isGoogleUser);
+          console.log('Critical Fields Missing:', criticalFieldsMissing);
+          console.log('Company:', storedUser.company);
+          console.log('Unit Name:', storedUser.unitName);
+          
+          // Set alert state
+          setShowProfileAlert(criticalFieldsMissing);
+        } else {
+          console.log('No user found in localStorage');
+        }
       } catch (error) {
         console.error('Authentication error:', error);
         
@@ -364,6 +393,11 @@ const Dashboard = () => {
     setSnackbarOpen(false);
   };
 
+  const handleCompleteProfile = () => {
+    console.log('Navigating to settings');
+    navigate('/settings');
+  };
+
   // Custom navigation label to hide year on small screens
   const navigationLabel = ({ date, label, locale }) => {
     // If small screen, remove the year
@@ -411,7 +445,29 @@ const Dashboard = () => {
   };
 
   return (
-    <Container maxWidth="lg" sx={responsiveStyles.container}>
+    <Container maxWidth="lg">
+      {/* Debug logging for alert state */}
+      {console.log('Show Profile Alert:', showProfileAlert)}
+      
+      {showProfileAlert && (
+        <Box sx={{ mb: 3 }}>
+          <Alert 
+            severity="warning" 
+            action={
+              <Button 
+                color="inherit" 
+                size="small" 
+                onClick={handleCompleteProfile}
+              >
+                Complete Profile
+              </Button>
+            }
+          >
+            <AlertTitle>Profile Incomplete</AlertTitle>
+            Please update your profile information to fully access all features.
+          </Alert>
+        </Box>
+      )}
       <Box sx={{ my: 4 }}>
         <Grid container spacing={3}>
           <Grid item xs={12}>

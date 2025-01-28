@@ -100,23 +100,24 @@ const Login = () => {
         offshoreRole: user.offshoreRole,
         workingRegime: user.workingRegime,
         company: user.company || null,
+        unitName: user.unitName || null,
         workSchedule: user.workSchedule || {
           nextOnBoardDate: null,
           nextOffBoardDate: null
         },
-        unitName: user.unitName || null,
         country: user.country || null,
-        profilePicture: user.profilePicture || null
+        profilePicture: user.profilePicture || null,
+        isGoogleUser: true  // Explicitly set to true for ALL Google logins
       };
+
+      // Log the safe user object for verification
+      console.log('Safe User Object:', JSON.stringify(safeUser, null, 2));
 
       // Store token and user data
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(safeUser));
 
-      // Log stored user data for verification
-      console.log('Stored User Data:', JSON.stringify(safeUser, null, 2));
-
-      // Redirect to dashboard or complete profile
+      // Redirect to dashboard
       navigate('/dashboard');
     } catch (err) {
       console.error('Google Login error:', err.response?.data || err.message);

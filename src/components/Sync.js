@@ -479,9 +479,14 @@ const Sync = () => {
 
       // Check if user is a Google user and schedule profile toast
       const user = JSON.parse(localStorage.getItem('user'));
+      console.log('User data:', user);
+      console.log('Is Google User:', user?.isGoogleUser);
+
       if (user && user.isGoogleUser) {
+        console.log('Scheduling profile toast');
         // Schedule profile toast after the current snackbar closes
         setTimeout(() => {
+          console.log('Setting profile toast to true');
           setOpenProfileToast(true);
         }, 6500); // Slightly longer than default snackbar duration
       }
