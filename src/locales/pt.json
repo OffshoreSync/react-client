@@ -78,6 +78,12 @@
     "onBoardDate": "Próxima Data de Embarque",
     "cancel": "Cancelar",
     "setOnBoardDate": "Definir Data de Embarque",
+    "snackbarMessages": {
+      "onBoardDateSet": "Data de Embarque definida com sucesso!",
+      "onBoardDateSetError": "Falha ao definir data de embarque",
+      "resetOnBoardDateError": "Falha ao redefinir data de embarque. Tente novamente.",
+      "onBoardDateResetSuccess": "Data de embarque redefinida com sucesso."
+    },
     "errors": {
       "noToken": "Token de autenticação ausente. Faça login novamente.",
       "unauthorized": "Acesso não autorizado. Faça login novamente.",
