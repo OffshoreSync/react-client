@@ -1,0 +1,59 @@
+{
+  "common": {
+    "appName": "Offshore Worker Management",
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "dashboard": "Dashboard",
+    "profile": "Profile",
+    "settings": "Settings",
+    "language": "Language",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "login": {
+    "title": "Offshore Worker Login",
+    "username": "Username",
+    "password": "Password",
+    "googleLogin": "Login with Google",
+    "forgotPassword": "Forgot Password?",
+    "noAccount": "Don't have an account?",
+    "errors": {
+      "loginFailed": "Login failed. Please try again.",
+      "googleLoginFailed": "Google login failed. Please try again."
+    }
+  },
+  "register": {
+    "title": "Offshore Worker Registration",
+    "completeProfile": "Complete Your Profile",
+    "errors": {
+      "registrationFailed": "Registration failed. Please try again.",
+      "missingFields": "Please fill in all required fields"
+    }
+  },
+  "dashboard": {
+    "welcome": "Welcome, {{name}}",
+    "workCycles": "Work Cycles",
+    "completeProfile": "Complete Your Profile",
+    "missingCriticalFields": "Please complete your profile to access all features.",
+    "profileAlert": {
+      "title": "Profile Incomplete",
+      "description": "You need to complete your profile to fully use the application."
+    }
+  },
+  "settings": {
+    "title": "User Settings",
+    "personalInfo": "Personal Information",
+    "workInfo": "Work Information",
+    "unitName": "Unit Name",
+    "country": "Country",
+    "workingRegime": "Working Regime",
+    "errors": {
+      "updateFailed": "Failed to update profile. Please try again."
+    }
+  },
+  "editProfile": {
+    "title": "Edit Profile",
+    "successMessage": "Profile updated successfully"
+  }
+}

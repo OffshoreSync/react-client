@@ -1,8 +1,12 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
 import { blue, green } from '@mui/material/colors';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+
+// Import i18n configuration
+import './i18n';
+import { useTranslation } from 'react-i18next';
 
 import Navbar from './components/Navbar';
 import Home from './pages/Home';

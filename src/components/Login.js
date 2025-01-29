@@ -14,7 +14,11 @@ import {
 import LoginIcon from '@mui/icons-material/Login';
 import { GoogleLogin } from '@react-oauth/google';
 
+// Import translation hook
+import { useTranslation } from 'react-i18next';
+
 const Login = () => {
+  const { t } = useTranslation(); // Add translation hook
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -74,7 +78,7 @@ const Login = () => {
       navigate('/dashboard');
     } catch (err) {
       console.error('Login error:', err.response?.data || err.message);
-      setError(err.response?.data?.message || 'Login failed. Please try again.');
+      setError(t('login.errors.loginFailed'));
     }
   };
 
@@ -121,7 +125,7 @@ const Login = () => {
       navigate('/dashboard');
     } catch (err) {
       console.error('Google Login error:', err.response?.data || err.message);
-      setError(err.response?.data?.message || 'Google Login failed. Please try again.');
+      setError(t('login.errors.googleLoginFailed'));
     }
   };
 
@@ -136,7 +140,7 @@ const Login = () => {
         }}
       >
         <Typography component="h1" variant="h5">
-          Offshore Worker Login
+          {t('login.title')}
         </Typography>
         <Paper 
           elevation={3} 
@@ -155,7 +159,7 @@ const Login = () => {
               required
               fullWidth
               id="username"
-              label="Username"
+              label={t('login.username')}
               name="username"
               autoComplete="username"
               autoFocus
@@ -167,7 +171,7 @@ const Login = () => {
               required
               fullWidth
               name="password"
-              label="Password"
+              label={t('login.password')}
               type="password"
               id="password"
               autoComplete="current-password"
@@ -188,24 +192,25 @@ const Login = () => {
               startIcon={<LoginIcon />}
               sx={{ mt: 3, mb: 2 }}
             >
-              Sign In
+              {t('common.login')}
             </Button>
             
             <GoogleLogin
               onSuccess={handleGoogleLogin}
               onError={() => {
                 console.log('Login Failed');
+                setError(t('login.errors.googleLoginFailed'));
               }}
             />
             
             <Typography variant="body2" color="text.secondary" align="center">
-              Don't have an account? 
+              {t('login.noAccount')}{' '}
               <MuiLink 
                 component={Link} 
                 to="/register" 
                 sx={{ ml: 1 }}
               >
-                Register here
+                {t('common.register')}
               </MuiLink>
             </Typography>
             <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>

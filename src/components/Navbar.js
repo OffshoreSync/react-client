@@ -14,7 +14,9 @@ import {
   Container,
   Button,
   useMediaQuery,
-  useTheme
+  useTheme,
+  Select,
+  MenuItem
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
@@ -22,13 +24,27 @@ import PersonIcon from '@mui/icons-material/Person';
 import LogoutIcon from '@mui/icons-material/Logout';
 import WavesIcon from '@mui/icons-material/Waves';
 import SettingsIcon from '@mui/icons-material/Settings';
+import LanguageIcon from '@mui/icons-material/Language';
+
+// Import i18n
+import { useTranslation } from 'react-i18next';
+import i18n from '../i18n';
 
 function Navbar() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const navigate = useNavigate();
   const theme = useTheme();
+  const { t } = useTranslation();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
   const isLoggedIn = !!localStorage.getItem('token');
+  const [language, setLanguage] = useState(localStorage.getItem('language') || 'en');
+
+  const handleLanguageChange = (event) => {
+    const newLanguage = event.target.value;
+    setLanguage(newLanguage);
+    i18n.changeLanguage(newLanguage);
+    localStorage.setItem('language', newLanguage);
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -42,13 +58,11 @@ function Navbar() {
   };
 
   const menuItems = isLoggedIn ? [
-    { text: 'Home', icon: <HomeIcon />, onClick: () => handleNavigation('/') },
-    { text: 'Sync', icon: <WavesIcon />, onClick: () => handleNavigation('/sync') },
-    { text: 'Settings', icon: <SettingsIcon />, onClick: () => handleNavigation('/settings') },
-    { text: 'Logout', icon: <LogoutIcon />, onClick: handleLogout }
+    { text: t('common.dashboard'), icon: <HomeIcon />, onClick: () => handleNavigation('/') },
+    { text: t('common.settings'), icon: <SettingsIcon />, onClick: () => handleNavigation('/settings') },
+    { text: t('common.logout'), icon: <LogoutIcon />, onClick: handleLogout }
   ] : [
-    { text: 'Home', icon: <HomeIcon />, onClick: () => handleNavigation('/') },
-    { text: 'Login', icon: <PersonIcon />, onClick: () => handleNavigation('/login') }
+    { text: t('common.login'), icon: <PersonIcon />, onClick: () => handleNavigation('/login') }
   ];
 
   return (
@@ -82,45 +96,56 @@ function Navbar() {
                   color: 'white'
                 }}
               >
-                OffshoreSync
+                {t('common.appName')}
               </Typography>
             </Box>
 
-            {isSmallScreen ? (
-              <IconButton
-                size="large"
-                edge="end"
-                color="inherit"
-                aria-label="menu"
-                onClick={() => setDrawerOpen(true)}
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              {/* Language Selector */}
+              <Select
+                value={language}
+                onChange={handleLanguageChange}
+                startAdornment={<LanguageIcon sx={{ mr: 1, color: 'white' }} />}
+                sx={{ 
+                  color: 'white', 
+                  '& .MuiSelect-icon': { color: 'white' },
+                  '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
+                }}
               >
-                <MenuIcon />
-              </IconButton>
-            ) : (
-              <Box>
-                {menuItems.map((item, index) => (
-                  <Button
-                    key={index}
-                    color="inherit"
+                <MenuItem value="en">English</MenuItem>
+                <MenuItem value="es">Español</MenuItem>
+                <MenuItem value="pt">Português</MenuItem>
+              </Select>
+
+              {isSmallScreen ? (
+                <IconButton
+                  size="large"
+                  edge="end"
+                  color="inherit"
+                  aria-label="menu"
+                  onClick={() => setDrawerOpen(true)}
+                >
+                  <MenuIcon />
+                </IconButton>
+              ) : (
+                menuItems.map((item, index) => (
+                  <Button 
+                    key={index} 
+                    color="inherit" 
                     startIcon={item.icon}
                     onClick={item.onClick}
-                    sx={{
-                      mx: 1,
-                      color: 'white',
-                      '&:hover': {
-                        backgroundColor: 'rgba(255,255,255,0.1)'
-                      }
-                    }}
+                    sx={{ ml: 1 }}
                   >
                     {item.text}
                   </Button>
-                ))}
-              </Box>
-            )}
+                ))
+              )}
+            </Box>
           </Toolbar>
         </Container>
       </AppBar>
 
+      {/* Drawer for mobile view */}
       <Drawer
         anchor="right"
         open={drawerOpen}

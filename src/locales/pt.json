@@ -1,0 +1,59 @@
+{
+  "common": {
+    "appName": "Gestão de Trabalhadores Offshore",
+    "login": "Entrar",
+    "logout": "Sair",
+    "register": "Registrar",
+    "dashboard": "Painel",
+    "profile": "Perfil",
+    "settings": "Configurações",
+    "language": "Idioma",
+    "save": "Salvar",
+    "cancel": "Cancelar"
+  },
+  "login": {
+    "title": "Login de Trabalhadores Offshore",
+    "username": "Nome de Usuário",
+    "password": "Senha",
+    "googleLogin": "Entrar com Google",
+    "forgotPassword": "Esqueceu a Senha?",
+    "noAccount": "Não tem uma conta?",
+    "errors": {
+      "loginFailed": "Falha no login. Por favor, tente novamente.",
+      "googleLoginFailed": "Falha no login do Google. Por favor, tente novamente."
+    }
+  },
+  "register": {
+    "title": "Registro de Trabalhadores Offshore",
+    "completeProfile": "Complete seu Perfil",
+    "errors": {
+      "registrationFailed": "Registro falhou. Por favor, tente novamente.",
+      "missingFields": "Por favor, preencha todos os campos obrigatórios"
+    }
+  },
+  "dashboard": {
+    "welcome": "Bem-vindo, {{name}}",
+    "workCycles": "Ciclos de Trabalho",
+    "completeProfile": "Complete seu Perfil",
+    "missingCriticalFields": "Por favor, complete seu perfil para acessar todos os recursos.",
+    "profileAlert": {
+      "title": "Perfil Incompleto",
+      "description": "Você precisa completar seu perfil para usar completamente o aplicativo."
+    }
+  },
+  "settings": {
+    "title": "Configurações de Usuário",
+    "personalInfo": "Informações Pessoais",
+    "workInfo": "Informações de Trabalho",
+    "unitName": "Nome da Unidade",
+    "country": "País",
+    "workingRegime": "Regime de Trabalho",
+    "errors": {
+      "updateFailed": "Falha ao atualizar o perfil. Por favor, tente novamente."
+    }
+  },
+  "editProfile": {
+    "title": "Editar Perfil",
+    "successMessage": "Perfil atualizado com sucesso"
+  }
+}
