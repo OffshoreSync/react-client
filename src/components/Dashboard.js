@@ -401,6 +401,13 @@ const Dashboard = () => {
     try {
       const token = localStorage.getItem('token');
       
+      if (!token) {
+        setSnackbarMessage(t('dashboard.errors.noToken'));
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+        return;
+      }
+
       const response = await axios.put(
         getBackendUrl('/api/auth/reset-next-onboard-date'), 
         {}, 
@@ -411,17 +418,66 @@ const Dashboard = () => {
         }
       );
 
-      // Update user in localStorage with new nextOnBoardDate
-      const currentUser = JSON.parse(localStorage.getItem('user'));
-      currentUser.nextOnBoardDate = response.data.nextOnBoardDate;
-      localStorage.setItem('user', JSON.stringify(currentUser));
+      // Detailed logging for debugging
+      console.log('Reset Onboard Date Response:', response.data);
 
-      // Optionally, refresh the page or update state to reflect changes
-      window.location.reload();
+      // Update user in localStorage with new nextOnBoardDate
+      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      
+      // Safely update user object
+      const updatedUser = {
+        ...currentUser,
+        workSchedule: response.data.workSchedule || {
+          nextOnBoardDate: null,
+          nextOffBoardDate: null
+        }
+      };
+
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+
+      // Soft refresh instead of hard reload
+      setUser(updatedUser);
+      
+      // Show success message
+      setSnackbarMessage(t('dashboard.snackbarMessages.onBoardDateResetSuccess'));
+      setSnackbarSeverity('success');
+      setSnackbarOpen(true);
     } catch (error) {
-      console.error('Error resetting next On Board date:', error);
-      // Optionally show an error message to the user
-      alert(t('dashboard.snackbarMessages.resetOnBoardDateError'));
+      // Comprehensive error logging
+      console.error('Reset Onboard Date Error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+        headers: error.response?.headers
+      });
+
+      // Specific error handling
+      if (error.response) {
+        switch (error.response.status) {
+          case 401:
+            setSnackbarMessage(t('dashboard.errors.unauthorized'));
+            // Optional: Redirect to login
+            navigate('/login');
+            break;
+          case 404:
+            setSnackbarMessage(t('dashboard.errors.userNotFound'));
+            break;
+          default:
+            setSnackbarMessage(
+              error.response.data?.message || 
+              t('dashboard.errors.resetOnBoardDateFailed')
+            );
+        }
+      } else if (error.request) {
+        // Request made but no response received
+        setSnackbarMessage(t('dashboard.errors.noServerResponse'));
+      } else {
+        // Something happened in setting up the request
+        setSnackbarMessage(t('dashboard.errors.requestSetupFailed'));
+      }
+
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     }
   };
 

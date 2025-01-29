@@ -82,7 +82,16 @@
     "snackbarMessages": {
       "onBoardDateSet": "On Board date set successfully!",
       "onBoardDateSetError": "Failed to set On Board date",
-      "resetOnBoardDateError": "Failed to reset next On Board date. Please try again."
+      "resetOnBoardDateError": "Failed to reset next On Board date. Please try again.",
+      "onBoardDateResetSuccess": "Onboard date has been successfully reset."
+    },
+    "errors": {
+      "noToken": "Authentication token is missing. Please log in again.",
+      "unauthorized": "Unauthorized access. Please log in again.",
+      "userNotFound": "User account not found. Please contact support.",
+      "resetOnBoardDateFailed": "Failed to reset onboard date. Please try again.",
+      "noServerResponse": "No response from the server. Please check your internet connection.",
+      "requestSetupFailed": "Failed to send the request. Please try again."
     }
   },
   "settings": {

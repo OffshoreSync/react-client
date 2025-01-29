@@ -77,7 +77,18 @@
     "onBoardDateDialogDescription": "Para ajudar a calcular seu cronograma de trabalho offshore, seleccione a data do seu próximo período de embarque. Isso nos ajudará a determinar suas próximas datas de embarque e fora de serviço de acordo com seu regime de trabalho.",
     "onBoardDate": "Próxima Data de Embarque",
     "cancel": "Cancelar",
-    "setOnBoardDate": "Establecer Data de Embarque"
+    "setOnBoardDate": "Establecer Data de Embarque",
+    "errors": {
+      "noToken": "Token de autenticação ausente. Faça login novamente.",
+      "unauthorized": "Acesso não autorizado. Faça login novamente.",
+      "userNotFound": "Conta de usuário não encontrada. Entre em contato com o suporte.",
+      "resetOnBoardDateFailed": "Falha ao redefinir data de embarque. Tente novamente.",
+      "noServerResponse": "Sem resposta do servidor. Verifique sua conexão com a internet.",
+      "requestSetupFailed": "Falha ao enviar a solicitação. Tente novamente."
+    },
+    "snackbarMessages": {
+      "onBoardDateResetSuccess": "A data de embarque foi redefinida com sucesso."
+    }
   },
   "settings": {
     "title": "Configurações de Usuário",

@@ -82,7 +82,16 @@
     "snackbarMessages": {
       "onBoardDateSet": "¡Fecha de Embarque establecida con éxito!",
       "onBoardDateSetError": "Error al establecer fecha de Embarque",
-      "resetOnBoardDateError": "Error al restablecer próxima fecha de Embarque. Por favor, intenta de nuevo."
+      "resetOnBoardDateError": "Error al restablecer próxima fecha de Embarque. Por favor, intenta de nuevo.",
+      "onBoardDateResetSuccess": "La fecha de embarque se ha restablecido correctamente."
+    },
+    "errors": {
+      "noToken": "Falta el token de autenticación. Inicie sesión de nuevo.",
+      "unauthorized": "Acceso no autorizado. Inicie sesión de nuevo.",
+      "userNotFound": "Cuenta de usuario no encontrada. Contacte al soporte.",
+      "resetOnBoardDateFailed": "No se pudo restablecer la fecha de embarque. Intente de nuevo.",
+      "noServerResponse": "Sin respuesta del servidor. Verifique su conexión a internet.",
+      "requestSetupFailed": "No se pudo enviar la solicitud. Intente de nuevo."
     }
   },
   "settings": {
