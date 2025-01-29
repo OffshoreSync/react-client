@@ -17,6 +17,23 @@ import { GoogleLogin } from '@react-oauth/google';
 // Import translation hook
 import { useTranslation } from 'react-i18next';
 import getBackendUrl from '../utils/apiUtils';
+import { styled } from '@mui/material/styles';
+
+// Styling for Google Sign-In button container
+const GoogleSignInContainer = styled(Box)(({ theme }) => ({
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'center',
+  width: '100%',
+  marginTop: theme.spacing(2),
+  marginBottom: theme.spacing(3)
+}));
+
+// Styling for the entire form section with extra spacing
+const FormSection = styled(Box)(({ theme }) => ({
+  marginTop: theme.spacing(2),
+  marginBottom: theme.spacing(3)
+}));
 
 const Login = () => {
   const { t } = useTranslation(); // Add translation hook
@@ -202,24 +219,32 @@ const Login = () => {
               {t('common.login')}
             </Button>
             
-            <GoogleLogin
-              onSuccess={handleGoogleLogin}
-              onError={() => {
-                console.log('Login Failed');
-                setError(t('login.errors.googleLoginFailed'));
-              }}
-            />
-            
-            <Typography variant="body2" color="text.secondary" align="center">
-              {t('login.noAccount')}{' '}
-              <MuiLink 
-                component={Link} 
-                to="/register" 
-                sx={{ ml: 1 }}
-              >
-                {t('common.register')}
-              </MuiLink>
-            </Typography>
+            <GoogleSignInContainer>
+              <GoogleLogin
+                onSuccess={handleGoogleLogin}
+                onError={() => {
+                  console.log('Login Failed');
+                  setError(t('login.errors.googleLoginFailed'));
+                }}
+                theme="white"
+                size="large"
+                text="signin_with"
+                shape="rectangular"
+              />
+            </GoogleSignInContainer>
+
+            <FormSection>
+              <Typography variant="body2" color="text.secondary" align="center">
+                {t('login.noAccount')}{' '}
+                <MuiLink 
+                  component={Link} 
+                  to="/register" 
+                  sx={{ ml: 1 }}
+                >
+                  {t('common.register')}
+                </MuiLink>
+              </Typography>
+            </FormSection>
             <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>
               <MuiLink 
                 component={Link} 
