@@ -586,17 +586,11 @@ const Sync = () => {
         </Button>
 
         {selectedUsers.length > 1 && (
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center', 
-            my: 2 
-          }}>
-            <Button 
-              variant="contained" 
-              color="primary" 
+          <Box sx={{ mt: 2 }}>
+            <Button
+              variant="outlined"
+              color="primary"
               onClick={() => {
-                // Copy dates to clipboard
                 const dateString = extractCommonOffBoardDates.join(', ');
                 navigator.clipboard.writeText(dateString).then(() => {
                   setSnackbarMessage(`Copied ${extractCommonOffBoardDates.length} common off-board dates`);

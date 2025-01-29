@@ -168,7 +168,7 @@
     "individualSyncSuccess": "Successfully synced worker {{name}}",
     "individualSyncError": "Failed to sync individual worker",
     "findMatchingPeriods": "Find Matching Periods",
-    "exportCommonDates": "Export Common Dates",
+    "exportCommonDates": "Export Common Dates ({{count}})",
     "commonOffBoardDates": "Common Off-Board Dates",
     "selectDate": "Select Date",
     "eventSummary": "Event Summary",

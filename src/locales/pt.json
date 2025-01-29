@@ -189,7 +189,7 @@
     "individualSyncSuccess": "Trabalhador {{name}} sincronizado com sucesso",
     "individualSyncError": "Falha ao sincronizar trabalhador individual",
     "findMatchingPeriods": "Encontrar Períodos Coincidentes",
-    "exportCommonDates": "Exportar Datas Comuns",
+    "exportCommonDates": "Exportar Datas Comuns ({{count}})",
     "commonOffBoardDates": "Datas Comuns Offshore",
     "selectDate": "Selecionar Data",
     "eventSummary": "Resumo do Evento",
