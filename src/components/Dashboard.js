@@ -288,6 +288,30 @@ const Dashboard = () => {
             console.error('Error generating work cycles:', cyclesError);
           }
         }
+
+        // Check if user is a Google user and needs profile completion
+        const storedUser = JSON.parse(localStorage.getItem('user'));
+        if (storedUser) {
+          console.log('User exists');
+          
+          // Explicitly check for Google user and critical fields
+          const isGoogleUser = storedUser.isGoogleUser === true;
+          const criticalFieldsMissing = 
+            isGoogleUser && (
+              storedUser.company === null || 
+              storedUser.unitName === null
+            );
+
+          console.log('Is Google User:', isGoogleUser);
+          console.log('Critical Fields Missing:', criticalFieldsMissing);
+          console.log('Company:', storedUser.company);
+          console.log('Unit Name:', storedUser.unitName);
+          
+          // Set alert state
+          setShowProfileAlert(criticalFieldsMissing);
+        } else {
+          console.log('No user found in localStorage');
+        }
       } catch (error) {
         console.error('Authentication check failed:', error);
         

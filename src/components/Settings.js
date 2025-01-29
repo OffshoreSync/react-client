@@ -97,12 +97,17 @@ const Settings = () => {
         }
       );
 
-      // Clear local storage and redirect
+      // Clear local storage
       localStorage.removeItem('token');
       localStorage.removeItem('user');
-      navigate('/');
+
+      // Dispatch event to update profile picture
+      window.dispatchEvent(new Event('profilePictureUpdated'));
+
+      // Reload the page to clear all state
+      window.location.href = '/';
     } catch (error) {
-      console.error('Account deletion failed', error);
+      console.error('Account deletion error:', error);
       alert('Failed to delete account. Please try again.');
     }
   };

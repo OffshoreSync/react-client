@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   AppBar, 
@@ -13,6 +13,7 @@ import {
   Box,
   Container,
   Button,
+  Avatar,
   useMediaQuery,
   useTheme,
   Select,
@@ -41,6 +42,28 @@ function Navbar() {
   const isLoggedIn = !!localStorage.getItem('token');
   const [language, setLanguage] = useState(localStorage.getItem('language') || 'en');
   const [languageMenuAnchor, setLanguageMenuAnchor] = useState(null);
+  const [user, setUser] = useState(null);
+
+  // Handle profile picture update event
+  const handleProfilePictureUpdate = () => {
+    const storedUser = JSON.parse(localStorage.getItem('user'));
+    setUser(storedUser);
+  };
+
+  // Fetch user from localStorage on component mount and add event listener
+  useEffect(() => {
+    // Initial user fetch
+    const storedUser = JSON.parse(localStorage.getItem('user'));
+    setUser(storedUser);
+
+    // Add custom event listener for profile picture updates
+    window.addEventListener('profilePictureUpdated', handleProfilePictureUpdate);
+
+    // Cleanup event listener
+    return () => {
+      window.removeEventListener('profilePictureUpdated', handleProfilePictureUpdate);
+    };
+  }, []);
 
   const handleLanguageChange = (event) => {
     const newLanguage = event.target.value;
@@ -52,6 +75,10 @@ function Navbar() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    
+    // Dispatch event to update profile picture
+    window.dispatchEvent(new Event('profilePictureUpdated'));
+    
     navigate('/login');
   };
 
@@ -60,6 +87,7 @@ function Navbar() {
     setDrawerOpen(false);
   };
 
+  // Modify menu items to remove Settings, Sync, and Logout buttons
   const menuItems = isLoggedIn ? [
     {
       text: t('navbar.home'),
@@ -68,7 +96,14 @@ function Navbar() {
         navigate('/dashboard');
         setDrawerOpen(false);
       }
-    },
+    }
+  ] : [
+    { text: t('common.home'), icon: <HomeIcon />, onClick: () => handleNavigation('/') },
+    { text: t('common.login'), icon: <PersonIcon />, onClick: () => handleNavigation('/login') }
+  ];
+
+  // Additional drawer-only menu items
+  const drawerMenuItems = isLoggedIn ? [
     {
       text: t('navbar.settings'),
       icon: <SettingsIcon />,
@@ -90,10 +125,7 @@ function Navbar() {
       icon: <LogoutIcon />,
       onClick: handleLogout
     }
-  ] : [
-    { text: t('common.home'), icon: <HomeIcon />, onClick: () => handleNavigation('/') },
-    { text: t('common.login'), icon: <PersonIcon />, onClick: () => handleNavigation('/login') }
-  ];
+  ] : [];
 
   return (
     <>
@@ -109,7 +141,6 @@ function Navbar() {
           <Toolbar 
             disableGutters 
             sx={{ 
-              display: 'flex', 
               justifyContent: 'space-between', 
               alignItems: 'center',
               height: 64
@@ -205,7 +236,24 @@ function Navbar() {
                 ))}
               </Menu>
 
-              {isSmallScreen ? (
+              {/* Profile Picture or Menu Button */}
+              {user && user.profilePicture ? (
+                <IconButton 
+                  onClick={() => setDrawerOpen(true)}
+                  sx={{ 
+                    ml: 1,
+                    p: 0,
+                    border: '2px solid white',
+                    borderRadius: '50%'
+                  }}
+                >
+                  <Avatar 
+                    src={user.profilePicture} 
+                    alt="User Profile" 
+                    sx={{ width: 40, height: 40 }} 
+                  />
+                </IconButton>
+              ) : (
                 <IconButton
                   size="large"
                   edge="end"
@@ -215,18 +263,6 @@ function Navbar() {
                 >
                   <MenuIcon />
                 </IconButton>
-              ) : (
-                menuItems.map((item, index) => (
-                  <Button 
-                    key={index} 
-                    color="inherit" 
-                    startIcon={item.icon}
-                    onClick={item.onClick}
-                    sx={{ ml: 1 }}
-                  >
-                    {item.text}
-                  </Button>
-                ))
               )}
             </Box>
           </Toolbar>
@@ -240,18 +276,36 @@ function Navbar() {
         onClose={() => setDrawerOpen(false)}
         sx={{
           '& .MuiDrawer-paper': {
-            width: 250,
-            background: theme.palette.background.default,
-            borderTopLeftRadius: 16,
-            borderBottomLeftRadius: 16
+            width: 250
           }
         }}
       >
         <List sx={{ pt: 2 }}>
+          {/* Regular menu items */}
           {menuItems.map((item, index) => (
             <ListItem 
               button 
               key={index} 
+              onClick={item.onClick}
+              sx={{
+                borderRadius: 2,
+                mx: 1,
+                my: 0.5,
+                '&:hover': {
+                  backgroundColor: theme.palette.action.hover
+                }
+              }}
+            >
+              <ListItemIcon>{item.icon}</ListItemIcon>
+              <ListItemText primary={item.text} />
+            </ListItem>
+          ))}
+
+          {/* Drawer-only menu items */}
+          {drawerMenuItems.map((item, index) => (
+            <ListItem 
+              button 
+              key={`drawer-${index}`} 
               onClick={item.onClick}
               sx={{
                 borderRadius: 2,

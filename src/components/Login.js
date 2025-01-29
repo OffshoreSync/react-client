@@ -95,6 +95,9 @@ const Login = () => {
       // Log stored user data for verification
       console.log('Stored User Data:', JSON.stringify(safeUser, null, 2));
 
+      // Dispatch event to update profile picture
+      window.dispatchEvent(new Event('profilePictureUpdated'));
+
       // Redirect to dashboard
       navigate('/dashboard');
     } catch (err) {
@@ -144,6 +147,9 @@ const Login = () => {
       // Store token and user data
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(safeUser));
+
+      // Dispatch event to update profile picture
+      window.dispatchEvent(new Event('profilePictureUpdated'));
 
       // Redirect to dashboard
       navigate('/dashboard');
