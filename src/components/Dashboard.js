@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import FullCalendar from '@fullcalendar/react';
@@ -25,7 +25,8 @@ import {
   CardHeader,
   CardContent,
   AlertTitle,
-  IconButton
+  IconButton,
+  CircularProgress
 } from '@mui/material';
 import { 
   ChevronLeft as ChevronLeftIcon, 
@@ -217,9 +218,10 @@ const generateCalendarEvents = (user, t) => {
 };
 
 const Dashboard = () => {
-  const { t, i18n } = useTranslation(); // Add translation hook
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [date, setDate] = useState(new Date());
   const [openOnBoardDialog, setOpenOnBoardDialog] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -235,6 +237,117 @@ const Dashboard = () => {
     getDateFnsLocale(i18n.language)
   );
 
+  // Memoize the checkAuth function to prevent unnecessary re-renders
+  const checkAuth = useCallback(async () => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      // If no token, immediately return null
+      if (!token) {
+        return null;
+      }
+
+      const response = await axios.get(getBackendUrl('/api/auth/profile'), {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      // Ensure working regime is correctly stored
+      const userWithFullData = {
+        ...response.data.user,
+        workingRegime: response.data.user.workingRegime || {
+          onDutyDays: 28,
+          offDutyDays: 28
+        }
+      };
+
+      // Explicitly set isGoogleUser based on the server response
+      userWithFullData.isGoogleUser = !!userWithFullData.isGoogleUser;
+
+      // Check if work cycles need generation
+      if (!userWithFullData.workCycles || userWithFullData.workCycles.length === 0) {
+        try {
+          const cyclesResponse = await axios.post(
+            getBackendUrl('/api/auth/generate-work-cycles'),
+            {},
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+
+          userWithFullData.workCycles = cyclesResponse.data.workCycles;
+        } catch (cyclesError) {
+          console.error('Error generating work cycles:', cyclesError);
+        }
+      }
+
+      // Determine if profile alert should be shown
+      const criticalFieldsMissing = 
+        userWithFullData.isGoogleUser && (
+          userWithFullData.company === null || 
+          userWithFullData.unitName === null
+        );
+
+      return {
+        user: userWithFullData,
+        showProfileAlert: criticalFieldsMissing
+      };
+
+    } catch (error) {
+      console.error('Authentication check failed:', error);
+      
+      // Only remove token and user if the error is related to authentication
+      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        return null;
+      }
+
+      // For other errors, return the existing user from localStorage
+      const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
+      return storedUser ? { user: storedUser, showProfileAlert: false } : null;
+    }
+  }, []);
+
+  // Use a separate effect for authentication
+  useEffect(() => {
+    let isMounted = true;
+
+    const performAuth = async () => {
+      setIsLoading(true);
+      const result = await checkAuth();
+      
+      if (isMounted) {
+        if (result) {
+          setUser(result.user);
+          setShowProfileAlert(result.showProfileAlert);
+          
+          // Update localStorage
+          localStorage.setItem('user', JSON.stringify(result.user));
+
+          // Automatically open On Board date dialog if no next On Board date is set
+          // This covers both first-time login and registration scenarios
+          if (!result.user.workSchedule?.nextOnBoardDate) {
+            console.log('No next OnBoard date found, opening dialog');
+            setOpenOnBoardDialog(true);
+          }
+        } else {
+          // If no valid user, navigate to home
+          navigate('/');
+        }
+        setIsLoading(false);
+      }
+    };
+
+    performAuth();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [checkAuth, navigate]);
+
   // Update locales when language changes
   useEffect(() => {
     // Set FullCalendar locale
@@ -249,130 +362,21 @@ const Dashboard = () => {
   // Calculate calendar events
   const calendarEvents = useMemo(() => generateCalendarEvents(user, t), [user, t]);
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('user') || 'null');
+  // If loading, show a loading indicator
+  if (isLoading) {
+    return (
+      <Box 
+        display="flex" 
+        justifyContent="center" 
+        alignItems="center" 
+        height="100vh"
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
 
-    if (!token || !user) {
-      navigate('/');
-      return;
-    }
-
-    const checkAuth = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await axios.get(getBackendUrl('/api/auth/profile'), {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        // Log entire response for detailed inspection
-        console.log('Full Profile Response:', JSON.stringify(response.data, null, 2));
-
-        // Ensure working regime is correctly stored
-        const userWithFullData = {
-          ...response.data.user,
-          workingRegime: response.data.user.workingRegime || {
-            onDutyDays: 28,  // Default to 28/28 if not present
-            offDutyDays: 28
-          }
-        };
-
-        // Add detailed logging for user data
-        console.log('User Data Details:', {
-          isGoogleUser: userWithFullData.isGoogleUser,
-          profilePicture: userWithFullData.profilePicture,
-          fullName: userWithFullData.fullName,
-          email: userWithFullData.email
-        });
-
-        if (!userWithFullData.workingRegime || 
-            typeof userWithFullData.workingRegime.onDutyDays !== 'number' ||
-            typeof userWithFullData.workingRegime.offDutyDays !== 'number') {
-          userWithFullData.workingRegime = {
-            onDutyDays: 28,
-            offDutyDays: 28
-          };
-        }
-
-        // Update localStorage with latest user data
-        localStorage.setItem('user', JSON.stringify(userWithFullData));
-        
-        // Update state
-        setUser(userWithFullData);
-
-        // Automatically open On Board date dialog if no next On Board date is set
-        if (!userWithFullData.workSchedule?.nextOnBoardDate) {
-          console.log('No next OnBoard date found, opening dialog');
-          setOpenOnBoardDialog(true);
-        }
-
-        // Check if work cycles exist, if not generate them
-        if (!userWithFullData.workCycles || userWithFullData.workCycles.length === 0) {
-          try {
-            const cyclesResponse = await axios.post(
-              getBackendUrl('/api/auth/generate-work-cycles'),
-              {},
-              {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                }
-              }
-            );
-
-            console.log('Generated Work Cycles:', cyclesResponse.data);
-
-            // Update user with generated work cycles
-            const updatedUser = {
-              ...userWithFullData,
-              workCycles: cyclesResponse.data.workCycles
-            };
-
-            // Update local storage and state
-            localStorage.setItem('user', JSON.stringify(updatedUser));
-            setUser(updatedUser);
-          } catch (cyclesError) {
-            console.error('Error generating work cycles:', cyclesError);
-          }
-        }
-
-        // Check if user is a Google user and needs profile completion
-        const storedUser = JSON.parse(localStorage.getItem('user'));
-        if (storedUser) {
-          console.log('User exists');
-          
-          // Explicitly check for Google user and critical fields
-          const isGoogleUser = storedUser.isGoogleUser === true;
-          const criticalFieldsMissing = 
-            isGoogleUser && (
-              storedUser.company === null || 
-              storedUser.unitName === null
-            );
-
-          console.log('Is Google User:', isGoogleUser);
-          console.log('Critical Fields Missing:', criticalFieldsMissing);
-          console.log('Company:', storedUser.company);
-          console.log('Unit Name:', storedUser.unitName);
-          
-          // Set alert state
-          setShowProfileAlert(criticalFieldsMissing);
-        } else {
-          console.log('No user found in localStorage');
-        }
-      } catch (error) {
-        console.error('Authentication check failed:', error);
-        
-        // Logout user if profile fetch fails
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        navigate('/');
-      }
-    };
-
-    checkAuth();
-  }, [navigate, t]);
-
-  // If no user, return null to prevent rendering
+  // If no user, return null
   if (!user) return null;
 
   const onChange = (newDate) => {
