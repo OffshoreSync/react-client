@@ -181,6 +181,20 @@ const Register = () => {
         )}
 
         <Box component="form" onSubmit={onSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <TextField
+            fullWidth
+            label={t('register.username')}
+            name="username"
+            value={username}
+            onChange={onChange}
+            required
+            variant="outlined"
+            disabled={isGoogleLogin}
+            InputProps={{
+              readOnly: isGoogleLogin
+            }}
+          />
+
           <TextField
             fullWidth
             label={t('register.emailAddress')}
@@ -200,20 +214,6 @@ const Register = () => {
             label={t('register.fullName')}
             name="fullName"
             value={fullName}
-            onChange={onChange}
-            required
-            variant="outlined"
-            disabled={isGoogleLogin}
-            InputProps={{
-              readOnly: isGoogleLogin
-            }}
-          />
-          
-          <TextField
-            fullWidth
-            label={t('register.username')}
-            name="username"
-            value={username}
             onChange={onChange}
             required
             variant="outlined"
