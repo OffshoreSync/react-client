@@ -27,6 +27,7 @@
   "register": {
     "title": "Offshore Worker Registration",
     "completeProfile": "Complete Your Profile",
+    "editProfile": "Edit Profile",
     "emailAddress": "Email Address",
     "fullName": "Full Name",
     "username": "Username",
@@ -43,6 +44,7 @@
     "completeProfileButton": "Complete Profile",
     "alreadyHaveAccount": "Already have an account?",
     "loginLink": "Login",
+    "profileUpdateSuccess": "Profile updated successfully",
     "errors": {
       "invalidWorkingRegime": "Please enter valid numbers for On and Off Duty days",
       "minimumWorkingDays": "On and Off Duty days must be at least 7",

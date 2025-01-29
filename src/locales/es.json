@@ -27,6 +27,7 @@
   "register": {
     "title": "Registro de Trabajador Offshore",
     "completeProfile": "Complete Su Perfil",
+    "editProfile": "Editar Perfil",
     "emailAddress": "Dirección de Correo Electrónico",
     "fullName": "Nombre Completo",
     "username": "Nombre de Usuario",
@@ -43,12 +44,12 @@
     "completeProfileButton": "Completar Perfil",
     "alreadyHaveAccount": "¿Ya tiene una cuenta?",
     "loginLink": "Iniciar Sesión",
+    "profileUpdateSuccess": "Perfil actualizado con éxito",
     "errors": {
       "invalidWorkingRegime": "Por favor, ingrese números válidos para Días de Servicio y Días de Descanso",
       "minimumWorkingDays": "Días de Servicio y Días de Descanso deben ser de al menos 7",
       "maximumWorkingDays": "Total de Días de Servicio y Días de Descanso no debe exceder 365",
       "registrationFailed": "Registro fallido. Por favor, intente de nuevo.",
-      "registrationFailed": "Registro fallido. Por favor, intenta de nuevo.",
       "missingFields": "Por favor, completa todos los campos requeridos"
     }
   },
@@ -97,7 +98,9 @@
   },
   "editProfile": {
     "title": "Editar Perfil",
-    "successMessage": "Perfil actualizado exitosamente"
+    "successMessage": "Perfil actualizado exitosamente",
+    "editProfile": "Editar Perfil",
+    "profileUpdateSuccess": "Perfil actualizado con éxito"
   },
   "home": {
     "title": "Gestione Su Régimen de Trabajo Offshore",

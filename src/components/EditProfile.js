@@ -1,428 +1,434 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 import { 
-  Container, 
-  Typography, 
   TextField, 
   Button, 
-  Box, 
-  MenuItem, 
   Select, 
+  MenuItem, 
   FormControl, 
   InputLabel, 
-  Paper, 
+  Grid, 
+  Typography, 
+  Container, 
   Alert 
 } from '@mui/material';
-import { OFFSHORE_COUNTRIES } from '../utils/countries';
-import { OFFSHORE_ROLES } from '../utils/offshoreRoles';
+
+import { OFFSHORE_COUNTRIES, getTranslatedCountries } from '../utils/countries';
+import { OFFSHORE_ROLES, getTranslatedRoles } from '../utils/offshoreRoles';
 
 const EditProfile = () => {
+  const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
+    fullName: '',
     username: '',
     email: '',
-    fullName: '',
     offshoreRole: '',
     workingRegime: '28/28', // Default to 28/28
     customOnDutyDays: '',
     customOffDutyDays: '',
+    country: '',
     company: '',
-    unitName: '',
-    country: ''
+    unitName: ''
   });
-  const [originalUser, setOriginalUser] = useState(null);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const navigate = useNavigate();
-  const [countryList] = useState(OFFSHORE_COUNTRIES.map(country => country.name));
 
-  const handleWorkingRegimeChange = (e) => {
-    const { name, value } = e.target;
-    
-    // If changing working regime dropdown
-    if (name === 'workingRegime') {
-      setFormData(prevState => ({
-        ...prevState,
-        workingRegime: value,
-        // Reset custom days when changing regime
-        customOnDutyDays: value === 'custom' ? '' : '',
-        customOffDutyDays: value === 'custom' ? '' : ''
-      }));
-    } 
-    // If changing custom days
-    else if (name === 'customOnDutyDays' || name === 'customOffDutyDays') {
-      setFormData(prevState => ({
-        ...prevState,
-        [name]: value,
-        // Ensure working regime is set to custom when editing custom days
-        workingRegime: 'custom'
-      }));
-    }
-  };
-
-  const onChange = e => {
-    const { name, value } = e.target;
-    if (name === 'workingRegime' || name === 'customOnDutyDays' || name === 'customOffDutyDays') {
-      handleWorkingRegimeChange(e);
-    } else {
-      setFormData(prevState => ({ ...prevState, [name]: value }));
-    }
-    setError(''); // Clear error when user starts typing
-    setSuccess(''); // Clear success message
-  };
-
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-
-    try {
-      // Prepare data for submission
-      const updateData = {
-        username: formData.username,
-        email: formData.email,
-        fullName: formData.fullName,
-        offshoreRole: formData.offshoreRole,
-        company: formData.company || null,
-        
-        // Explicitly include country and unitName
-        country: formData.country || originalUser.country,
-        unitName: formData.unitName || originalUser.unitName,
-      };
-
-      // Handle working regime
-      if (formData.workingRegime === 'custom') {
-        // Validate custom regime
-        const onDutyDays = parseInt(formData.customOnDutyDays);
-        const offDutyDays = parseInt(formData.customOffDutyDays);
-
-        if (isNaN(onDutyDays) || isNaN(offDutyDays)) {
-          setError('Please enter valid custom working days');
-          return;
-        }
-
-        if (onDutyDays < 7 || onDutyDays > 365 || offDutyDays < 7 || offDutyDays > 365) {
-          setError('Custom working days must be between 7 and 365');
-          return;
-        }
-
-        updateData.workingRegime = {
-          onDutyDays,
-          offDutyDays
-        };
-      } else {
-        // For predefined regimes
-        const [onDutyDays, offDutyDays] = formData.workingRegime.split('/').map(Number);
-        updateData.workingRegime = { onDutyDays, offDutyDays };
-      }
-
-      // Get token from localStorage
-      const token = localStorage.getItem('token');
-
-      console.log('Sending update data:', updateData);
-
-      // Send update request
-      const response = await axios.put(
-        'http://localhost:5000/api/auth/update-profile', 
-        updateData, 
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      console.log('Update response:', response.data);
-
-      // Update localStorage with new user data
-      const safeUser = {
-        id: response.data.user.id,
-        username: response.data.user.username,
-        email: response.data.user.email,
-        fullName: response.data.user.fullName,
-        offshoreRole: response.data.user.offshoreRole,
-        workingRegime: response.data.user.workingRegime,
-        company: response.data.user.company || null,
-        workSchedule: response.data.user.workSchedule || {
-          nextOnBoardDate: null,
-          nextOffBoardDate: null
-        },
-        unitName: response.data.user.unitName || null,
-        country: response.data.user.country || null,
-        profilePicture: response.data.user.profilePicture || null,
-        coverPicture: response.data.user.coverPicture || null,
-        followers: response.data.user.followers || [],
-        following: response.data.user.following || []
-      };
-
-      localStorage.setItem('user', JSON.stringify(safeUser));
-
-      // Update token
-      localStorage.setItem('token', response.data.token);
-
-      // Show success message
-      setSuccess('Profile updated successfully');
-
-      // Optional: Redirect or update state
-      setTimeout(() => {
-        navigate('/dashboard');
-      }, 1500);
-    } catch (err) {
-      console.error('Profile update error:', err.response?.data || err.message);
-      setError(err.response?.data?.message || 'Profile update failed. Please try again.');
-    }
-  };
+  const [errors, setErrors] = useState({});
+  const [successMessage, setSuccessMessage] = useState('');
 
   useEffect(() => {
-    // Check if user is logged in
-    const storedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
+    const fetchUserProfile = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/auth/profile', {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        });
+        const { user } = response.data;
+        
+        // Find the country name for the fetched country code
+        const countryObj = OFFSHORE_COUNTRIES.find(c => c.code === user.country);
+        const countryName = countryObj ? countryObj.name : user.country;
 
-    if (!storedUser || !token) {
-      // Redirect to login if no user or token
-      navigate('/login');
-      return;
+        // Handle working regime conversion
+        let workingRegimeDisplay = '28/28'; // Default
+        let customOnDutyDays = '';
+        let customOffDutyDays = '';
+
+        if (user.workingRegime) {
+          const predefinedRegimes = {
+            '7/7': { onDutyDays: 7, offDutyDays: 7 },
+            '14/14': { onDutyDays: 14, offDutyDays: 14 },
+            '28/28': { onDutyDays: 28, offDutyDays: 28 }
+          };
+
+          // Check if it matches a predefined regime
+          const matchedPredefined = Object.entries(predefinedRegimes).find(
+            ([key, regime]) => 
+              regime.onDutyDays === user.workingRegime.onDutyDays && 
+              regime.offDutyDays === user.workingRegime.offDutyDays
+          );
+
+          if (matchedPredefined) {
+            workingRegimeDisplay = matchedPredefined[0];
+          } else {
+            // Custom regime
+            workingRegimeDisplay = 'custom';
+            customOnDutyDays = user.workingRegime.onDutyDays.toString();
+            customOffDutyDays = user.workingRegime.offDutyDays.toString();
+          }
+        }
+
+        setFormData({
+          fullName: user.fullName || '',
+          username: user.username || '',
+          email: user.email || '',
+          offshoreRole: user.offshoreRole || '',
+          workingRegime: workingRegimeDisplay,
+          customOnDutyDays: customOnDutyDays,
+          customOffDutyDays: customOffDutyDays,
+          country: countryName || '',
+          company: user.company || '',
+          unitName: user.unitName || ''
+        });
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        // Optionally show an error message to the user
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
+
+  useEffect(() => {
+    // Update country name when language changes
+    const updateCountryName = () => {
+      if (formData.country) {
+        const countryObj = OFFSHORE_COUNTRIES.find(c => c.name === formData.country);
+        if (countryObj) {
+          const translatedCountryName = t(`countries.${countryObj.code}`);
+          setFormData(prevState => ({
+            ...prevState,
+            country: translatedCountryName
+          }));
+        }
+      }
+    };
+
+    // Initial translation
+    updateCountryName();
+
+    // Optional: Add event listener for language changes if needed
+    const languageChangeHandler = () => {
+      updateCountryName();
+    };
+
+    i18n.on('languageChanged', languageChangeHandler);
+
+    // Cleanup
+    return () => {
+      i18n.off('languageChanged', languageChangeHandler);
+    };
+  }, [formData.country, i18n.language]);
+
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.fullName) newErrors.fullName = t('register.errors.requiredField');
+    if (!formData.username) newErrors.username = t('register.errors.requiredField');
+    if (!formData.email) newErrors.email = t('register.errors.requiredField');
+    if (!formData.offshoreRole) newErrors.offshoreRole = t('register.errors.requiredField');
+    if (!formData.country) newErrors.country = t('register.errors.requiredField');
+
+    if (formData.workingRegime === 'custom') {
+      const onDutyDays = parseInt(formData.customOnDutyDays, 10);
+      const offDutyDays = parseInt(formData.customOffDutyDays, 10);
+
+      if (isNaN(onDutyDays) || isNaN(offDutyDays)) {
+        newErrors.customWorkingRegime = t('register.errors.invalidWorkingRegime');
+      } else {
+        if (onDutyDays < 7 || offDutyDays < 7) {
+          newErrors.customWorkingRegime = t('register.errors.minimumWorkingDays');
+        }
+        if (onDutyDays + offDutyDays > 365) {
+          newErrors.customWorkingRegime = t('register.errors.maximumWorkingDays');
+        }
+      }
     }
 
-    // Parse and set user
-    try {
-      const parsedUser = JSON.parse(storedUser);
-      setOriginalUser(parsedUser);
-      
-      // Populate form with existing user data
-      const workingRegime = parsedUser.workingRegime;
-      let workingRegimeDisplay = '28/28'; // Default
-      let customOnDutyDays = '';
-      let customOffDutyDays = '';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
-      // Determine working regime display
-      if (workingRegime) {
-        const predefinedRegimes = {
-          '7/7': { onDutyDays: 7, offDutyDays: 7 },
-          '14/14': { onDutyDays: 14, offDutyDays: 14 },
-          '28/28': { onDutyDays: 28, offDutyDays: 28 }
-        };
-
-        const matchedPredefined = Object.entries(predefinedRegimes).find(
-          ([, value]) => value.onDutyDays === workingRegime.onDutyDays && 
-                         value.offDutyDays === workingRegime.offDutyDays
-        );
-
-        if (matchedPredefined) {
-          workingRegimeDisplay = matchedPredefined[0];
-        } else {
-          // Custom regime
-          workingRegimeDisplay = 'custom';
-          customOnDutyDays = workingRegime.onDutyDays;
-          customOffDutyDays = workingRegime.offDutyDays;
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prevState => {
+      // Special handling for working regime
+      if (name === 'workingRegime') {
+        // If predefined regime is selected, reset custom inputs
+        if (value !== 'custom') {
+          return {
+            ...prevState,
+            workingRegime: value,
+            customOnDutyDays: '',
+            customOffDutyDays: ''
+          };
         }
       }
 
-      setFormData({
-        username: parsedUser.username || '',
-        email: parsedUser.email || '',
-        fullName: parsedUser.fullName || '',
-        offshoreRole: parsedUser.offshoreRole || '',
-        workingRegime: workingRegimeDisplay,
-        customOnDutyDays: customOnDutyDays,
-        customOffDutyDays: customOffDutyDays,
-        company: parsedUser.company || '',
-        
-        // Explicitly handle country and unitName
-        unitName: parsedUser.unitName || '',
-        country: parsedUser.country || ''
+      // Normal input handling
+      return {
+        ...prevState,
+        [name]: value
+      };
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+
+    try {
+      // Determine working regime
+      let finalWorkingRegime;
+      if (formData.workingRegime === 'custom') {
+        const onDutyDays = parseInt(formData.customOnDutyDays, 10);
+        const offDutyDays = parseInt(formData.customOffDutyDays, 10);
+
+        // Validate custom working regime
+        if (isNaN(onDutyDays) || isNaN(offDutyDays)) {
+          setErrors({ customWorkingRegime: t('register.errors.invalidWorkingRegime') });
+          return;
+        }
+
+        if (onDutyDays < 7 || offDutyDays < 7) {
+          setErrors({ customWorkingRegime: t('register.errors.minimumWorkingDays') });
+          return;
+        }
+
+        if (onDutyDays + offDutyDays > 365) {
+          setErrors({ customWorkingRegime: t('register.errors.maximumWorkingDays') });
+          return;
+        }
+
+        finalWorkingRegime = { 
+          onDutyDays, 
+          offDutyDays 
+        };
+      } else {
+        // Predefined regimes
+        const [onDutyDays, offDutyDays] = formData.workingRegime.split('/').map(Number);
+        finalWorkingRegime = { 
+          onDutyDays, 
+          offDutyDays 
+        };
+      }
+
+      // Prepare data for submission
+      const submitData = {
+        ...formData,
+        workingRegime: finalWorkingRegime,
+        company: formData.company.trim() || null,
+        unitName: formData.unitName.trim() || null,
+        // Convert country name to country code if needed
+        country: OFFSHORE_COUNTRIES.find(c => c.name === formData.country)?.code || formData.country
+      };
+
+      // Remove custom working regime inputs from submitted data
+      delete submitData.customOnDutyDays;
+      delete submitData.customOffDutyDays;
+
+      const response = await axios.put('http://localhost:5000/api/auth/update-profile', submitData, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
 
-      console.log('Initial form data:', {
-        unitName: parsedUser.unitName,
-        country: parsedUser.country,
-        workingRegime: workingRegimeDisplay,
-        customOnDutyDays,
-        customOffDutyDays
-      });
+      setSuccessMessage(t('register.profileUpdateSuccess'));
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 2000);
     } catch (error) {
-      console.error('Error parsing user data', error);
-      // Clear invalid localStorage and redirect
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
-      navigate('/login');
+      console.error('Error updating profile:', error);
+      setErrors({ submit: t('register.errors.registrationFailed') });
     }
-  }, [navigate]);
+  };
 
-  if (!originalUser) return null;
+  const translatedCountries = getTranslatedCountries();
+  const translatedRoles = getTranslatedRoles();
 
   return (
-    <Container maxWidth="xs">
-      <Box
-        sx={{
-          marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-        }}
-      >
-        <Typography component="h1" variant="h5">
-          Edit Profile
-        </Typography>
-        <Paper 
-          elevation={3} 
-          sx={{ 
-            width: '100%', 
-            padding: 3, 
-            marginTop: 2,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-          }}
-        >
-          <Box component="form" onSubmit={onSubmit} noValidate sx={{ mt: 1, width: '100%' }}>
+    <Container maxWidth="sm">
+      <Typography variant="h4" gutterBottom>
+        {t('register.editProfile')}
+      </Typography>
+      
+      {successMessage && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {successMessage}
+        </Alert>
+      )}
+
+      <form onSubmit={handleSubmit}>
+        <Grid container spacing={2}>
+          <Grid item xs={12}>
             <TextField
               fullWidth
-              label="Username"
-              name="username"
-              value={formData.username}
-              onChange={onChange}
-              required
-              variant="outlined"
-              sx={{ mb: 2 }}
-            />
-            
-            <TextField
-              fullWidth
-              type="email"
-              label="Email Address"
-              name="email"
-              value={formData.email}
-              onChange={onChange}
-              required
-              variant="outlined"
-              sx={{ mb: 2 }}
-            />
-            
-            <TextField
-              fullWidth
-              label="Full Name"
+              label={t('register.fullName')}
               name="fullName"
               value={formData.fullName}
-              onChange={onChange}
-              required
-              variant="outlined"
-              sx={{ mb: 2 }}
+              onChange={handleChange}
+              error={!!errors.fullName}
+              helperText={errors.fullName}
             />
-            
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Offshore Role</InputLabel>
+          </Grid>
+
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label={t('register.username')}
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              error={!!errors.username}
+              helperText={errors.username}
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label={t('register.emailAddress')}
+              name="email"
+              type="email"
+              value={formData.email}
+              onChange={handleChange}
+              error={!!errors.email}
+              helperText={errors.email}
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <FormControl fullWidth>
+              <InputLabel>{t('register.offshoreRole')}</InputLabel>
               <Select
                 name="offshoreRole"
                 value={formData.offshoreRole}
-                label="Offshore Role"
-                onChange={onChange}
+                label={t('register.offshoreRole')}
+                onChange={handleChange}
+                error={!!errors.offshoreRole}
               >
-                {OFFSHORE_ROLES.map((role) => (
+                {OFFSHORE_ROLES.map((role, index) => (
                   <MenuItem key={role} value={role}>
-                    {role}
+                    {translatedRoles[index]}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
-            
-            <FormControl fullWidth required sx={{ mb: 2 }}>
-              <InputLabel>Working Regime</InputLabel>
+          </Grid>
+
+          <Grid item xs={12}>
+            <FormControl fullWidth>
+              <InputLabel>{t('register.workingRegime')}</InputLabel>
               <Select
                 name="workingRegime"
                 value={formData.workingRegime}
-                label="Working Regime"
-                onChange={handleWorkingRegimeChange}
+                label={t('register.workingRegime')}
+                onChange={handleChange}
               >
-                <MenuItem value="7/7">7 Days On / 7 Days Off</MenuItem>
-                <MenuItem value="14/14">14 Days On / 14 Days Off</MenuItem>
-                <MenuItem value="28/28">28 Days On / 28 Days Off</MenuItem>
-                <MenuItem value="custom">Custom Regime</MenuItem>
+                <MenuItem value="7/7">7/7</MenuItem>
+                <MenuItem value="14/14">14/14</MenuItem>
+                <MenuItem value="28/28">28/28</MenuItem>
+                <MenuItem value="custom">{t('register.customRegime')}</MenuItem>
               </Select>
             </FormControl>
-            
-            {formData.workingRegime === 'custom' && (
-              <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+          </Grid>
+
+          {formData.workingRegime === 'custom' && (
+            <>
+              <Grid item xs={6}>
                 <TextField
                   fullWidth
-                  type="number"
-                  label="On Duty Days (7-365)"
+                  label={t('register.customOnDutyDays')}
                   name="customOnDutyDays"
+                  type="number"
                   value={formData.customOnDutyDays}
-                  onChange={handleWorkingRegimeChange}
-                  inputProps={{ min: 7, max: 365 }}
-                  required
-                  variant="outlined"
+                  onChange={handleChange}
+                  error={!!errors.customWorkingRegime}
+                  helperText={errors.customWorkingRegime}
                 />
+              </Grid>
+              <Grid item xs={6}>
                 <TextField
                   fullWidth
-                  type="number"
-                  label="Off Duty Days (7-365)"
+                  label={t('register.customOffDutyDays')}
                   name="customOffDutyDays"
+                  type="number"
                   value={formData.customOffDutyDays}
-                  onChange={handleWorkingRegimeChange}
-                  inputProps={{ min: 7, max: 365 }}
-                  required
-                  variant="outlined"
+                  onChange={handleChange}
+                  error={!!errors.customWorkingRegime}
+                  helperText={errors.customWorkingRegime}
                 />
-              </Box>
-            )}
-            
-            <TextField
-              fullWidth
-              label="Company (Optional)"
-              name="company"
-              value={formData.company}
-              onChange={onChange}
-              variant="outlined"
-              sx={{ mb: 2 }}
-            />
-            
-            <TextField
-              fullWidth
-              label="Unit Name (Optional)"
-              name="unitName"
-              value={formData.unitName}
-              onChange={onChange}
-              variant="outlined"
-              sx={{ mb: 2 }}
-            />
-            
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Country</InputLabel>
+              </Grid>
+            </>
+          )}
+
+          <Grid item xs={12}>
+            <FormControl fullWidth>
+              <InputLabel>{t('register.country')}</InputLabel>
               <Select
                 name="country"
                 value={formData.country}
-                label="Country"
-                onChange={onChange}
+                label={t('register.country')}
+                onChange={handleChange}
+                error={!!errors.country}
               >
-                {countryList.map((country, index) => (
-                  <MenuItem key={index} value={country}>
-                    {country}
+                <MenuItem value="">Select Country</MenuItem>
+                {translatedCountries.map(country => (
+                  <MenuItem key={country.code} value={country.name}>
+                    {country.name}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
-            
-            {error && (
-              <Alert severity="error" sx={{ width: '100%', mt: 2 }}>
-                {error}
-              </Alert>
-            )}
-            
-            {success && (
-              <Alert severity="success" sx={{ width: '100%', mt: 2 }}>
-                {success}
-              </Alert>
-            )}
-            
-            <Button
-              type="submit"
+          </Grid>
+
+          <Grid item xs={12}>
+            <TextField
               fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
+              label={t('register.company')}
+              name="company"
+              value={formData.company}
+              onChange={handleChange}
+            />
+          </Grid>
+
+          <Grid item xs={12}>
+            <TextField
+              fullWidth
+              label={t('register.unitName')}
+              name="unitName"
+              value={formData.unitName}
+              onChange={handleChange}
+            />
+          </Grid>
+
+          {errors.submit && (
+            <Grid item xs={12}>
+              <Alert severity="error">{errors.submit}</Alert>
+            </Grid>
+          )}
+
+          <Grid item xs={12}>
+            <Button 
+              type="submit" 
+              variant="contained" 
+              color="primary" 
+              fullWidth
             >
-              Update Profile
+              {t('common.save')}
             </Button>
-          </Box>
-        </Paper>
-      </Box>
+          </Grid>
+        </Grid>
+      </form>
     </Container>
   );
 };

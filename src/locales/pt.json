@@ -27,6 +27,7 @@
   "register": {
     "title": "Registro de Trabalhador Offshore",
     "completeProfile": "Complete Seu Perfil",
+    "editProfile": "Editar Perfil",
     "emailAddress": "Endereço de E-mail",
     "fullName": "Nome Completo",
     "username": "Nome de Usuário",
@@ -43,6 +44,7 @@
     "completeProfileButton": "Completar Perfil",
     "alreadyHaveAccount": "Já tem uma conta?",
     "loginLink": "Entrar",
+    "profileUpdateSuccess": "Perfil atualizado com sucesso",
     "errors": {
       "invalidWorkingRegime": "Por favor, insira números válidos para Dias de Serviço e Dias de Folga",
       "minimumWorkingDays": "Dias de Serviço e Dias de Folga devem ser de pelo menos 7",
@@ -149,6 +151,6 @@
     "management": "Gestão",
     "operations": "Operações",
     "safety": "Segurança",
-    "bridge": "Passadiço"
+    "bridge": "Ponte"
   }
 }
