@@ -15,8 +15,8 @@ import {
   Paper, 
   Alert 
 } from '@mui/material';
-import { OFFSHORE_COUNTRIES } from '../utils/countries';
-import { OFFSHORE_ROLES } from '../utils/offshoreRoles';
+import { OFFSHORE_COUNTRIES, getTranslatedCountries } from '../utils/countries';
+import { OFFSHORE_ROLES, getTranslatedRoles } from '../utils/offshoreRoles';
 
 const Register = () => {
   const { t } = useTranslation();
@@ -244,8 +244,8 @@ const Register = () => {
               onChange={onChange}
               required
             >
-              {OFFSHORE_ROLES.map((role) => (
-                <MenuItem key={role} value={role}>
+              {getTranslatedRoles().map((role, index) => (
+                <MenuItem key={OFFSHORE_ROLES[index]} value={OFFSHORE_ROLES[index]}>
                   {role}
                 </MenuItem>
               ))}
@@ -319,7 +319,7 @@ const Register = () => {
               onChange={onChange}
             >
               <MenuItem value="">Select Country</MenuItem>
-              {OFFSHORE_COUNTRIES.map(country => (
+              {getTranslatedCountries().map(country => (
                 <MenuItem key={country.code} value={country.name}>
                   {country.name}
                 </MenuItem>

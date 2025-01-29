@@ -124,5 +124,37 @@
         "description": "Works with offshore professionals from multiple countries"
       }
     }
+  },
+  "countries": {
+    "US": "United States",
+    "BR": "Brazil", 
+    "NO": "Norway", 
+    "GB": "United Kingdom", 
+    "MX": "Mexico", 
+    "CN": "China", 
+    "IN": "India", 
+    "CA": "Canada", 
+    "AU": "Australia", 
+    "AZ": "Azerbaijan", 
+    "NG": "Nigeria", 
+    "KW": "Kuwait", 
+    "QA": "Qatar", 
+    "SA": "Saudi Arabia", 
+    "AE": "United Arab Emirates", 
+    "RU": "Russia", 
+    "NL": "Netherlands", 
+    "IT": "Italy", 
+    "DK": "Denmark",
+    "MY": "Malaysia"
+  },
+  "offshoreRoles": {
+    "drilling": "Drilling",
+    "production": "Production", 
+    "maintenance": "Maintenance", 
+    "support": "Support", 
+    "management": "Management",
+    "operations": "Operations",
+    "safety": "Safety",
+    "bridge": "Bridge"
   }
 }

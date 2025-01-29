@@ -118,5 +118,37 @@
         "description": "Trabalha com profissionais offshore de múltiplos países"
       }
     }
+  },
+  "countries": {
+    "US": "Estados Unidos",
+    "BR": "Brasil", 
+    "NO": "Noruega", 
+    "GB": "Reino Unido", 
+    "MX": "México", 
+    "CN": "China", 
+    "IN": "Índia", 
+    "CA": "Canadá", 
+    "AU": "Austrália", 
+    "AZ": "Azerbaijão", 
+    "NG": "Nigéria", 
+    "KW": "Kuwait", 
+    "QA": "Catar", 
+    "SA": "Arábia Saudita", 
+    "AE": "Emirados Árabes Unidos", 
+    "RU": "Rússia", 
+    "NL": "Países Baixos", 
+    "IT": "Itália", 
+    "DK": "Dinamarca",
+    "MY": "Malásia"
+  },
+  "offshoreRoles": {
+    "drilling": "Perfuração",
+    "production": "Produção", 
+    "maintenance": "Manutenção", 
+    "support": "Suporte", 
+    "management": "Gestão",
+    "operations": "Operações",
+    "safety": "Segurança",
+    "bridge": "Passadiço"
   }
 }

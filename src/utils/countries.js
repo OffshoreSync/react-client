@@ -1,3 +1,5 @@
+import i18next from 'i18next';
+
 // Countries ordered by offshore oil production size (as of 2021)
 export const OFFSHORE_COUNTRIES = [
   { code: 'US', name: 'United States', rank: 1 },
@@ -20,15 +22,20 @@ export const OFFSHORE_COUNTRIES = [
   { code: 'IT', name: 'Italy', rank: 18 },
   { code: 'DK', name: 'Denmark', rank: 19 },
   { code: 'MY', name: 'Malaysia', rank: 20 }
-].sort((a, b) => a.name.localeCompare(b.name)); // Alphabetical order for dropdown
+];
+
+// Translate country names
+export const getTranslatedCountries = () => {
+  return OFFSHORE_COUNTRIES.map(country => ({
+    ...country,
+    name: i18next.t(`countries.${country.code}`)
+  }));
+};
 
 // Helper function to get country code for display
 export const getCountryCode = (countryName) => {
-  if (!countryName) return '';
-  
-  const country = OFFSHORE_COUNTRIES.find(c => 
-    c.name.toLowerCase() === countryName.toLowerCase()
+  const country = OFFSHORE_COUNTRIES.find(
+    c => c.name.toLowerCase() === countryName.toLowerCase()
   );
-  
-  return country ? country.code : '';
+  return country ? country.code : null;
 };
