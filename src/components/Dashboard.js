@@ -421,13 +421,13 @@ const Dashboard = () => {
       // Detailed logging for debugging
       console.log('Reset Onboard Date Response:', response.data);
 
-      // Update user in localStorage with new nextOnBoardDate
+      // Update user in localStorage with reset workSchedule
       const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
       
       // Safely update user object
       const updatedUser = {
         ...currentUser,
-        workSchedule: response.data.workSchedule || {
+        workSchedule: {
           nextOnBoardDate: null,
           nextOffBoardDate: null
         }
@@ -435,13 +435,11 @@ const Dashboard = () => {
 
       localStorage.setItem('user', JSON.stringify(updatedUser));
 
-      // Soft refresh instead of hard reload
+      // Update local state
       setUser(updatedUser);
-      
-      // Show success message
-      setSnackbarMessage(t('dashboard.snackbarMessages.onBoardDateResetSuccess'));
-      setSnackbarSeverity('success');
-      setSnackbarOpen(true);
+
+      // Open the onboard date dialog
+      setOpenOnBoardDialog(true);
     } catch (error) {
       // Comprehensive error logging
       console.error('Reset Onboard Date Error:', {
