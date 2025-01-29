@@ -690,9 +690,6 @@ const Sync = () => {
             alignItems: 'center', 
             my: 2 
           }}>
-            <Typography variant="h6">
-              Off Board Periods Graph
-            </Typography>
             <Button 
               variant="contained" 
               color="primary" 
