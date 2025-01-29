@@ -38,7 +38,29 @@
     "missingCriticalFields": "Please complete your profile to access all features.",
     "profileAlert": {
       "title": "Profile Incomplete",
-      "description": "You need to complete your profile to fully use the application."
+      "description": "You need to complete your profile to fully use the application.",
+      "completeProfile": "Complete Profile"
+    },
+    "offshoreTerms": {
+      "getOn": "GET ON",
+      "onBoard": "ONBOARD",
+      "offBoard": "OFF BOARD",
+      "getOff": "GET OFF"
+    },
+    "resetOnBoardDate": "Reset Next On Board Date",
+    "workSchedule": "Work Schedule",
+    "workScheduleSubheader": "Your Offshore Work Calendar",
+    "previous": "PREVIOUS",
+    "next": "NEXT",
+    "onBoardDateDialogTitle": "Select Your Next On Board Date",
+    "onBoardDateDialogDescription": "To help calculate your offshore working schedule, please select the date of your next On Board period. This will help us determine your upcoming On and Off dates based on your working regime.",
+    "onBoardDate": "Next On Board Date",
+    "cancel": "Cancel",
+    "setOnBoardDate": "Set On Board Date",
+    "snackbarMessages": {
+      "onBoardDateSet": "On Board date set successfully!",
+      "onBoardDateSetError": "Failed to set On Board date",
+      "resetOnBoardDateError": "Failed to reset next On Board date. Please try again."
     }
   },
   "settings": {

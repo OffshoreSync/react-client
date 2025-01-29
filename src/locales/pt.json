@@ -39,7 +39,23 @@
     "profileAlert": {
       "title": "Perfil Incompleto",
       "description": "Você precisa completar seu perfil para usar completamente o aplicativo."
-    }
+    },
+    "offshoreTerms": {
+      "getOn": "EMBARQUE",
+      "onBoard": "EMBARCADO",
+      "offBoard": "FOLGA",
+      "getOff": "DESEMBARQUE"
+    },
+    "resetOnBoardDate": "Restablecer Próxima Data de Embarque",
+    "workSchedule": "Agenda de Trabalho",
+    "workScheduleSubheader": "Seu Calendário de Trabalho Offshore",
+    "previous": "ANTERIOR",
+    "next": "PRÓXIMO",
+    "onBoardDateDialogTitle": "Seleccione sua Próxima Data de Embarque",
+    "onBoardDateDialogDescription": "Para ajudar a calcular seu cronograma de trabalho offshore, seleccione a data do seu próximo período de embarque. Isso nos ajudará a determinar suas próximas datas de embarque e fora de serviço de acordo com seu regime de trabalho.",
+    "onBoardDate": "Próxima Data de Embarque",
+    "cancel": "Cancelar",
+    "setOnBoardDate": "Establecer Data de Embarque"
   },
   "settings": {
     "title": "Configurações de Usuário",

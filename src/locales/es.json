@@ -38,7 +38,29 @@
     "missingCriticalFields": "Por favor, completa tu perfil para acceder a todas las funciones.",
     "profileAlert": {
       "title": "Perfil Incompleto",
-      "description": "Necesitas completar tu perfil para usar completamente la aplicación."
+      "description": "Necesitas completar tu perfil para usar completamente la aplicación.",
+      "completeProfile": "Completar Perfil"
+    },
+    "offshoreTerms": {
+      "getOn": "EMBARQUE",
+      "onBoard": "A BORDO",
+      "offBoard": "FUERA DE SERVICIO",
+      "getOff": "DESEMBARQUE"
+    },
+    "resetOnBoardDate": "Restablecer Próxima Fecha de Embarque",
+    "workSchedule": "Agenda de Trabajo",
+    "workScheduleSubheader": "Tu Calendario de Trabajo Offshore",
+    "previous": "ANTERIOR",
+    "next": "SIGUIENTE",
+    "onBoardDateDialogTitle": "Selecciona tu Próxima Fecha de Embarque",
+    "onBoardDateDialogDescription": "Para ayudar a calcular tu cronograma de trabajo offshore, selecciona la fecha de tu próximo período de Embarque. Esto nos ayudará a determinar tus próximas fechas de Embarque y Fuera de Servicio según tu régimen de trabajo.",
+    "onBoardDate": "Próxima Fecha de Embarque",
+    "cancel": "Cancelar",
+    "setOnBoardDate": "Establecer Fecha de Embarque",
+    "snackbarMessages": {
+      "onBoardDateSet": "¡Fecha de Embarque establecida con éxito!",
+      "onBoardDateSetError": "Error al establecer fecha de Embarque",
+      "resetOnBoardDateError": "Error al restablecer próxima fecha de Embarque. Por favor, intenta de nuevo."
     }
   },
   "settings": {

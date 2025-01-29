@@ -36,6 +36,9 @@ import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { styled } from '@mui/material/styles';
 
+// Import translation hook
+import { useTranslation } from 'react-i18next';
+
 // Custom styled calendar to match Material-UI theme
 const StyledCalendar = styled(FullCalendar)`
   width: 350px !important;
@@ -92,7 +95,7 @@ const getTileClassName = (date, view, workSchedule, workingRegime) => {
 };
 
 // Function to generate calendar events
-const generateCalendarEvents = (user) => {
+const generateCalendarEvents = (user, t) => {
   // If no user or no next On Board date, return empty array
   if (!user || !user.workSchedule?.nextOnBoardDate) {
     return [];
@@ -109,7 +112,9 @@ const generateCalendarEvents = (user) => {
     calendarEvents.push({
       start: new Date(cycle.startDate),
       end: new Date(cycle.endDate),
-      title: cycle.type,
+      title: cycle.type === 'OnBoard' 
+        ? t('dashboard.offshoreTerms.onBoard') 
+        : t('dashboard.offshoreTerms.offBoard'),
       allDay: true,
       className: cycle.type === 'OnBoard' ? 'on-board-event' : 'off-board-event',
       extendedProps: {
@@ -136,7 +141,7 @@ const generateCalendarEvents = (user) => {
         calendarEvents.push({
           start: prevCycleEnd,
           end: currentCycleStart,
-          title: 'GET OFF',
+          title: t('dashboard.offshoreTerms.getOff'),
           allDay: true,
           className: 'get-off-event',
           extendedProps: {
@@ -162,7 +167,7 @@ const generateCalendarEvents = (user) => {
           calendarEvents.push({
             start: prevCycleEnd,
             end: currentCycleStart,
-            title: 'GET ON',
+            title: t('dashboard.offshoreTerms.getOn'),
             allDay: true,
             className: 'get-on-event',
             extendedProps: {
@@ -179,6 +184,7 @@ const generateCalendarEvents = (user) => {
 };
 
 const Dashboard = () => {
+  const { t } = useTranslation(); // Add translation hook
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [date, setDate] = useState(new Date());
@@ -191,7 +197,7 @@ const Dashboard = () => {
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
 
   // Calculate calendar events
-  const calendarEvents = useMemo(() => generateCalendarEvents(user), [user]);
+  const calendarEvents = useMemo(() => generateCalendarEvents(user, t), [user, t]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -309,7 +315,7 @@ const Dashboard = () => {
     };
 
     checkAuth();
-  }, [navigate]);
+  }, [navigate, t]);
 
   // If no user, return null to prevent rendering
   if (!user) return null;
@@ -364,7 +370,7 @@ const Dashboard = () => {
       
       // Close dialog and show success message
       setOpenOnBoardDialog(false);
-      setSnackbarMessage('On Board date set successfully!');
+      setSnackbarMessage(t('dashboard.snackbarMessages.onBoardDateSet'));
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
     } catch (error) {
@@ -381,7 +387,7 @@ const Dashboard = () => {
       
       // Show error message
       setSnackbarMessage(
-        error.response?.data?.message || 'Failed to set On Board date'
+        error.response?.data?.message || t('dashboard.snackbarMessages.onBoardDateSetError')
       );
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
@@ -412,7 +418,7 @@ const Dashboard = () => {
     } catch (error) {
       console.error('Error resetting next On Board date:', error);
       // Optionally show an error message to the user
-      alert('Failed to reset next On Board date. Please try again.');
+      alert(t('dashboard.snackbarMessages.resetOnBoardDateError'));
     }
   };
 
@@ -489,12 +495,12 @@ const Dashboard = () => {
                 size="small" 
                 onClick={handleCompleteProfile}
               >
-                Complete Profile
+                {t('dashboard.profileAlert.completeProfile')}
               </Button>
             }
           >
-            <AlertTitle>Profile Incomplete</AlertTitle>
-            Please update your profile information to fully access all features.
+            <AlertTitle>{t('dashboard.profileAlert.title')}</AlertTitle>
+            {t('dashboard.profileAlert.description')}
           </Alert>
         </Box>
       )}
@@ -518,13 +524,13 @@ const Dashboard = () => {
                   right: 10,
                   color: 'primary.main'
                 }}
-                title="Reset Next On Board Date"
+                title={t('dashboard.resetOnBoardDate')}
               >
                 <EditIcon />
               </IconButton>
               <CardHeader
-                title="Work Schedule"
-                subheader="Your Offshore Work Calendar"
+                title={t('dashboard.workSchedule')}
+                subheader={t('dashboard.workScheduleSubheader')}
                 titleTypographyProps={{
                   variant: 'h6',
                   color: 'primary',
@@ -560,8 +566,8 @@ const Dashboard = () => {
                     right: 'next'
                   }}
                   buttonText={{
-                    prev: isSmallScreen ? '<' : 'PREVIOUS',
-                    next: isSmallScreen ? '>' : 'NEXT'
+                    prev: isSmallScreen ? '<' : t('dashboard.previous'),
+                    next: isSmallScreen ? '>' : t('dashboard.next')
                   }}
                   style={{
                     '--fc-border-color': 'rgba(0,0,0,0.12)',
@@ -682,17 +688,16 @@ const Dashboard = () => {
         fullWidth
       >
         <DialogTitle id="onboard-date-dialog-title">
-          Select Your Next On Board Date
+          {t('dashboard.onBoardDateDialogTitle')}
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="onboard-date-dialog-description" sx={{ mb: 2 }}>
-            To help calculate your offshore working schedule, please select the date of your next On Board period.
-            This will help us determine your upcoming On and Off dates based on your working regime.
+            {t('dashboard.onBoardDateDialogDescription')}
           </DialogContentText>
           
           <LocalizationProvider dateAdapter={AdapterDateFns}>
             <DatePicker
-              label="Next On Board Date"
+              label={t('dashboard.onBoardDate')}
               value={date}
               onChange={(newValue) => setDate(newValue)}
               renderInput={(params) => (
@@ -710,10 +715,10 @@ const Dashboard = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setOpenOnBoardDialog(false)} color="primary">
-            Cancel
+            {t('dashboard.cancel')}
           </Button>
           <Button onClick={handleSetOnBoardDate} color="primary" autoFocus>
-            Set On Board Date
+            {t('dashboard.setOnBoardDate')}
           </Button>
         </DialogActions>
       </Dialog>
