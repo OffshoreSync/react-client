@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { 
   Container, 
   Typography, 
@@ -18,6 +19,7 @@ import SecurityIcon from '@mui/icons-material/Security';
 import PublicIcon from '@mui/icons-material/Public';
 
 function Home() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
@@ -83,7 +85,7 @@ function Home() {
             fontWeight: 'bold'
           }}
         >
-          Manage Your Offshore Working Regime
+          {t('home.title')}
         </Typography>
         
         <Typography 
@@ -94,10 +96,7 @@ function Home() {
             mb: 4 
           }}
         >
-          Our application is designed specifically for offshore industry professionals 
-          to track and manage their complex working schedules. Whether you're in drilling, 
-          production, maintenance, or support roles, we provide a comprehensive solution 
-          for your unique work-life balance.
+          {t('home.subtitle')}
         </Typography>
         
         <Grid container spacing={3} justifyContent="center">
@@ -117,30 +116,30 @@ function Home() {
                   mb: 2 
                 }}
               >
-                Key Features
+                {t('home.keyFeaturesTitle')}
               </Typography>
               
               <List>
                 {[
                   {
                     icon: <CheckCircleOutlineIcon color="primary" />,
-                    primary: "Flexible Working Regimes",
-                    secondary: "Choose from predefined 7/7, 14/14, 28/28 schedules or create a custom regime"
+                    primary: t('home.features.workManagement.title'),
+                    secondary: t('home.features.workManagement.description')
                   },
                   {
                     icon: <SecurityIcon color="primary" />,
-                    primary: "User Authentication",
-                    secondary: "Secure registration and login with personalized dashboards"
+                    primary: t('home.features.authentication.title'),
+                    secondary: t('home.features.authentication.description')
                   },
                   {
                     icon: <WorkIcon color="primary" />,
-                    primary: "Role-Based Access",
-                    secondary: "Tailored experience for different offshore roles"
+                    primary: t('home.features.roleBasedAccess.title'),
+                    secondary: t('home.features.roleBasedAccess.description')
                   },
                   {
                     icon: <PublicIcon color="primary" />,
-                    primary: "Global Offshore Support",
-                    secondary: "Works with offshore professionals from multiple countries"
+                    primary: t('home.features.globalSupport.title'),
+                    secondary: t('home.features.globalSupport.description')
                   }
                 ].map((feature, index) => (
                   <ListItem key={index}>
@@ -172,7 +171,7 @@ function Home() {
                 onClick={handleLogin}
                 sx={{ minWidth: 200 }}
               >
-                Login to Your Account
+                {t('home.loginButton')}
               </Button>
               
               <Button 
@@ -182,7 +181,7 @@ function Home() {
                 onClick={handleRegister}
                 sx={{ minWidth: 200 }}
               >
-                Create New Account
+                {t('home.registerButton')}
               </Button>
             </>
           ) : (
@@ -194,7 +193,7 @@ function Home() {
                 onClick={handleDashboard}
                 sx={{ minWidth: 200 }}
               >
-                Go to Dashboard
+                {t('home.dashboardButton')}
               </Button>
               
               <Button 
@@ -204,7 +203,7 @@ function Home() {
                 onClick={handleLogout}
                 sx={{ minWidth: 200 }}
               >
-                Logout from Your Account
+                {t('home.logoutButton')}
               </Button>
             </>
           )}

@@ -77,5 +77,32 @@
   "editProfile": {
     "title": "Edit Profile",
     "successMessage": "Profile updated successfully"
+  },
+  "home": {
+    "title": "Manage Your Offshore Working Regime",
+    "subtitle": "Our application is designed specifically for offshore industry professionals to track and manage their complex working schedules. Whether you're in drilling, production, maintenance, or support roles, we provide a comprehensive solution for your unique work-life balance.",
+    "keyFeaturesTitle": "Key Features",
+    "loginButton": "Login to Your Account",
+    "registerButton": "Create New Account",
+    "dashboardButton": "Go to Dashboard",
+    "logoutButton": "Logout from Your Account",
+    "features": {
+      "workManagement": {
+        "title": "Flexible Working Regimes",
+        "description": "Choose from predefined 7/7, 14/14, 28/28 schedules or create a custom regime"
+      },
+      "authentication": {
+        "title": "User Authentication",
+        "description": "Secure registration and login with personalized dashboards"
+      },
+      "roleBasedAccess": {
+        "title": "Role-Based Access",
+        "description": "Tailored experience for different offshore roles"
+      },
+      "globalSupport": {
+        "title": "Global Offshore Support",
+        "description": "Works with offshore professionals from multiple countries"
+      }
+    }
   }
 }

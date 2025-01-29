@@ -71,5 +71,32 @@
   "editProfile": {
     "title": "Editar Perfil",
     "successMessage": "Perfil atualizado com sucesso"
+  },
+  "home": {
+    "title": "Gerencie Seu Regime de Trabalho Offshore",
+    "subtitle": "Nosso aplicativo é projetado especificamente para profissionais da indústria offshore para acompanhar e gerenciar seus complexos cronogramas de trabalho. Seja em perfuração, produção, manutenção ou funções de suporte, fornecemos uma solução abrangente para o seu equilíbrio único entre trabalho e vida.",
+    "keyFeaturesTitle": "Principais Recursos",
+    "loginButton": "Entrar na Sua Conta",
+    "registerButton": "Criar Nova Conta",
+    "dashboardButton": "Ir para o Painel",
+    "logoutButton": "Sair da Sua Conta",
+    "features": {
+      "workManagement": {
+        "title": "Regimes de Trabalho Flexíveis",
+        "description": "Escolha entre regimes predefinidos de 7/7, 14/14, 28/28 ou crie um regime personalizado"
+      },
+      "authentication": {
+        "title": "Autenticação de Usuário",
+        "description": "Registro e login seguros com painéis personalizados"
+      },
+      "roleBasedAccess": {
+        "title": "Acesso Baseado em Função",
+        "description": "Experiência personalizada para diferentes funções offshore"
+      },
+      "globalSupport": {
+        "title": "Suporte Offshore Global",
+        "description": "Trabalha com profissionais offshore de múltiplos países"
+      }
+    }
   }
 }
