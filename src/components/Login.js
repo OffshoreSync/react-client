@@ -134,7 +134,7 @@ const Login = () => {
           nextOffBoardDate: null
         },
         country: user.country || null,
-        profilePicture: user.profilePicture || null,
+        profilePicture: user.profilePicture || null, // Ensure profilePicture is saved
         isGoogleUser: true  // Explicitly set to true for ALL Google logins
       };
 

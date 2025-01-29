@@ -213,9 +213,13 @@ const Dashboard = () => {
 
     const checkAuth = async () => {
       try {
+        const token = localStorage.getItem('token');
         const response = await axios.get(getBackendUrl('/api/auth/profile'), {
           headers: { Authorization: `Bearer ${token}` }
         });
+
+        // Log entire response for detailed inspection
+        console.log('Full Profile Response:', JSON.stringify(response.data, null, 2));
 
         // Ensure working regime is correctly stored
         const userWithFullData = {
@@ -226,21 +230,34 @@ const Dashboard = () => {
           }
         };
 
+        // Add detailed logging for user data
+        console.log('User Data Details:', {
+          isGoogleUser: userWithFullData.isGoogleUser,
+          profilePicture: userWithFullData.profilePicture,
+          fullName: userWithFullData.fullName,
+          email: userWithFullData.email
+        });
+
         if (!userWithFullData.workingRegime || 
             typeof userWithFullData.workingRegime.onDutyDays !== 'number' ||
             typeof userWithFullData.workingRegime.offDutyDays !== 'number') {
-          console.warn('Invalid working regime detected, using default');
           userWithFullData.workingRegime = {
             onDutyDays: 28,
             offDutyDays: 28
           };
         }
 
-        // Update localStorage with fresh user data
+        // Update localStorage with latest user data
         localStorage.setItem('user', JSON.stringify(userWithFullData));
         
-        // Set user state
+        // Update state
         setUser(userWithFullData);
+
+        // Automatically open On Board date dialog if no next On Board date is set
+        if (!userWithFullData.workSchedule?.nextOnBoardDate) {
+          console.log('No next OnBoard date found, opening dialog');
+          setOpenOnBoardDialog(true);
+        }
 
         // Check if work cycles exist, if not generate them
         if (!userWithFullData.workCycles || userWithFullData.workCycles.length === 0) {
@@ -271,51 +288,13 @@ const Dashboard = () => {
             console.error('Error generating work cycles:', cyclesError);
           }
         }
-
-        // Automatically open On Board date dialog if no next On Board date is set
-        if (!userWithFullData.workSchedule?.nextOnBoardDate) {
-          setOpenOnBoardDialog(true);
-        }
-
-        // Retrieve user from localStorage
-        const storedUser = JSON.parse(localStorage.getItem('user'));
-        console.log('Stored User:', storedUser);
-        setUser(storedUser);
-
-        // Check if user is a Google user and needs profile completion
-        if (storedUser) {
-          console.log('User exists');
-          
-          // Explicitly check for Google user and critical fields
-          const isGoogleUser = storedUser.isGoogleUser === true;
-          const criticalFieldsMissing = 
-            isGoogleUser && (
-              storedUser.company === null || 
-              storedUser.unitName === null
-            );
-
-          console.log('Is Google User:', isGoogleUser);
-          console.log('Critical Fields Missing:', criticalFieldsMissing);
-          console.log('Company:', storedUser.company);
-          console.log('Unit Name:', storedUser.unitName);
-          
-          // Set alert state
-          setShowProfileAlert(criticalFieldsMissing);
-        } else {
-          console.log('No user found in localStorage');
-        }
       } catch (error) {
-        console.error('Authentication error:', error);
+        console.error('Authentication check failed:', error);
         
-        // Handle token expiration specifically
-        if (error.response && error.response.data.error === 'TokenExpiredError') {
-          // Clear existing token and user data
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
-          
-          // Redirect to login
-          navigate('/login');
-        }
+        // Logout user if profile fetch fails
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        navigate('/');
       }
     };
 
