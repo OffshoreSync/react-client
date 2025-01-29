@@ -32,8 +32,6 @@ import {
   ChevronRight as ChevronRightIcon,
   Edit as EditIcon 
 } from '@mui/icons-material';
-import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 import { styled } from '@mui/material/styles';
 
 // Import translation hook
@@ -41,6 +39,18 @@ import { useTranslation } from 'react-i18next';
 
 // Import getBackendUrl
 import getBackendUrl from '../utils/apiUtils';
+
+// Import FullCalendar locales
+import ptLocale from '@fullcalendar/core/locales/pt-br';
+import enLocale from '@fullcalendar/core/locales/en-gb';
+import esLocale from '@fullcalendar/core/locales/es';
+
+// Import date-fns locales
+import { enUS, ptBR, es } from 'date-fns/locale';
+
+// Import MUI date picker components
+import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 
 // Custom styled calendar to match Material-UI theme
 const StyledCalendar = styled(FullCalendar)`
@@ -51,6 +61,26 @@ const StyledCalendar = styled(FullCalendar)`
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
   font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
 `;
+
+// Function to get FullCalendar locale
+const getFullCalendarLocale = (language) => {
+  const localeMap = {
+    'pt': ptLocale,
+    'en': enLocale,
+    'es': esLocale
+  };
+  return localeMap[language] || enLocale; // Default to English
+};
+
+// Mapping for date-fns locales
+const getDateFnsLocale = (language) => {
+  const localeMap = {
+    'pt': ptBR,
+    'en': enUS,
+    'es': es
+  };
+  return localeMap[language] || enUS; // Default to English
+};
 
 // Pure function to determine tile class
 const getTileClassName = (date, view, workSchedule, workingRegime) => {
@@ -187,7 +217,7 @@ const generateCalendarEvents = (user, t) => {
 };
 
 const Dashboard = () => {
-  const { t } = useTranslation(); // Add translation hook
+  const { t, i18n } = useTranslation(); // Add translation hook
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [date, setDate] = useState(new Date());
@@ -198,6 +228,23 @@ const Dashboard = () => {
   const [showProfileAlert, setShowProfileAlert] = useState(false);
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  const [calendarLocale, setCalendarLocale] = useState(
+    getFullCalendarLocale(i18n.language)
+  );
+  const [datePickerLocale, setDatePickerLocale] = useState(
+    getDateFnsLocale(i18n.language)
+  );
+
+  // Update locales when language changes
+  useEffect(() => {
+    // Set FullCalendar locale
+    const newCalendarLocale = getFullCalendarLocale(i18n.language);
+    setCalendarLocale(newCalendarLocale);
+
+    // Set date-fns locale for DatePicker
+    const newDateFnsLocale = getDateFnsLocale(i18n.language);
+    setDatePickerLocale(newDateFnsLocale);
+  }, [i18n.language]);
 
   // Calculate calendar events
   const calendarEvents = useMemo(() => generateCalendarEvents(user, t), [user, t]);
@@ -733,6 +780,7 @@ const Dashboard = () => {
                       titleEl.style.textAlign = isSmallScreen ? 'center' : 'left';
                     }
                   }}
+                  locale={calendarLocale}
                 />
               </CardContent>
             </Card>
@@ -756,8 +804,10 @@ const Dashboard = () => {
           <DialogContentText id="onboard-date-dialog-description" sx={{ mb: 2 }}>
             {t('dashboard.onBoardDateDialogDescription')}
           </DialogContentText>
-          
-          <LocalizationProvider dateAdapter={AdapterDateFns}>
+          <LocalizationProvider 
+            dateAdapter={AdapterDateFns} 
+            adapterLocale={datePickerLocale}
+          >
             <DatePicker
               label={t('dashboard.onBoardDate')}
               value={date}
