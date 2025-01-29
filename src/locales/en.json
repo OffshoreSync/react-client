@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Offshore Worker Management",
+    "appName": "OffshoreSync",
     "home": "Home",
     "login": "Login",
     "logout": "Logout",
@@ -145,6 +145,18 @@
         "title": "Global Offshore Support",
         "description": "Works with offshore professionals from multiple countries"
       }
+    }
+  },
+  "navbar": {
+    "home": "Home",
+    "settings": "Settings",
+    "sync": "Sync",
+    "logout": "Logout",
+    "language": "Language",
+    "languages": {
+      "en": "English",
+      "es": "Spanish",
+      "pt": "Portuguese"
     }
   },
   "countries": {

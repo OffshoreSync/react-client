@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "Gestão de Trabalhadores Offshore",
+    "appName": "OffshoreSync",
     "home": "Início",
     "login": "Entrar",
     "logout": "Sair",
@@ -134,6 +134,18 @@
         "title": "Suporte Offshore Global",
         "description": "Trabalha com profissionais offshore de múltiplos países"
       }
+    }
+  },
+  "navbar": {
+    "home": "Início",
+    "settings": "Configurações",
+    "sync": "Sincronizar",
+    "logout": "Sair",
+    "language": "Idioma",
+    "languages": {
+      "en": "Inglês",
+      "es": "Espanhol",
+      "pt": "Português"
     }
   },
   "countries": {

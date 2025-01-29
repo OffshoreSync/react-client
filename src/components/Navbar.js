@@ -16,7 +16,8 @@ import {
   useMediaQuery,
   useTheme,
   Select,
-  MenuItem
+  MenuItem,
+  Menu
 } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
@@ -25,6 +26,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import WavesIcon from '@mui/icons-material/Waves';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LanguageIcon from '@mui/icons-material/Language';
+import ReactCountryFlag from 'react-country-flag';
 
 // Import i18n
 import { useTranslation } from 'react-i18next';
@@ -38,6 +40,7 @@ function Navbar() {
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
   const isLoggedIn = !!localStorage.getItem('token');
   const [language, setLanguage] = useState(localStorage.getItem('language') || 'en');
+  const [languageMenuAnchor, setLanguageMenuAnchor] = useState(null);
 
   const handleLanguageChange = (event) => {
     const newLanguage = event.target.value;
@@ -58,9 +61,35 @@ function Navbar() {
   };
 
   const menuItems = isLoggedIn ? [
-    { text: t('common.dashboard'), icon: <HomeIcon />, onClick: () => handleNavigation('/') },
-    { text: t('common.settings'), icon: <SettingsIcon />, onClick: () => handleNavigation('/settings') },
-    { text: t('common.logout'), icon: <LogoutIcon />, onClick: handleLogout }
+    {
+      text: t('navbar.home'),
+      icon: <HomeIcon />,
+      onClick: () => {
+        navigate('/dashboard');
+        setDrawerOpen(false);
+      }
+    },
+    {
+      text: t('navbar.settings'),
+      icon: <SettingsIcon />,
+      onClick: () => {
+        navigate('/settings');
+        setDrawerOpen(false);
+      }
+    },
+    {
+      text: t('navbar.sync'),
+      icon: <WavesIcon />,
+      onClick: () => {
+        navigate('/sync');
+        setDrawerOpen(false);
+      }
+    },
+    {
+      text: t('navbar.logout'),
+      icon: <LogoutIcon />,
+      onClick: handleLogout
+    }
   ] : [
     { text: t('common.home'), icon: <HomeIcon />, onClick: () => handleNavigation('/') },
     { text: t('common.login'), icon: <PersonIcon />, onClick: () => handleNavigation('/login') }
@@ -102,21 +131,79 @@ function Navbar() {
             </Box>
 
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              {/* Language Selector */}
-              <Select
-                value={language}
-                onChange={handleLanguageChange}
-                startAdornment={<LanguageIcon sx={{ mr: 1, color: 'white' }} />}
-                sx={{ 
-                  color: 'white', 
-                  '& .MuiSelect-icon': { color: 'white' },
-                  '& .MuiOutlinedInput-notchedOutline': { border: 'none' }
+              {isSmallScreen ? (
+                <IconButton 
+                  id="language-select"
+                  onClick={(e) => {
+                    setDrawerOpen(false);
+                    setLanguageMenuAnchor(e.currentTarget);
+                  }}
+                  sx={{ 
+                    color: 'white',
+                    '&:hover': { 
+                      backgroundColor: 'rgba(255,255,255,0.1)' 
+                    }
+                  }}
+                >
+                  <LanguageIcon />
+                </IconButton>
+              ) : (
+                <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
+                  <IconButton 
+                    id="language-select"
+                    onClick={(e) => setLanguageMenuAnchor(e.currentTarget)}
+                    sx={{ 
+                      color: 'white',
+                      '&:hover': { 
+                        backgroundColor: 'rgba(255,255,255,0.1)' 
+                      }
+                    }}
+                  >
+                    <LanguageIcon />
+                  </IconButton>
+                </Box>
+              )}
+
+              <Menu
+                anchorEl={languageMenuAnchor}
+                open={Boolean(languageMenuAnchor)}
+                onClose={() => setLanguageMenuAnchor(null)}
+                anchorOrigin={{
+                  vertical: 'bottom',
+                  horizontal: 'right',
+                }}
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
                 }}
               >
-                <MenuItem value="en">English</MenuItem>
-                <MenuItem value="es">Español</MenuItem>
-                <MenuItem value="pt">Português</MenuItem>
-              </Select>
+                {['en', 'es', 'pt'].map((lang) => (
+                  <MenuItem 
+                    key={lang} 
+                    onClick={() => {
+                      handleLanguageChange({ target: { value: lang } });
+                      setLanguageMenuAnchor(null);
+                    }}
+                    sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 1,
+                      fontWeight: language === lang ? 'bold' : 'normal'
+                    }}
+                  >
+                    <ReactCountryFlag 
+                      countryCode={
+                        lang === 'en' ? 'US' : 
+                        lang === 'es' ? 'ES' : 
+                        lang === 'pt' ? 'BR' : ''
+                      } 
+                      svg 
+                      style={{ width: '1.5em', height: '1em' }} 
+                    />
+                    {t(`navbar.languages.${lang}`)}
+                  </MenuItem>
+                ))}
+              </Menu>
 
               {isSmallScreen ? (
                 <IconButton
