@@ -94,7 +94,27 @@
     "workingRegime": "Working Regime",
     "errors": {
       "updateFailed": "Failed to update profile. Please try again."
-    }
+    },
+    "profileSettings": "Profile Settings",
+    "personalInformation": "Personal Information",
+    "professionalDetails": "Professional Details",
+    "username": "Username",
+    "email": "Email",
+    "fullName": "Full Name",
+    "offshoreRole": "Offshore Role",
+    "workingRegime": "Working Regime",
+    "company": "Company",
+    "unitName": "Unit Name",
+    "country": "Country",
+    "noCountrySelected": "No country selected",
+    "loading": "Loading...",
+    "editProfile": "Edit Profile",
+    "deleteAccount": "Delete Account",
+    "confirmDeleteAccount": "Delete Account",
+    "deleteAccountWarning": "Are you sure you want to delete your account? This action cannot be undone.",
+    "cancel": "Cancel",
+    "confirmDelete": "Confirm Delete",
+    "notSet": "Not Set"
   },
   "editProfile": {
     "title": "Edit Profile",

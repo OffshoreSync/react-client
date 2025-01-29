@@ -17,11 +17,13 @@ import {
   Container
 } from '@mui/material';
 import { getCountryCode } from '../utils/countries';
+import { useTranslation } from 'react-i18next';
 
 const Settings = () => {
   const [user, setUser] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     // Check if user is logged in
@@ -139,126 +141,128 @@ const Settings = () => {
     <Container maxWidth="md">
       <Box sx={{ my: 4 }}>
         <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
-          <Typography variant="h6" gutterBottom>
-            Personal Profile
+          <Typography variant="h4" gutterBottom>
+            {t('settings.profileSettings')}
           </Typography>
-          
-          <Grid container spacing={3}>
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6">Personal Information</Typography>
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="body1">
-                  <strong>Full Name:</strong> {user.fullName || 'N/A'}
+
+          {user ? (
+            <Grid container spacing={3}>
+              <Grid item xs={12} md={6}>
+                <Typography variant="h6">
+                  {t('settings.personalInformation')}
                 </Typography>
-                <Typography variant="body1">
-                  <strong>Username:</strong> {user.username || 'N/A'}
-                </Typography>
-                <Typography variant="body1">
-                  <strong>Email:</strong> {user.email || 'N/A'}
-                </Typography>
-              </Box>
-            </Grid>
-            
-            <Grid item xs={12} md={6}>
-              <Typography variant="h6">Professional Details</Typography>
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="body1">
-                  <strong>Offshore Role:</strong> {user.offshoreRole || 'Not Specified'}
-                </Typography>
-                <Typography variant="body1">
-                  <strong>Working Regime:</strong> {formatWorkingRegime(user.workingRegime)}
-                </Typography>
-                {user.company && (
+                <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                   <Typography variant="body1">
-                    <strong>Company:</strong> {user.company}
+                    <strong>{t('settings.fullName')}:</strong> {user.fullName || t('settings.notSet')}
                   </Typography>
-                )}
-                {user.unitName && (
                   <Typography variant="body1">
-                    <strong>Unit Name:</strong> {user.unitName}
+                    <strong>{t('settings.username')}:</strong> {user.username || t('settings.notSet')}
                   </Typography>
-                )}
-                <Typography variant="body1" sx={{ color: 'black' }}>
+                  <Typography variant="body1">
+                    <strong>{t('settings.email')}:</strong> {user.email || t('settings.notSet')}
+                  </Typography>
                   {user.country ? (
-                    <Box 
-                      sx={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'space-between',
-                        width: '100%'
-                      }}
-                    >
-                      <Box>
-                        <Typography variant="body1" sx={{ color: 'black' }}>
-                          <strong>Country:</strong> {user.country}
-                        </Typography>
-                      </Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Typography variant="body1">
+                        <strong>{t('settings.country')}:</strong> {t(`countries.${user.country}`)}
+                      </Typography>
                       <ReactCountryFlag
-                        countryCode={getCountryCode(user.country)}
+                        countryCode={user.country}
                         svg
                         style={{
                           width: '2em',
                           height: '1.5em',
                           borderRadius: '4px'
                         }}
-                        title={user.country}
+                        title={t(`countries.${user.country}`)}
                       />
                     </Box>
                   ) : (
-                    'No country selected'
+                    <Typography variant="body1">
+                      <strong>{t('settings.country')}:</strong> {t('settings.noCountrySelected')}
+                    </Typography>
                   )}
+                </Box>
+              </Grid>
+              
+              <Grid item xs={12} md={6}>
+                <Typography variant="h6">
+                  {t('settings.professionalDetails')}
                 </Typography>
-              </Box>
+                <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                  <Typography variant="body1">
+                    <strong>{t('settings.offshoreRole')}:</strong> {
+                      user.offshoreRole 
+                        ? t(`offshoreRoles.${user.offshoreRole.toLowerCase()}`) 
+                        : t('settings.notSet')
+                    }
+                  </Typography>
+                  <Typography variant="body1">
+                    <strong>{t('settings.workingRegime')}:</strong> {
+                      user.workingRegime 
+                        ? `${user.workingRegime.onDutyDays}/${user.workingRegime.offDutyDays}` 
+                        : t('settings.notSet')
+                    }
+                  </Typography>
+                  {user.company && (
+                    <Typography variant="body1">
+                      <strong>{t('settings.company')}:</strong> {user.company}
+                    </Typography>
+                  )}
+                  {user.unitName && (
+                    <Typography variant="body1">
+                      <strong>{t('settings.unitName')}:</strong> {user.unitName}
+                    </Typography>
+                  )}
+                </Box>
+              </Grid>
             </Grid>
-          </Grid>
-          
-          <Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between' }}>
-            <Link href="/edit-profile" underline="none">
-              <Button 
-                variant="contained" 
-                color="primary"
-              >
-                Edit Profile
-              </Button>
-            </Link>
-            
+          ) : (
+            <Typography>{t('settings.loading')}</Typography>
+          )}
+
+          <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between' }}>
             <Button 
               variant="contained" 
-              color="secondary"
-              onClick={handleLogout}
+              color="primary" 
+              onClick={() => navigate('/edit-profile')}
             >
-              Logout
+              {t('settings.editProfile')}
             </Button>
             
             <Button 
               variant="outlined" 
-              color="error"
+              color="error" 
               onClick={() => setShowDeleteConfirm(true)}
             >
-              Delete Account
+              {t('settings.deleteAccount')}
             </Button>
           </Box>
+
+          <Dialog
+            open={showDeleteConfirm}
+            onClose={() => setShowDeleteConfirm(false)}
+            aria-labelledby="alert-dialog-title"
+            aria-describedby="alert-dialog-description"
+          >
+            <DialogTitle id="alert-dialog-title">
+              {t('settings.confirmDeleteAccount')}
+            </DialogTitle>
+            <DialogContent>
+              <DialogContentText id="alert-dialog-description">
+                {t('settings.deleteAccountWarning')}
+              </DialogContentText>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={() => setShowDeleteConfirm(false)} color="primary">
+                {t('settings.cancel')}
+              </Button>
+              <Button onClick={handleDeleteAccount} color="error" autoFocus>
+                {t('settings.confirmDelete')}
+              </Button>
+            </DialogActions>
+          </Dialog>
         </Paper>
-        
-        <Dialog
-          open={showDeleteConfirm}
-          onClose={() => setShowDeleteConfirm(false)}
-        >
-          <DialogTitle>Delete Account</DialogTitle>
-          <DialogContent>
-            <DialogContentText>
-              Are you sure you want to delete your account? This action cannot be undone.
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setShowDeleteConfirm(false)} color="primary">
-              Cancel
-            </Button>
-            <Button onClick={handleDeleteAccount} color="error" autoFocus>
-              Confirm Delete
-            </Button>
-          </DialogActions>
-        </Dialog>
       </Box>
     </Container>
   );

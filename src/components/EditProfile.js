@@ -29,7 +29,7 @@ const EditProfile = () => {
     workingRegime: '28/28', // Default to 28/28
     customOnDutyDays: '',
     customOffDutyDays: '',
-    country: '',
+    country: ['', ''], // Will store [countryCode, countryName]
     company: '',
     unitName: ''
   });
@@ -43,11 +43,12 @@ const EditProfile = () => {
         const response = await axios.get('http://localhost:5000/api/auth/profile', {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
+        
         const { user } = response.data;
         
         // Find the country name for the fetched country code
         const countryObj = OFFSHORE_COUNTRIES.find(c => c.code === user.country);
-        const countryName = countryObj ? countryObj.name : user.country;
+        const countryName = countryObj ? t(`countries.${user.country}`) : user.country;
 
         // Handle working regime conversion
         let workingRegimeDisplay = '28/28'; // Default
@@ -86,13 +87,12 @@ const EditProfile = () => {
           workingRegime: workingRegimeDisplay,
           customOnDutyDays: customOnDutyDays,
           customOffDutyDays: customOffDutyDays,
-          country: countryName || '',
+          country: [user.country, countryName], // Store as [code, translated name]
           company: user.company || '',
           unitName: user.unitName || ''
         });
       } catch (error) {
         console.error('Error fetching profile:', error);
-        // Optionally show an error message to the user
       }
     };
 
@@ -102,14 +102,20 @@ const EditProfile = () => {
   useEffect(() => {
     // Update country name when language changes
     const updateCountryName = () => {
-      if (formData.country) {
-        const countryObj = OFFSHORE_COUNTRIES.find(c => c.name === formData.country);
+      if (formData.country[0]) {
+        // Find the country object by its current code
+        const countryObj = OFFSHORE_COUNTRIES.find(c => c.code === formData.country[0]);
+
         if (countryObj) {
           const translatedCountryName = t(`countries.${countryObj.code}`);
-          setFormData(prevState => ({
-            ...prevState,
-            country: translatedCountryName
-          }));
+          
+          // Only update if the translated name is different from the current name
+          if (translatedCountryName.toLowerCase() !== formData.country[1].toLowerCase()) {
+            setFormData(prevState => ({
+              ...prevState,
+              country: [prevState.country[0], translatedCountryName]
+            }));
+          }
         }
       }
     };
@@ -128,7 +134,7 @@ const EditProfile = () => {
     return () => {
       i18n.off('languageChanged', languageChangeHandler);
     };
-  }, [formData.country, i18n.language]);
+  }, [formData.country[0], i18n.language, t]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -137,7 +143,7 @@ const EditProfile = () => {
     if (!formData.username) newErrors.username = t('register.errors.requiredField');
     if (!formData.email) newErrors.email = t('register.errors.requiredField');
     if (!formData.offshoreRole) newErrors.offshoreRole = t('register.errors.requiredField');
-    if (!formData.country) newErrors.country = t('register.errors.requiredField');
+    if (!formData.country[0]) newErrors.country = t('register.errors.requiredField');
 
     if (formData.workingRegime === 'custom') {
       const onDutyDays = parseInt(formData.customOnDutyDays, 10);
@@ -230,8 +236,7 @@ const EditProfile = () => {
         workingRegime: finalWorkingRegime,
         company: formData.company.trim() || null,
         unitName: formData.unitName.trim() || null,
-        // Convert country name to country code if needed
-        country: OFFSHORE_COUNTRIES.find(c => c.name === formData.country)?.code || formData.country
+        country: formData.country[0] // Use country code for submission
       };
 
       // Remove custom working regime inputs from submitted data
@@ -376,15 +381,27 @@ const EditProfile = () => {
               <InputLabel>{t('register.country')}</InputLabel>
               <Select
                 name="country"
-                value={formData.country}
+                value={formData.country[1]} // Use country name for display
                 label={t('register.country')}
-                onChange={handleChange}
+                onChange={(e) => {
+                  // Find the corresponding country object
+                  const selectedCountry = translatedCountries.find(c => 
+                    t(`countries.${c.code}`) === e.target.value
+                  );
+                  
+                  if (selectedCountry) {
+                    setFormData(prev => ({
+                      ...prev,
+                      country: [selectedCountry.code, t(`countries.${selectedCountry.code}`)]
+                    }));
+                  }
+                }}
                 error={!!errors.country}
               >
                 <MenuItem value="">Select Country</MenuItem>
                 {translatedCountries.map(country => (
-                  <MenuItem key={country.code} value={country.name}>
-                    {country.name}
+                  <MenuItem key={country.code} value={t(`countries.${country.code}`)}>
+                    {t(`countries.${country.code}`)}
                   </MenuItem>
                 ))}
               </Select>

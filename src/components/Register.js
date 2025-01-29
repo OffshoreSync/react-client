@@ -19,7 +19,7 @@ import { OFFSHORE_COUNTRIES, getTranslatedCountries } from '../utils/countries';
 import { OFFSHORE_ROLES, getTranslatedRoles } from '../utils/offshoreRoles';
 
 const Register = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const location = useLocation();
   const [isGoogleLogin, setIsGoogleLogin] = useState(false);
   const [googleUserData, setGoogleUserData] = useState(null);
@@ -35,9 +35,19 @@ const Register = () => {
     customOffDutyDays: '',
     company: '',
     unitName: '',
-    country: ''
+    country: ['', ''] // Store as [countryCode, countryName]
   });
   const [error, setError] = useState('');
+  const [errors, setErrors] = useState({
+    username: '',
+    email: '',
+    password: '',
+    fullName: '',
+    offshoreRole: '',
+    country: '',
+    workingRegime: '',
+    customWorkingRegime: ''
+  });
 
   const navigate = useNavigate();
 
@@ -72,6 +82,43 @@ const Register = () => {
     }
   }, [location.state]);
 
+  useEffect(() => {
+    // Update country name when language changes
+    const updateCountryName = () => {
+      if (formData.country[0]) {
+        // Find the country object by its current code
+        const countryObj = OFFSHORE_COUNTRIES.find(c => c.code === formData.country[0]);
+
+        if (countryObj) {
+          const translatedCountryName = t(`countries.${countryObj.code}`);
+          
+          // Only update if the translated name is different from the current name
+          if (translatedCountryName.toLowerCase() !== formData.country[1].toLowerCase()) {
+            setFormData(prevState => ({
+              ...prevState,
+              country: [prevState.country[0], translatedCountryName]
+            }));
+          }
+        }
+      }
+    };
+
+    // Initial translation
+    updateCountryName();
+
+    // Optional: Add event listener for language changes if needed
+    const languageChangeHandler = () => {
+      updateCountryName();
+    };
+
+    i18n.on('languageChanged', languageChangeHandler);
+
+    // Cleanup
+    return () => {
+      i18n.off('languageChanged', languageChangeHandler);
+    };
+  }, [formData.country[0], i18n.language, t]);
+
   const onChange = e => {
     // Disable changes if Google login
     if (isGoogleLogin && e.target.name !== 'password' && e.target.name !== 'offshoreRole' && e.target.name !== 'workingRegime' && e.target.name !== 'customOnDutyDays' && e.target.name !== 'customOffDutyDays' && e.target.name !== 'company' && e.target.name !== 'unitName' && e.target.name !== 'country') {
@@ -99,68 +146,98 @@ const Register = () => {
       };
     });
     setError(''); // Clear error when user starts typing
+    setErrors(prevState => ({ ...prevState, [name]: '' }));
   };
 
-  const onSubmit = async e => {
-    e.preventDefault();
-    try {
-      // Determine working regime
-      let finalWorkingRegime;
-      if (workingRegime === 'custom') {
-        const onDutyDays = parseInt(customOnDutyDays, 10);
-        const offDutyDays = parseInt(customOffDutyDays, 10);
+  const validateForm = () => {
+    const newErrors = {};
 
-        // Validate custom working regime
-        if (isNaN(onDutyDays) || isNaN(offDutyDays)) {
-          setError(t('register.errors.invalidWorkingRegime'));
-          return;
-        }
+    if (!username) newErrors.username = t('register.errors.requiredField');
+    if (!email) newErrors.email = t('register.errors.requiredField');
+    if (!password) newErrors.password = t('register.errors.requiredField');
+    if (!fullName) newErrors.fullName = t('register.errors.requiredField');
+    if (!offshoreRole) newErrors.offshoreRole = t('register.errors.requiredField');
+    if (!formData.country[0]) newErrors.country = t('register.errors.requiredField');
 
-        if (onDutyDays < 7 || offDutyDays < 7) {
-          setError(t('register.errors.minimumWorkingDays'));
-          return;
-        }
+    if (workingRegime === 'custom') {
+      const onDutyDays = parseInt(customOnDutyDays, 10);
+      const offDutyDays = parseInt(customOffDutyDays, 10);
 
-        if (onDutyDays + offDutyDays > 365) {
-          setError(t('register.errors.maximumWorkingDays'));
-          return;
-        }
-
-        finalWorkingRegime = { 
-          onDutyDays, 
-          offDutyDays 
-        };
+      if (isNaN(onDutyDays) || isNaN(offDutyDays)) {
+        newErrors.customWorkingRegime = t('register.errors.invalidWorkingRegime');
       } else {
-        // Predefined regimes
-        const [onDutyDays, offDutyDays] = workingRegime.split('/').map(Number);
-        finalWorkingRegime = { 
-          onDutyDays, 
-          offDutyDays 
-        };
+        if (onDutyDays < 7 || offDutyDays < 7) {
+          newErrors.customWorkingRegime = t('register.errors.minimumWorkingDays');
+        }
+        if (onDutyDays + offDutyDays > 365) {
+          newErrors.customWorkingRegime = t('register.errors.maximumWorkingDays');
+        }
+      }
+    }
+
+    setError(Object.keys(newErrors).length > 0 ? t('register.errors.formError') : '');
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Validate form
+    if (!validateForm()) return;
+
+    // Determine working regime
+    let finalWorkingRegime;
+    if (workingRegime === 'custom') {
+      const onDutyDays = parseInt(customOnDutyDays, 10);
+      const offDutyDays = parseInt(customOffDutyDays, 10);
+
+      // Validate custom working regime
+      if (isNaN(onDutyDays) || isNaN(offDutyDays)) {
+        setError(t('register.errors.invalidWorkingRegime'));
+        return;
       }
 
-      // Remove empty strings for optional fields
+      finalWorkingRegime = { 
+        onDutyDays, 
+        offDutyDays 
+      };
+    } else {
+      // Predefined regimes
+      const [onDutyDays, offDutyDays] = workingRegime.split('/').map(Number);
+      finalWorkingRegime = { 
+        onDutyDays, 
+        offDutyDays 
+      };
+    }
+
+    try {
+      // Prepare data for submission
       const submitData = {
-        ...formData,
+        username,
+        email,
+        password,
+        fullName,
+        offshoreRole,
         workingRegime: finalWorkingRegime,
         company: company.trim() || null,
-        unitName: unitName.trim() || null
+        unitName: unitName.trim() || null,
+        country: formData.country[0] // Use country code for submission
       };
 
       // Remove custom working regime inputs from submitted data
       delete submitData.customOnDutyDays;
       delete submitData.customOffDutyDays;
 
-      const res = await axios.post('http://localhost:5000/api/auth/register', {
-        ...submitData,
-        googleLogin: isGoogleLogin
-      });
-      
-      // Store user token and info in localStorage
-      localStorage.setItem('token', res.data.token);
-      localStorage.setItem('user', JSON.stringify(res.data.user));
+      // Determine registration method
+      const registrationEndpoint = isGoogleLogin 
+        ? 'http://localhost:5000/api/auth/google-register'
+        : 'http://localhost:5000/api/auth/register';
 
-      // Redirect to dashboard or main app page
+      const response = await axios.post(registrationEndpoint, submitData);
+
+      // Handle successful registration
+      localStorage.setItem('token', response.data.token);
       navigate('/dashboard');
     } catch (err) {
       setError(err.response?.data?.message || t('register.errors.registrationFailed'));
@@ -180,7 +257,7 @@ const Register = () => {
           </Alert>
         )}
 
-        <Box component="form" onSubmit={onSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         <TextField
             fullWidth
             label={t('register.username')}
@@ -193,6 +270,8 @@ const Register = () => {
             InputProps={{
               readOnly: isGoogleLogin
             }}
+            error={!!errors.username}
+            helperText={errors.username}
           />
 
           <TextField
@@ -207,6 +286,8 @@ const Register = () => {
             InputProps={{
               readOnly: isGoogleLogin
             }}
+            error={!!errors.email}
+            helperText={errors.email}
           />
           
           <TextField
@@ -221,6 +302,8 @@ const Register = () => {
             InputProps={{
               readOnly: isGoogleLogin
             }}
+            error={!!errors.fullName}
+            helperText={errors.fullName}
           />
           
           <TextField
@@ -233,6 +316,8 @@ const Register = () => {
             required
             variant="outlined"
             inputProps={{ minLength: 6 }}
+            error={!!errors.password}
+            helperText={errors.password}
           />
           
           <FormControl fullWidth required sx={{ mb: 2 }}>
@@ -243,6 +328,7 @@ const Register = () => {
               label={t('register.offshoreRole')}
               onChange={onChange}
               required
+              error={!!errors.offshoreRole}
             >
               {getTranslatedRoles().map((role, index) => (
                 <MenuItem key={OFFSHORE_ROLES[index]} value={OFFSHORE_ROLES[index]}>
@@ -250,6 +336,7 @@ const Register = () => {
                 </MenuItem>
               ))}
             </Select>
+            {errors.offshoreRole && <div style={{ color: 'red' }}>{errors.offshoreRole}</div>}
           </FormControl>
           
           <FormControl fullWidth required sx={{ mb: 2 }}>
@@ -259,12 +346,14 @@ const Register = () => {
               value={workingRegime}
               label={t('register.workingRegime')}
               onChange={onChange}
+              error={!!errors.workingRegime}
             >
               <MenuItem value="7/7">7/7</MenuItem>
               <MenuItem value="14/14">14/14</MenuItem>
               <MenuItem value="28/28">28/28</MenuItem>
               <MenuItem value="custom">{t('register.customRegime')}</MenuItem>
             </Select>
+            {errors.workingRegime && <div style={{ color: 'red' }}>{errors.workingRegime}</div>}
           </FormControl>
           
           {workingRegime === 'custom' && (
@@ -279,6 +368,8 @@ const Register = () => {
                 inputProps={{ min: 7, max: 365 }}
                 required
                 variant="outlined"
+                error={!!errors.customWorkingRegime}
+                helperText={errors.customWorkingRegime}
               />
               <TextField
                 fullWidth
@@ -290,6 +381,8 @@ const Register = () => {
                 inputProps={{ min: 7, max: 365 }}
                 required
                 variant="outlined"
+                error={!!errors.customWorkingRegime}
+                helperText={errors.customWorkingRegime}
               />
             </Box>
           )}
@@ -314,17 +407,31 @@ const Register = () => {
             <InputLabel>{t('register.country')}</InputLabel>
             <Select
               name="country"
-              value={country}
+              value={formData.country[1]} // Use country name for display
               label={t('register.country')}
-              onChange={onChange}
+              onChange={(e) => {
+                // Find the corresponding country object
+                const selectedCountry = getTranslatedCountries().find(c => 
+                  t(`countries.${c.code}`) === e.target.value
+                );
+                
+                if (selectedCountry) {
+                  setFormData(prev => ({
+                    ...prev,
+                    country: [selectedCountry.code, t(`countries.${selectedCountry.code}`)]
+                  }));
+                }
+              }}
+              error={!!errors.country}
             >
               <MenuItem value="">Select Country</MenuItem>
               {getTranslatedCountries().map(country => (
-                <MenuItem key={country.code} value={country.name}>
-                  {country.name}
+                <MenuItem key={country.code} value={t(`countries.${country.code}`)}>
+                  {t(`countries.${country.code}`)}
                 </MenuItem>
               ))}
             </Select>
+            {errors.country && <div style={{ color: 'red' }}>{errors.country}</div>}
           </FormControl>
           
           <Button 
