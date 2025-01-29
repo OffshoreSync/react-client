@@ -203,14 +203,16 @@ const Dashboard = () => {
   const calendarEvents = useMemo(() => generateCalendarEvents(user, t), [user, t]);
 
   useEffect(() => {
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || 'null');
+
+    if (!token || !user) {
+      navigate('/');
+      return;
+    }
+
     const checkAuth = async () => {
       try {
-        const token = localStorage.getItem('token');
-        if (!token) {
-          navigate('/login');
-          return;
-        }
-
         const response = await axios.get(getBackendUrl('/api/auth/profile'), {
           headers: { Authorization: `Bearer ${token}` }
         });
