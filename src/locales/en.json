@@ -159,6 +159,29 @@
       "pt": "Portuguese"
     }
   },
+  "sync": {
+    "title": "Off Board Periods Sync",
+    "subtitle": "Visualize and compare Off Board periods across team members. Select multiple users to see when everyone is simultaneously off board.",
+    "createCommonEvent": "Create Common Event ({{count}})",
+    "syncSuccessMessage": "Sync completed successfully",
+    "defaultSyncError": "An error occurred during sync",
+    "individualSyncSuccess": "Successfully synced worker {{name}}",
+    "individualSyncError": "Failed to sync individual worker",
+    "findMatchingPeriods": "Find Matching Periods",
+    "exportCommonDates": "Export Common Dates",
+    "commonOffBoardDates": "Common Off-Board Dates",
+    "selectDate": "Select Date",
+    "eventSummary": "Event Summary",
+    "eventDescription": "Event Description (Optional)",
+    "enterEventSummary": "Enter event summary",
+    "enterEventDescription": "Enter event description",
+    "createOffBoardDayEvent": "Create Off Board Day Event",
+    "loginWithGoogleToCreateEvent": "Login with Google to Create Event",
+    "noCommonOffBoardDatesFound": "No common off-board dates found.",
+    "close": "Close",
+    "completeYourProfile": "Complete your profile",
+    "updateProfile": "Update Profile"
+  },
   "countries": {
     "US": "United States",
     "BR": "Brazil", 

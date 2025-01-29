@@ -187,5 +187,28 @@
     "operations": "Operaciones",
     "safety": "Seguridad",
     "bridge": "Puente"
+  },
+  "sync": {
+    "title": "Sincronización de Períodos Offshore",
+    "subtitle": "Visualice y compare períodos Offshore entre miembros del equipo. Seleccione múltiples usuarios para ver cuándo todos están simultáneamente fuera de servicio.",
+    "createCommonEvent": "Crear Evento Común ({{count}})",
+    "syncSuccessMessage": "Sincronización completada con éxito",
+    "defaultSyncError": "Ocurrió un error durante la sincronización",
+    "individualSyncSuccess": "Trabajador {{name}} sincronizado exitosamente",
+    "individualSyncError": "Error al sincronizar trabajador individual",
+    "findMatchingPeriods": "Encontrar Períodos Coincidentes",
+    "exportCommonDates": "Exportar Fechas Comunes",
+    "commonOffBoardDates": "Fechas Comunes Offshore",
+    "selectDate": "Seleccionar Fecha",
+    "eventSummary": "Resumen del Evento",
+    "eventDescription": "Descripción del Evento (Opcional)",
+    "enterEventSummary": "Ingrese el resumen del evento",
+    "enterEventDescription": "Ingrese la descripción del evento",
+    "createOffBoardDayEvent": "Crear Evento de Día Offshore",
+    "loginWithGoogleToCreateEvent": "Iniciar sesión con Google para crear evento",
+    "noCommonOffBoardDatesFound": "No se encontraron fechas comunes offshore.",
+    "close": "Cerrar",
+    "completeYourProfile": "Complete su perfil",
+    "updateProfile": "Actualizar Perfil"
   }
 }

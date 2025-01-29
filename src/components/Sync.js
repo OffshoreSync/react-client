@@ -7,8 +7,7 @@ import {
   MenuItem, 
   FormControl, 
   InputLabel, 
-  Button, 
-  Grid,
+  Button,
   useMediaQuery,
   useTheme,
   Snackbar,
@@ -16,11 +15,7 @@ import {
   Chip,
   Card,
   CardContent,
-  Slider,
   Modal,
-  List,
-  ListItem,
-  ListItemText,
   TextField
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
@@ -39,7 +34,8 @@ import {
 } from 'recharts';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import { GoogleLogin, useGoogleLogin } from '@react-oauth/google';
+import { useGoogleLogin } from '@react-oauth/google';
+import { useTranslation } from 'react-i18next';
 
 // Utility function to format dates consistently
 const formatDate = (date) => {
@@ -126,53 +122,8 @@ const generateColorPalette = (numUsers) => {
   return materialColors.slice(0, numUsers);
 };
 
-// Custom Material Design tooltip
-const CustomTooltip = ({ active, payload, label }) => {
-  if (active && payload && payload.length) {
-    return (
-      <Card 
-        elevation={4} 
-        sx={{ 
-          backgroundColor: 'rgba(255, 255, 255, 0.95)', 
-          borderRadius: 2, 
-          p: 2 
-        }}
-      >
-        <CardContent>
-          <Typography variant="h6" color="text.primary" gutterBottom>
-            {label}
-          </Typography>
-          {payload.map((entry, index) => (
-            <Box 
-              key={`item-${index}`} 
-              sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
-                mb: 1 
-              }}
-            >
-              <Box 
-                sx={{ 
-                  width: 12, 
-                  height: 12, 
-                  borderRadius: '50%', 
-                  backgroundColor: entry.color, 
-                  mr: 1 
-                }} 
-              />
-              <Typography variant="body2" color="text.secondary">
-                {entry.name}: {entry.value === 1 ? 'Off Board' : 'On Board'}
-              </Typography>
-            </Box>
-          ))}
-        </CardContent>
-      </Card>
-    );
-  }
-  return null;
-};
-
 const Sync = () => {
+  const { t } = useTranslation();
   const [availableUsers, setAvailableUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [graphData, setGraphData] = useState([]);
@@ -302,11 +253,6 @@ const Sync = () => {
 
   // State for dates modal
   const [isDateModalOpen, setIsDateModalOpen] = useState(false);
-
-  // Function to open dates modal
-  const handleOpenDateModal = () => {
-    setIsDateModalOpen(true);
-  };
 
   // Function to close dates modal
   const handleCloseDateModal = () => {
@@ -471,50 +417,6 @@ const Sync = () => {
     }
   };
 
-  const handleSaveWorkCycle = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const userId = JSON.parse(localStorage.getItem('user')).id;
-
-      const response = await axios.post(
-        'http://localhost:5000/api/auth/generate-work-cycles', 
-        { 
-          userId, 
-          workCycles: extractCommonOffBoardDates 
-        },
-        {
-          headers: { 
-            Authorization: `Bearer ${token}` 
-          }
-        }
-      );
-
-      // Existing success handling
-      setSnackbarMessage('Work cycles saved successfully!');
-      setSnackbarSeverity('success');
-      setSnackbarOpen(true);
-
-      // Check if user is a Google user and schedule profile toast
-      const user = JSON.parse(localStorage.getItem('user'));
-      console.log('User data:', user);
-      console.log('Is Google User:', user?.isGoogleUser);
-
-      if (user && user.isGoogleUser) {
-        console.log('Scheduling profile toast');
-        // Schedule profile toast after the current snackbar closes
-        setTimeout(() => {
-          console.log('Setting profile toast to true');
-          setOpenProfileToast(true);
-        }, 6500); // Slightly longer than default snackbar duration
-      }
-    } catch (error) {
-      console.error('Error saving work cycles:', error);
-      setSnackbarMessage('Failed to save work cycles');
-      setSnackbarSeverity('error');
-      setSnackbarOpen(true);
-    }
-  };
-
   return (
     <Container maxWidth="lg">
       <Box sx={{ my: { xs: 2, md: 4 } }}>
@@ -534,7 +436,7 @@ const Sync = () => {
             }}
           >
             <Typography variant="h4" gutterBottom sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
-              Off Board Periods Sync
+              {t('sync.title')}
             </Typography>
             <Typography 
               variant="subtitle1" 
@@ -545,7 +447,7 @@ const Sync = () => {
                 mx: 'auto'
               }}
             >
-              Visualize and compare Off Board periods across team members. Select multiple users to see when everyone is simultaneously off board.
+              {t('sync.subtitle')}
             </Typography>
           </CardContent>
         </Card>
@@ -680,7 +582,7 @@ const Sync = () => {
             fontSize: { xs: '0.875rem', md: '1rem' }
           }}
         >
-          Find Matching Periods
+          {t('sync.findMatchingPeriods')}
         </Button>
 
         {selectedUsers.length > 1 && (
@@ -708,7 +610,7 @@ const Sync = () => {
               disabled={extractCommonOffBoardDates.length === 0}
               startIcon={<EventIcon />}
             >
-              Export Common Dates ({extractCommonOffBoardDates.length})
+              {t('sync.exportCommonDates', { count: extractCommonOffBoardDates.length })}
             </Button>
           </Box>
         )}
@@ -835,7 +737,7 @@ const Sync = () => {
       >
         <Box sx={modalStyle}>
           <Typography id="common-dates-modal" variant="h6" component="h2" gutterBottom>
-            Common Off-Board Dates
+            {t('sync.commonOffBoardDates')}
           </Typography>
           
           {extractCommonOffBoardDates.length > 0 ? (
@@ -846,7 +748,7 @@ const Sync = () => {
               width: '100%' 
             }}>
               <FormControl fullWidth>
-                <InputLabel id="common-dates-select-label">Select Date</InputLabel>
+                <InputLabel id="common-dates-select-label">{t('sync.selectDate')}</InputLabel>
                 <Select
                   labelId="common-dates-select-label"
                   id="common-dates-select"
@@ -873,22 +775,22 @@ const Sync = () => {
                     <>
                       <TextField
                         fullWidth
-                        label="Event Summary"
+                        label={t('sync.eventSummary')}
                         name="summary"
                         value={eventDetails.summary}
                         onChange={handleEventDetailsChange}
                         required
-                        placeholder="Enter event summary"
+                        placeholder={t('sync.enterEventSummary')}
                       />
                       <TextField
                         fullWidth
-                        label="Event Description (Optional)"
+                        label={t('sync.eventDescription')}
                         name="description"
                         value={eventDetails.description}
                         onChange={handleEventDetailsChange}
                         multiline
                         rows={3}
-                        placeholder="Enter event description"
+                        placeholder={t('sync.enterEventDescription')}
                       />
                       <Button
                         variant="contained"
@@ -899,7 +801,7 @@ const Sync = () => {
                         }}
                         disabled={!eventDetails.summary.trim()}
                       >
-                        Create Off Board Day Event
+                        {t('sync.createOffBoardDayEvent')}
                       </Button>
                     </>
                   ) : (
@@ -908,7 +810,7 @@ const Sync = () => {
                       color="primary"
                       onClick={handleGoogleLogin}
                     >
-                      Login with Google to Create Event
+                      {t('sync.loginWithGoogleToCreateEvent')}
                     </Button>
                   )}
                 </Box>
@@ -916,12 +818,12 @@ const Sync = () => {
             </Box>
           ) : (
             <Typography variant="body2" color="text.secondary">
-              No common off-board dates found.
+              {t('sync.noCommonOffBoardDatesFound')}
             </Typography>
           )}
           
           <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
-            <Button onClick={handleCloseDateModal}>Close</Button>
+            <Button onClick={handleCloseDateModal}>{t('sync.close')}</Button>
           </Box>
         </Box>
       </Modal>
@@ -944,14 +846,14 @@ const Sync = () => {
         autoHideDuration={6000}
         onClose={() => setOpenProfileToast(false)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        message="Complete your profile"
+        message={t('sync.completeYourProfile')}
         action={
           <Button 
             color="secondary" 
             size="small" 
             onClick={handleGoToSettings}
           >
-            Update Profile
+            {t('sync.updateProfile')}
           </Button>
         }
       />
