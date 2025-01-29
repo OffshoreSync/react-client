@@ -1,6 +1,7 @@
 {
   "common": {
     "appName": "Offshore Worker Management",
+    "home": "Home",
     "login": "Login",
     "logout": "Logout",
     "register": "Register",

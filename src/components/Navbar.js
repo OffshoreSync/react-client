@@ -62,6 +62,7 @@ function Navbar() {
     { text: t('common.settings'), icon: <SettingsIcon />, onClick: () => handleNavigation('/settings') },
     { text: t('common.logout'), icon: <LogoutIcon />, onClick: handleLogout }
   ] : [
+    { text: t('common.home'), icon: <HomeIcon />, onClick: () => handleNavigation('/') },
     { text: t('common.login'), icon: <PersonIcon />, onClick: () => handleNavigation('/login') }
   ];
 

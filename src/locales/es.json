@@ -1,6 +1,7 @@
 {
   "common": {
     "appName": "Gestión de Trabajadores Offshore",
+    "home": "Inicio",
     "login": "Iniciar Sesión",
     "logout": "Cerrar Sesión",
     "register": "Registrarse",
