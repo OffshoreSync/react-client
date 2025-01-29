@@ -9,7 +9,7 @@ import './i18n';
 import { useTranslation } from 'react-i18next';
 
 import Navbar from './components/Navbar';
-import Home from './pages/Home';
+import Home from './components/Home';
 import Login from './components/Login';
 import Register from './components/Register';
 import Dashboard from './components/Dashboard';
