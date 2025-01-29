@@ -39,6 +39,9 @@ import { styled } from '@mui/material/styles';
 // Import translation hook
 import { useTranslation } from 'react-i18next';
 
+// Import getBackendUrl
+import getBackendUrl from '../utils/apiUtils';
+
 // Custom styled calendar to match Material-UI theme
 const StyledCalendar = styled(FullCalendar)`
   width: 350px !important;
@@ -208,7 +211,7 @@ const Dashboard = () => {
           return;
         }
 
-        const response = await axios.get('http://localhost:5000/api/auth/profile', {
+        const response = await axios.get(getBackendUrl('/api/auth/profile'), {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -241,7 +244,7 @@ const Dashboard = () => {
         if (!userWithFullData.workCycles || userWithFullData.workCycles.length === 0) {
           try {
             const cyclesResponse = await axios.post(
-              'http://localhost:5000/api/auth/generate-work-cycles',
+              getBackendUrl('/api/auth/generate-work-cycles'),
               {},
               {
                 headers: {
@@ -330,7 +333,7 @@ const Dashboard = () => {
       
       // Call backend API to set On Board date
       const response = await axios.put(
-        'http://localhost:5000/api/auth/set-onboard-date', 
+        getBackendUrl('/api/auth/set-onboard-date'), 
         { nextOnBoardDate: date },
         {
           headers: {
@@ -344,7 +347,7 @@ const Dashboard = () => {
 
       // Generate work cycles
       const cyclesResponse = await axios.post(
-        'http://localhost:5000/api/auth/generate-work-cycles',
+        getBackendUrl('/api/auth/generate-work-cycles'),
         {},
         {
           headers: {
@@ -399,7 +402,7 @@ const Dashboard = () => {
       const token = localStorage.getItem('token');
       
       const response = await axios.put(
-        'http://localhost:5000/api/auth/reset-next-onboard-date', 
+        getBackendUrl('/api/auth/reset-next-onboard-date'), 
         {}, 
         {
           headers: {

@@ -36,6 +36,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useTranslation } from 'react-i18next';
+import getBackendUrl from '../utils/apiUtils';
 
 // Utility function to format dates consistently
 const formatDate = (date) => {
@@ -154,7 +155,7 @@ const Sync = () => {
           return;
         }
 
-        const response = await axios.get('http://localhost:5000/api/auth/all-users', {
+        const response = await axios.get(getBackendUrl('/api/auth/all-users'), {
           headers: { Authorization: `Bearer ${token}` }
         });
 
@@ -316,7 +317,7 @@ const Sync = () => {
       };
 
       const response = await axios.post(
-        'https://www.googleapis.com/calendar/v3/calendars/primary/events',
+        getBackendUrl('https://www.googleapis.com/calendar/v3/calendars/primary/events'),
         event,
         {
           headers: {
@@ -377,10 +378,9 @@ const Sync = () => {
       
       // Fetch work cycles for selected users
       const cyclesPromises = selectedUsers.map(async (userId) => {
-        const response = await axios.get(
-          `http://localhost:5000/api/auth/user-work-cycles/${userId}`, 
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        const response = await axios.get(getBackendUrl(`/api/auth/user-work-cycles/${userId}`), {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         return response.data.workCycles;
       });
 

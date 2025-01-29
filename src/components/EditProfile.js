@@ -17,6 +17,7 @@ import {
 
 import { OFFSHORE_COUNTRIES, getTranslatedCountries } from '../utils/countries';
 import { OFFSHORE_ROLES, getTranslatedRoles } from '../utils/offshoreRoles';
+import getBackendUrl from '../utils/apiUtils';
 
 const EditProfile = () => {
   const { t, i18n } = useTranslation();
@@ -40,7 +41,7 @@ const EditProfile = () => {
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        const response = await axios.get('http://localhost:5000/api/auth/profile', {
+        const response = await axios.get(getBackendUrl('/api/auth/profile'), {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
         
@@ -243,7 +244,7 @@ const EditProfile = () => {
       delete submitData.customOnDutyDays;
       delete submitData.customOffDutyDays;
 
-      const response = await axios.put('http://localhost:5000/api/auth/update-profile', submitData, {
+      const response = await axios.put(getBackendUrl('/api/auth/update-profile'), submitData, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
 

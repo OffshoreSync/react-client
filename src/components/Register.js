@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
+import getBackendUrl from '../utils/apiUtils';
 import { 
   Container, 
   Typography, 
@@ -231,8 +232,8 @@ const Register = () => {
 
       // Determine registration method
       const registrationEndpoint = isGoogleLogin 
-        ? 'http://localhost:5000/api/auth/google-register'
-        : 'http://localhost:5000/api/auth/register';
+        ? getBackendUrl('/api/auth/google-register')
+        : getBackendUrl('/api/auth/register');
 
       const response = await axios.post(registrationEndpoint, submitData);
 

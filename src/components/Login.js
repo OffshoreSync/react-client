@@ -16,6 +16,7 @@ import { GoogleLogin } from '@react-oauth/google';
 
 // Import translation hook
 import { useTranslation } from 'react-i18next';
+import getBackendUrl from '../utils/apiUtils';
 
 const Login = () => {
   const { t } = useTranslation(); // Add translation hook
@@ -39,10 +40,13 @@ const Login = () => {
     setError('');
 
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', {
-        username,
-        password
-      });
+      const response = await axios.post(
+        getBackendUrl('/api/auth/login'), 
+        {
+          username,
+          password
+        }
+      );
 
       // Log the entire response for debugging
       console.log('Login Response:', JSON.stringify(response.data, null, 2));
@@ -85,9 +89,12 @@ const Login = () => {
   const handleGoogleLogin = async (credentialResponse) => {
     try {
       // Send full Google token to backend for verification
-      const response = await axios.post('http://localhost:5000/api/auth/google-login', {
-        googleToken: credentialResponse.credential
-      });
+      const response = await axios.post(
+        getBackendUrl('/api/auth/google-login'), 
+        {
+          googleToken: credentialResponse.credential
+        }
+      );
 
       // Log the entire response for debugging
       console.log('Google Login Response:', JSON.stringify(response.data, null, 2));

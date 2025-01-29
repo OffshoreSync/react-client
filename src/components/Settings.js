@@ -18,6 +18,7 @@ import {
 } from '@mui/material';
 import { getCountryCode } from '../utils/countries';
 import { useTranslation } from 'react-i18next';
+import getBackendUrl from '../utils/apiUtils';
 
 const Settings = () => {
   const [user, setUser] = useState(null);
@@ -87,11 +88,14 @@ const Settings = () => {
     try {
       const token = localStorage.getItem('token');
       
-      await axios.delete('http://localhost:5000/api/auth/delete-account', {
-        headers: {
-          'Authorization': `Bearer ${token}`
+      await axios.delete(
+        getBackendUrl('/api/auth/delete-account'), 
+        { 
+          headers: { 
+            Authorization: `Bearer ${token}` 
+          } 
         }
-      });
+      );
 
       // Clear local storage and redirect
       localStorage.removeItem('token');
