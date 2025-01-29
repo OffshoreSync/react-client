@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import { 
   Container, 
@@ -18,6 +19,7 @@ import { OFFSHORE_COUNTRIES } from '../utils/countries';
 import { OFFSHORE_ROLES } from '../utils/offshoreRoles';
 
 const Register = () => {
+  const { t } = useTranslation();
   const location = useLocation();
   const [isGoogleLogin, setIsGoogleLogin] = useState(false);
   const [googleUserData, setGoogleUserData] = useState(null);
@@ -110,17 +112,17 @@ const Register = () => {
 
         // Validate custom working regime
         if (isNaN(onDutyDays) || isNaN(offDutyDays)) {
-          setError('Please enter valid numbers for On and Off Duty days');
+          setError(t('register.errors.invalidWorkingRegime'));
           return;
         }
 
         if (onDutyDays < 7 || offDutyDays < 7) {
-          setError('On and Off Duty days must be at least 7');
+          setError(t('register.errors.minimumWorkingDays'));
           return;
         }
 
         if (onDutyDays + offDutyDays > 365) {
-          setError('Total On and Off Duty days must not exceed 365');
+          setError(t('register.errors.maximumWorkingDays'));
           return;
         }
 
@@ -161,7 +163,7 @@ const Register = () => {
       // Redirect to dashboard or main app page
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Registration failed. Please try again.');
+      setError(err.response?.data?.message || t('register.errors.registrationFailed'));
     }
   };
 
@@ -169,7 +171,7 @@ const Register = () => {
     <Container maxWidth="sm">
       <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
         <Typography variant="h4" gutterBottom align="center">
-          {isGoogleLogin ? 'Complete Your Profile' : 'Offshore Worker Registration'}
+          {isGoogleLogin ? t('register.completeProfile') : t('register.title')}
         </Typography>
 
         {error && (
@@ -181,7 +183,7 @@ const Register = () => {
         <Box component="form" onSubmit={onSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <TextField
             fullWidth
-            label="Email Address"
+            label={t('register.emailAddress')}
             name="email"
             value={email}
             onChange={onChange}
@@ -195,7 +197,7 @@ const Register = () => {
           
           <TextField
             fullWidth
-            label="Full Name"
+            label={t('register.fullName')}
             name="fullName"
             value={fullName}
             onChange={onChange}
@@ -209,7 +211,7 @@ const Register = () => {
           
           <TextField
             fullWidth
-            label="Username"
+            label={t('register.username')}
             name="username"
             value={username}
             onChange={onChange}
@@ -224,7 +226,7 @@ const Register = () => {
           <TextField
             fullWidth
             type="password"
-            label="Password"
+            label={t('register.password')}
             name="password"
             value={password}
             onChange={onChange}
@@ -234,11 +236,11 @@ const Register = () => {
           />
           
           <FormControl fullWidth required sx={{ mb: 2 }}>
-            <InputLabel>Offshore Role</InputLabel>
+            <InputLabel>{t('register.offshoreRole')}</InputLabel>
             <Select
               name="offshoreRole"
               value={offshoreRole}
-              label="Offshore Role"
+              label={t('register.offshoreRole')}
               onChange={onChange}
               required
             >
@@ -251,17 +253,17 @@ const Register = () => {
           </FormControl>
           
           <FormControl fullWidth required sx={{ mb: 2 }}>
-            <InputLabel>Working Regime</InputLabel>
+            <InputLabel>{t('register.workingRegime')}</InputLabel>
             <Select
               name="workingRegime"
               value={workingRegime}
-              label="Working Regime"
+              label={t('register.workingRegime')}
               onChange={onChange}
             >
-              <MenuItem value="7/7">7 Days On / 7 Days Off</MenuItem>
-              <MenuItem value="14/14">14 Days On / 14 Days Off</MenuItem>
-              <MenuItem value="28/28">28 Days On / 28 Days Off</MenuItem>
-              <MenuItem value="custom">Custom Regime</MenuItem>
+              <MenuItem value="7/7">7/7</MenuItem>
+              <MenuItem value="14/14">14/14</MenuItem>
+              <MenuItem value="28/28">28/28</MenuItem>
+              <MenuItem value="custom">{t('register.customRegime')}</MenuItem>
             </Select>
           </FormControl>
           
@@ -270,7 +272,7 @@ const Register = () => {
               <TextField
                 fullWidth
                 type="number"
-                label="On Duty Days (7-365)"
+                label={t('register.customOnDutyDays')}
                 name="customOnDutyDays"
                 value={customOnDutyDays}
                 onChange={onChange}
@@ -281,7 +283,7 @@ const Register = () => {
               <TextField
                 fullWidth
                 type="number"
-                label="Off Duty Days (7-365)"
+                label={t('register.customOffDutyDays')}
                 name="customOffDutyDays"
                 value={customOffDutyDays}
                 onChange={onChange}
@@ -294,7 +296,7 @@ const Register = () => {
           
           <TextField
             fullWidth
-            label="Company (Optional)"
+            label={t('register.company')}
             name="company"
             value={company}
             onChange={onChange}
@@ -302,18 +304,18 @@ const Register = () => {
           />
           <TextField
             fullWidth
-            label="Unit Name (Optional)"
+            label={t('register.unitName')}
             name="unitName"
             value={unitName}
             onChange={onChange}
             variant="outlined"
           />
           <FormControl fullWidth required sx={{ mb: 2 }}>
-            <InputLabel>Country</InputLabel>
+            <InputLabel>{t('register.country')}</InputLabel>
             <Select
               name="country"
               value={country}
-              label="Country"
+              label={t('register.country')}
               onChange={onChange}
             >
               <MenuItem value="">Select Country</MenuItem>
@@ -332,12 +334,15 @@ const Register = () => {
             size="large"
             sx={{ mt: 2 }}
           >
-            {isGoogleLogin ? 'Complete Profile' : 'Register'}
+            {isGoogleLogin ? t('register.completeProfileButton') : t('register.registerButton')}
           </Button>
         </Box>
 
         <Typography variant="body2" align="center" sx={{ mt: 2 }}>
-          Already have an account? <Link to="/login">Login</Link>
+          {t('register.alreadyHaveAccount')}{' '}
+          <Link to="/login" style={{ textDecoration: 'none' }}>
+            {t('register.loginLink')}
+          </Link>
         </Typography>
       </Paper>
     </Container>

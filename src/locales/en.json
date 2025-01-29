@@ -27,7 +27,26 @@
   "register": {
     "title": "Offshore Worker Registration",
     "completeProfile": "Complete Your Profile",
+    "emailAddress": "Email Address",
+    "fullName": "Full Name",
+    "username": "Username",
+    "password": "Password",
+    "offshoreRole": "Offshore Role",
+    "workingRegime": "Working Regime",
+    "customRegime": "Custom Regime",
+    "customOnDutyDays": "On Duty Days (7-365)",
+    "customOffDutyDays": "Off Duty Days (7-365)",
+    "company": "Company (Optional)",
+    "unitName": "Unit Name (Optional)",
+    "country": "Country",
+    "registerButton": "Register",
+    "completeProfileButton": "Complete Profile",
+    "alreadyHaveAccount": "Already have an account?",
+    "loginLink": "Login",
     "errors": {
+      "invalidWorkingRegime": "Please enter valid numbers for On and Off Duty days",
+      "minimumWorkingDays": "On and Off Duty days must be at least 7",
+      "maximumWorkingDays": "Total On and Off Duty days must not exceed 365",
       "registrationFailed": "Registration failed. Please try again.",
       "missingFields": "Please fill in all required fields"
     }

@@ -25,9 +25,29 @@
     }
   },
   "register": {
-    "title": "Registro de Trabajadores Offshore",
-    "completeProfile": "Completa tu Perfil",
+    "title": "Registro de Trabajador Offshore",
+    "completeProfile": "Complete Su Perfil",
+    "emailAddress": "Dirección de Correo Electrónico",
+    "fullName": "Nombre Completo",
+    "username": "Nombre de Usuario",
+    "password": "Contraseña",
+    "offshoreRole": "Rol Offshore",
+    "workingRegime": "Régimen de Trabajo",
+    "customRegime": "Régimen Personalizado",
+    "customOnDutyDays": "Días de Servicio (7-365)",
+    "customOffDutyDays": "Días de Descanso (7-365)",
+    "company": "Empresa (Opcional)",
+    "unitName": "Nombre de la Unidad (Opcional)",
+    "country": "País",
+    "registerButton": "Registrarse",
+    "completeProfileButton": "Completar Perfil",
+    "alreadyHaveAccount": "¿Ya tiene una cuenta?",
+    "loginLink": "Iniciar Sesión",
     "errors": {
+      "invalidWorkingRegime": "Por favor, ingrese números válidos para Días de Servicio y Días de Descanso",
+      "minimumWorkingDays": "Días de Servicio y Días de Descanso deben ser de al menos 7",
+      "maximumWorkingDays": "Total de Días de Servicio y Días de Descanso no debe exceder 365",
+      "registrationFailed": "Registro fallido. Por favor, intente de nuevo.",
       "registrationFailed": "Registro fallido. Por favor, intenta de nuevo.",
       "missingFields": "Por favor, completa todos los campos requeridos"
     }
