@@ -151,6 +151,10 @@
         "title": "Suporte Offshore Global",
         "description": "Trabalha com profissionais offshore de múltiplos países"
       }
+    },
+    "googleLogin": {
+      "title": "Login com Google Agora Disponível",
+      "description": "Agora você pode fazer login usando sua conta do Google através da página de login. Basta clicar no botão \"Entrar com Google\" na tela de login."
     }
   },
   "navbar": {

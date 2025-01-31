@@ -151,6 +151,10 @@
         "title": "Soporte Offshore Global",
         "description": "Trabaja con profesionales offshore de múltiples países"
       }
+    },
+    "googleLogin": {
+      "title": "Inicio de Sesión con Google Ahora Disponible",
+      "description": "Ahora puedes iniciar sesión utilizando tu cuenta de Google a través de la página de inicio de sesión. Simplemente haz clic en el botón \"Iniciar sesión con Google\" en la pantalla de inicio de sesión."
     }
   },
   "navbar": {

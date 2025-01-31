@@ -109,9 +109,8 @@ function Home() {
             severity="info" 
             variant="outlined"
           >
-            <AlertTitle>Google Login Now Available</AlertTitle>
-            You can now log in using your Google account through the login page. 
-            Simply click the "Sign in with Google" button on the login screen.
+            <AlertTitle>{t('home.googleLogin.title')}</AlertTitle>
+            {t('home.googleLogin.description')}
           </Alert>
         </Box>
         
