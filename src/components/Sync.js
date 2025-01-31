@@ -294,6 +294,40 @@ const Sync = () => {
     }));
   };
 
+  // Google OAuth login handler
+  const handleGoogleLogin = useGoogleLogin({
+    onSuccess: async (codeResponse) => {
+      try {
+        // Exchange authorization code for access token
+        const tokenResponse = await axios.post(
+          'https://oauth2.googleapis.com/token',
+          {
+            code: codeResponse.code,
+            client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
+            client_secret: process.env.REACT_APP_GOOGLE_CLIENT_SECRET,
+            redirect_uri: window.location.origin,
+            grant_type: 'authorization_code'
+          }
+        );
+
+        setGoogleAccessToken(tokenResponse.data.access_token);
+      } catch (error) {
+        console.error('Google token exchange error:', error);
+        setSnackbarMessage('Failed to authenticate with Google');
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
+      }
+    },
+    onError: (error) => {
+      console.error('Google login error:', error);
+      setSnackbarMessage('Google login failed');
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    },
+    flow: 'auth-code',
+    scope: 'https://www.googleapis.com/auth/calendar.events'
+  });
+
   // Function to create Google Calendar event
   const createGoogleCalendarEvent = async (date) => {
     try {
@@ -303,21 +337,26 @@ const Sync = () => {
         return;
       }
 
+      if (!googleAccessToken) {
+        alert('Please login with Google first');
+        return;
+      }
+
       const event = {
         summary: eventDetails.summary,
         description: eventDetails.description || 'Offshore Work Off Board Day',
         start: {
           date, // Full-day event
-          timeZone: 'UTC'
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
         },
         end: {
           date, // Same date for full-day event
-          timeZone: 'UTC'
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
         }
       };
 
       const response = await axios.post(
-        getBackendUrl('https://www.googleapis.com/calendar/v3/calendars/primary/events'),
+        'https://www.googleapis.com/calendar/v3/calendars/primary/events',
         event,
         {
           headers: {
@@ -336,28 +375,23 @@ const Sync = () => {
     } catch (error) {
       console.error('Error creating Google Calendar event:', error);
       
+      // Detailed error handling
+      let errorMessage = 'Failed to create event';
+      if (error.response) {
+        if (error.response.status === 401) {
+          errorMessage = 'Unauthorized. Please re-authenticate with Google.';
+          setGoogleAccessToken(null);
+        } else if (error.response.status === 403) {
+          errorMessage = 'Insufficient permissions to create event.';
+        }
+      }
+
       // Show error snackbar
       setSnackbarOpen(true);
-      setSnackbarMessage('Failed to create event. Please try again.');
+      setSnackbarMessage(errorMessage);
       setSnackbarSeverity('error');
     }
   };
-
-  // Google OAuth login handler
-  const handleGoogleLogin = useGoogleLogin({
-    onSuccess: (codeResponse) => {
-      setGoogleAccessToken(codeResponse.access_token);
-    },
-    onError: (error) => {
-      console.error('Google Login Failed:', error);
-      
-      // Show error snackbar
-      setSnackbarOpen(true);
-      setSnackbarMessage('Google login failed. Please try again.');
-      setSnackbarSeverity('error');
-    },
-    scope: 'https://www.googleapis.com/auth/calendar.events'
-  });
 
   // Handle user selection
   const handleUserChange = (event) => {
