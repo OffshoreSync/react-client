@@ -11,12 +11,15 @@ import {
   List, 
   ListItem, 
   ListItemIcon, 
-  ListItemText 
+  ListItemText,
+  Alert,
+  AlertTitle
 } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import WorkIcon from '@mui/icons-material/Work';
 import SecurityIcon from '@mui/icons-material/Security';
 import PublicIcon from '@mui/icons-material/Public';
+import GoogleIcon from '@mui/icons-material/Google';
 
 function Home() {
   const { t } = useTranslation();
@@ -98,6 +101,19 @@ function Home() {
         >
           {t('home.subtitle')}
         </Typography>
+        
+        {/* Google Login Support Alert */}
+        <Box sx={{ mb: 3 }}>
+          <Alert 
+            icon={<GoogleIcon />} 
+            severity="info" 
+            variant="outlined"
+          >
+            <AlertTitle>Google Login Now Available</AlertTitle>
+            You can now log in using your Google account through the login page. 
+            Simply click the "Sign in with Google" button on the login screen.
+          </Alert>
+        </Box>
         
         <Grid container spacing={3} justifyContent="center">
           <Grid item xs={12}>
