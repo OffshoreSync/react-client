@@ -5,10 +5,14 @@
     <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
     <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#000000" />
+    <!-- Theme Color for Mobile Browsers -->
+    <meta name="theme-color" content="#1976d2" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Offshore Sync" />
     <meta
       name="description"
-      content="Web site created using create-react-app"
+      content="A web app created to manage Offshore life with ease"
     />
     <!--
       manifest.json provides metadata used when your web app is installed on a
@@ -25,6 +29,10 @@
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
     <title>Offshore Sync</title>
+    <!-- PWA Splash Screens for iOS -->
+    <link href="%PUBLIC_URL%/splash-iphone-6-plus.png" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)" rel="apple-touch-startup-image" />
+    <link href="%PUBLIC_URL%/splash-iphone-x.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3)" rel="apple-touch-startup-image" />
+    <link href="%PUBLIC_URL%/splash-ipad.png" media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2)" rel="apple-touch-startup-image" />
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
