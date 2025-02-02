@@ -166,6 +166,7 @@
     "sync": "Sync",
     "logout": "Logout",
     "language": "Language",
+    "friends": "Friends",
     "languages": {
       "en": "English",
       "es": "Spanish",
@@ -194,6 +195,28 @@
     "close": "Close",
     "completeYourProfile": "Complete your profile",
     "updateProfile": "Update Profile"
+  },
+  "friendManagement": {
+    "title": "Friends Management",
+    "searchPlaceholder": "Search by name or username",
+    "search": "Search",
+    "searchError": "Error searching users",
+    "emailPlaceholder": "Enter friend's email",
+    "sendRequest": "Send Friend Request",
+    "requestSent": "Friend request sent successfully!",
+    "requestError": "Error sending friend request",
+    "requestPending": "Request Pending",
+    "alreadyFriends": "Already Friends",
+    "pendingRequests": "Pending Friend Requests",
+    "friendsList": "Your Friends",
+    "accept": "Accept Request",
+    "decline": "Decline Request",
+    "noFriends": "You have no friends yet. Start connecting!",
+    "noPendingRequests": "No pending friend requests",
+    "syncEnabled": "Schedule sync is enabled for this friend",
+    "syncDisabled": "Schedule sync is disabled for this friend",
+    "syncOn": "Sync On",
+    "syncOff": "Sync Off"
   },
   "countries": {
     "US": "United States",

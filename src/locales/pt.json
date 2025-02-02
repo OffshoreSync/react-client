@@ -163,6 +163,7 @@
     "sync": "Sincronizar",
     "logout": "Sair",
     "language": "Idioma",
+    "friends": "Amigos",
     "languages": {
       "en": "Inglês",
       "es": "Espanhol",
@@ -223,5 +224,27 @@
     "close": "Fechar",
     "completeYourProfile": "Complete seu perfil",
     "updateProfile": "Atualizar Perfil"
+  },
+  "friendManagement": {
+    "title": "Gerenciamento de Amigos",
+    "searchPlaceholder": "Buscar por nome ou nome de usuário",
+    "search": "Buscar",
+    "searchError": "Erro ao buscar usuários",
+    "emailPlaceholder": "Digite o e-mail do amigo",
+    "sendRequest": "Enviar Pedido de Amizade",
+    "requestSent": "Pedido de amizade enviado com sucesso!",
+    "requestError": "Erro ao enviar pedido de amizade",
+    "requestPending": "Pedido Pendente",
+    "alreadyFriends": "Já são Amigos",
+    "pendingRequests": "Pedidos de Amizade Pendentes",
+    "friendsList": "Seus Amigos",
+    "accept": "Aceitar Pedido",
+    "decline": "Recusar Pedido",
+    "noFriends": "Você ainda não tem amigos. Comece a se conectar!",
+    "noPendingRequests": "Não há pedidos de amizade pendentes",
+    "syncEnabled": "Sincronização de agenda está habilitada para este amigo",
+    "syncDisabled": "Sincronização de agenda está desabilitada para este amigo",
+    "syncOn": "Sincronização Ativada",
+    "syncOff": "Sincronização Desativada"
   }
 }

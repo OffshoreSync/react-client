@@ -1,0 +1,311 @@
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { 
+  Container, 
+  Typography, 
+  Box, 
+  List, 
+  ListItem, 
+  ListItemAvatar, 
+  Avatar, 
+  ListItemText, 
+  Button, 
+  TextField, 
+  Paper,
+  Divider,
+  IconButton,
+  Tooltip,
+  Chip,
+  Grid,
+  Card,
+  CardContent,
+  CardActions
+} from '@mui/material';
+import { 
+  PersonAdd as PersonAddIcon, 
+  Check as CheckIcon, 
+  Close as CloseIcon,
+  Search as SearchIcon
+} from '@mui/icons-material';
+import { useTranslation } from 'react-i18next';
+import getBackendUrl from '../utils/apiUtils';
+
+const FriendManagement = () => {
+  const { t } = useTranslation();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [friends, setFriends] = useState([]);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetchPendingRequests();
+    fetchFriends();
+  }, []);
+
+  const fetchPendingRequests = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(
+        getBackendUrl('/api/auth/friend-requests'), 
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setPendingRequests(response.data.pendingRequests);
+    } catch (error) {
+      console.error('Error fetching pending requests:', error);
+    }
+  };
+
+  const fetchFriends = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(
+        getBackendUrl('/api/auth/friends'), 
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setFriends(response.data.friends);
+    } catch (error) {
+      console.error('Error fetching friends:', error);
+    }
+  };
+
+  const searchUsers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(
+        getBackendUrl('/api/auth/search-users'), 
+        { 
+          params: { query: searchQuery },
+          headers: { Authorization: `Bearer ${token}` } 
+        }
+      );
+      setSearchResults(response.data.users);
+      setError('');
+    } catch (error) {
+      setError(error.response?.data?.message || t('friendManagement.searchError'));
+      setSearchResults([]);
+    }
+  };
+
+  const sendFriendRequest = async (targetUserId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.post(
+        getBackendUrl('/api/auth/friend-request'), 
+        { friendId: targetUserId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      // Update search results to reflect sent request
+      setSearchResults(prev => 
+        prev.map(user => 
+          user.id === targetUserId 
+            ? { ...user, friendshipStatus: 'PENDING' } 
+            : user
+        )
+      );
+      
+      alert(t('friendManagement.requestSent'));
+    } catch (error) {
+      setError(error.response?.data?.message || t('friendManagement.requestError'));
+    }
+  };
+
+  const handleFriendRequestResponse = async (requestId, status) => {
+    try {
+      const token = localStorage.getItem('token');
+      await axios.put(
+        getBackendUrl(`/api/auth/friend-request/${requestId}`),
+        { status },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      fetchPendingRequests();
+      fetchFriends();
+    } catch (error) {
+      console.error('Error responding to friend request:', error);
+    }
+  };
+
+  return (
+    <Container maxWidth="lg">
+      <Paper elevation={3} sx={{ p: 3, mt: 3 }}>
+        <Typography variant="h5" gutterBottom>
+          {t('friendManagement.title')}
+        </Typography>
+
+        {/* User Search */}
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3 }}>
+          <TextField
+            fullWidth
+            label={t('friendManagement.searchPlaceholder')}
+            variant="outlined"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            error={!!error}
+            helperText={error}
+          />
+          <Button
+            variant="contained"
+            color="primary"
+            startIcon={<SearchIcon />}
+            onClick={searchUsers}
+            disabled={searchQuery.length < 2}
+          >
+            {t('friendManagement.search')}
+          </Button>
+        </Box>
+
+        {/* Search Results */}
+        {searchResults.length > 0 && (
+          <Grid container spacing={2} sx={{ mb: 3 }}>
+            {searchResults.map((user) => (
+              <Grid item xs={12} md={4} key={user.id}>
+                <Card variant="outlined">
+                  <CardContent>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Avatar 
+                        src={user.profilePicture} 
+                        alt={user.fullName}
+                        sx={{ width: 56, height: 56 }}
+                      />
+                      <Box>
+                        <Typography variant="h6">{user.fullName}</Typography>
+                        <Typography variant="body2" color="textSecondary">
+                          {user.offshoreRole}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </CardContent>
+                  <CardActions>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      startIcon={<PersonAddIcon />}
+                      onClick={() => sendFriendRequest(user.id)}
+                      disabled={
+                        user.friendshipStatus === 'PENDING' || 
+                        user.friendshipStatus === 'ACCEPTED'
+                      }
+                    >
+                      {user.friendshipStatus === 'PENDING' 
+                        ? t('friendManagement.requestPending')
+                        : user.friendshipStatus === 'ACCEPTED'
+                          ? t('friendManagement.alreadyFriends')
+                          : t('friendManagement.sendRequest')
+                      }
+                    </Button>
+                  </CardActions>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+        )}
+
+        {/* Pending Friend Requests */}
+        <Typography variant="h6" sx={{ mt: 3 }}>
+          {t('friendManagement.pendingRequests')}
+        </Typography>
+        <List>
+          {pendingRequests.length === 0 ? (
+            <Typography variant="body2" color="textSecondary" sx={{ textAlign: 'center', mt: 2 }}>
+              {t('friendManagement.noPendingRequests')}
+            </Typography>
+          ) : (
+            pendingRequests.map((request) => (
+              <React.Fragment key={request.id}>
+                <ListItem
+                  secondaryAction={
+                    <>
+                      <Tooltip title={t('friendManagement.accept')}>
+                        <IconButton 
+                          edge="end" 
+                          color="primary"
+                          onClick={() => handleFriendRequestResponse(request.id, 'ACCEPTED')}
+                        >
+                          <CheckIcon />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title={t('friendManagement.decline')}>
+                        <IconButton 
+                          edge="end" 
+                          color="secondary"
+                          onClick={() => handleFriendRequestResponse(request.id, 'BLOCKED')}
+                        >
+                          <CloseIcon />
+                        </IconButton>
+                      </Tooltip>
+                    </>
+                  }
+                >
+                  <ListItemAvatar>
+                    <Avatar 
+                      src={request.user.profilePicture} 
+                      alt={request.user.fullName}
+                    />
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={request.user.fullName}
+                    secondary={request.user.email}
+                  />
+                </ListItem>
+                <Divider variant="inset" component="li" />
+              </React.Fragment>
+            ))
+          )}
+        </List>
+
+        {/* Friends List */}
+        <Typography variant="h6" sx={{ mt: 3 }}>
+          {t('friendManagement.friendsList')}
+        </Typography>
+        <List>
+          {friends.length === 0 ? (
+            <Typography variant="body2" color="textSecondary" sx={{ textAlign: 'center', mt: 2 }}>
+              {t('friendManagement.noFriends')}
+            </Typography>
+          ) : (
+            friends.map((friend) => (
+              <React.Fragment key={friend.id}>
+                <ListItem>
+                  <ListItemAvatar>
+                    <Avatar 
+                      src={friend.profilePicture} 
+                      alt={friend.fullName}
+                    />
+                  </ListItemAvatar>
+                  <ListItemText
+                    primary={friend.fullName}
+                    secondary={friend.email}
+                  />
+                  <Tooltip 
+                    title={
+                      friend.sharingPreferences.allowScheduleSync 
+                        ? t('friendManagement.syncEnabled') 
+                        : t('friendManagement.syncDisabled')
+                    }
+                  >
+                    <Chip 
+                      label={
+                        friend.sharingPreferences.allowScheduleSync 
+                          ? t('friendManagement.syncOn') 
+                          : t('friendManagement.syncOff')
+                      }
+                      color={
+                        friend.sharingPreferences.allowScheduleSync 
+                          ? 'primary' 
+                          : 'default'
+                      }
+                    />
+                  </Tooltip>
+                </ListItem>
+                <Divider variant="inset" component="li" />
+              </React.Fragment>
+            ))
+          )}
+        </List>
+      </Paper>
+    </Container>
+  );
+};
+
+export default FriendManagement;

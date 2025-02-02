@@ -16,6 +16,7 @@ import Dashboard from './components/Dashboard';
 import Settings from './components/Settings';
 import EditProfile from './components/EditProfile';
 import Sync from './components/Sync';
+import FriendManagement from './components/FriendManagement';
 
 // Create custom theme
 const theme = createTheme({
@@ -110,6 +111,14 @@ function App() {
                 element={
                   <PrivateRoute>
                     <EditProfile />
+                  </PrivateRoute>
+                } 
+              />
+              <Route 
+                path="/friends" 
+                element={
+                  <PrivateRoute>
+                    <FriendManagement />
                   </PrivateRoute>
                 } 
               />

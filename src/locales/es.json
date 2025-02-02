@@ -167,7 +167,8 @@
       "en": "Inglés",
       "es": "Español",
       "pt": "Portugués"
-    }
+    },
+    "friends": "Amigos"
   },
   "countries": {
     "US": "Estados Unidos",
@@ -223,5 +224,27 @@
     "close": "Cerrar",
     "completeYourProfile": "Complete su perfil",
     "updateProfile": "Actualizar Perfil"
+  },
+  "friendManagement": {
+    "title": "Gestión de Amigos",
+    "searchPlaceholder": "Buscar por nombre o nombre de usuario",
+    "search": "Buscar",
+    "searchError": "Error al buscar usuarios",
+    "emailPlaceholder": "Ingrese el correo electrónico del amigo",
+    "sendRequest": "Enviar Solicitud de Amistad",
+    "requestSent": "¡Solicitud de amistad enviada con éxito!",
+    "requestError": "Error al enviar la solicitud de amistad",
+    "requestPending": "Solicitud Pendiente",
+    "alreadyFriends": "Ya son Amigos",
+    "pendingRequests": "Solicitudes de Amistad Pendientes",
+    "friendsList": "Tus Amigos",
+    "accept": "Aceptar Solicitud",
+    "decline": "Rechazar Solicitud",
+    "noFriends": "Aún no tienes amigos. ¡Comienza a conectar!",
+    "noPendingRequests": "No hay solicitudes de amistad pendientes",
+    "syncEnabled": "La sincronización de horarios está habilitada para este amigo",
+    "syncDisabled": "La sincronización de horarios está deshabilitada para este amigo",
+    "syncOn": "Sincronización Activada",
+    "syncOff": "Sincronización Desactivada"
   }
 }

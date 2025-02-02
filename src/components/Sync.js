@@ -155,13 +155,14 @@ const Sync = () => {
           return;
         }
 
-        const response = await axios.get(getBackendUrl('/api/auth/all-users'), {
+        // Fetch friends with sync permissions
+        const friendsResponse = await axios.get(getBackendUrl('/api/auth/friends'), {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        // Validate and filter users
-        const validUsers = response.data.users.filter(user => 
-          user.id && user.fullName && user.id !== currentUser.id
+        // Filter friends who have allowed schedule sync
+        const syncableFriends = friendsResponse.data.friends.filter(
+          friend => friend.sharingPreferences.allowScheduleSync
         );
 
         // Add current user with a special "You" label
@@ -171,15 +172,14 @@ const Sync = () => {
             fullName: `${currentUser.fullName} (You)`,
             isCurrentUser: true
           },
-          ...validUsers
+          ...syncableFriends
         ];
 
         setAvailableUsers(usersWithCurrentUser);
       } catch (error) {
-        console.error('Error fetching available users:', error);
+        console.error('Error fetching syncable friends:', error);
         
-        // Detailed error handling
-        let errorMessage = 'Failed to fetch available users';
+        let errorMessage = 'Failed to fetch syncable friends';
         
         if (error.response) {
           if (error.response.status === 401) {

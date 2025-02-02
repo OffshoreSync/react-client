@@ -27,6 +27,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import WavesIcon from '@mui/icons-material/Waves';
 import SettingsIcon from '@mui/icons-material/Settings';
 import LanguageIcon from '@mui/icons-material/Language';
+import PersonAddIcon from '@mui/icons-material/PersonAdd';
 import ReactCountryFlag from 'react-country-flag';
 
 // Import i18n
@@ -104,6 +105,14 @@ function Navbar() {
 
   // Additional drawer-only menu items
   const drawerMenuItems = isLoggedIn ? [
+    {
+      text: t('navbar.friends'),
+      icon: <PersonAddIcon />,
+      onClick: () => {
+        navigate('/friends');
+        setDrawerOpen(false);
+      }
+    },
     {
       text: t('navbar.settings'),
       icon: <SettingsIcon />,
