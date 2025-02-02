@@ -90,7 +90,7 @@ const FriendManagement = () => {
   const sendFriendRequest = async (targetUserId) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.post(
+      const response = await axios.post(
         getBackendUrl('/api/auth/friend-request'), 
         { friendId: targetUserId },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -105,9 +105,15 @@ const FriendManagement = () => {
         )
       );
       
-      alert(t('friendManagement.requestSent'));
+      // Use the response message from the backend
+      alert(response.data.message || t('friendManagement.requestSent'));
     } catch (error) {
-      setError(error.response?.data?.message || t('friendManagement.requestError'));
+      // Use the error message from the backend, fallback to translation
+      const errorMessage = error.response?.data?.message || t('friendManagement.requestError');
+      setError(errorMessage);
+      
+      // Optional: Show error in a more user-friendly way
+      alert(errorMessage);
     }
   };
 
