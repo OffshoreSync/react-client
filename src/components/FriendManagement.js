@@ -19,7 +19,9 @@ import {
   Grid,
   Card,
   CardContent,
-  CardActions
+  CardActions,
+  Snackbar,
+  Alert
 } from '@mui/material';
 import { 
   PersonAdd as PersonAddIcon, 
@@ -38,10 +40,24 @@ const FriendManagement = () => {
   const [friends, setFriends] = useState([]);
   const [error, setError] = useState('');
 
+  // Toast state
+  const [toast, setToast] = useState({
+    open: false,
+    message: '',
+    severity: 'success'
+  });
+
   useEffect(() => {
     fetchPendingRequests();
     fetchFriends();
   }, []);
+
+  const handleToastClose = (event, reason) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    setToast({ ...toast, open: false });
+  };
 
   const fetchPendingRequests = async () => {
     try {
@@ -53,6 +69,11 @@ const FriendManagement = () => {
       setPendingRequests(response.data.pendingRequests);
     } catch (error) {
       console.error('Error fetching pending requests:', error);
+      setToast({
+        open: true,
+        message: t('friendManagement.fetchRequestsError'),
+        severity: 'error'
+      });
     }
   };
 
@@ -66,6 +87,11 @@ const FriendManagement = () => {
       setFriends(response.data.friends);
     } catch (error) {
       console.error('Error fetching friends:', error);
+      setToast({
+        open: true,
+        message: t('friendManagement.fetchFriendsError'),
+        severity: 'error'
+      });
     }
   };
 
@@ -84,6 +110,11 @@ const FriendManagement = () => {
     } catch (error) {
       setError(error.response?.data?.message || t('friendManagement.searchError'));
       setSearchResults([]);
+      setToast({
+        open: true,
+        message: error.response?.data?.message || t('friendManagement.searchError'),
+        severity: 'error'
+      });
     }
   };
 
@@ -105,15 +136,23 @@ const FriendManagement = () => {
         )
       );
       
-      // Use the response message from the backend
-      alert(response.data.message || t('friendManagement.requestSent'));
+      // Show success toast
+      setToast({
+        open: true,
+        message: response.data.message || t('friendManagement.requestSent'),
+        severity: 'success'
+      });
     } catch (error) {
       // Use the error message from the backend, fallback to translation
       const errorMessage = error.response?.data?.message || t('friendManagement.requestError');
       setError(errorMessage);
       
-      // Optional: Show error in a more user-friendly way
-      alert(errorMessage);
+      // Show error toast
+      setToast({
+        open: true,
+        message: errorMessage,
+        severity: 'error'
+      });
     }
   };
 
@@ -127,13 +166,43 @@ const FriendManagement = () => {
       );
       fetchPendingRequests();
       fetchFriends();
+
+      // Show success toast based on status
+      setToast({
+        open: true,
+        message: status === 'ACCEPTED' 
+          ? t('friendManagement.requestAccepted') 
+          : t('friendManagement.requestDeclined'),
+        severity: 'success'
+      });
     } catch (error) {
       console.error('Error responding to friend request:', error);
+      setToast({
+        open: true,
+        message: t('friendManagement.requestResponseError'),
+        severity: 'error'
+      });
     }
   };
 
   return (
     <Container maxWidth="lg">
+      {/* Snackbar for Toast Notifications */}
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={6000}
+        onClose={handleToastClose}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert 
+          onClose={handleToastClose} 
+          severity={toast.severity} 
+          sx={{ width: '100%' }}
+        >
+          {toast.message}
+        </Alert>
+      </Snackbar>
+
       <Paper elevation={3} sx={{ p: 3, mt: 3 }}>
         <Typography variant="h5" gutterBottom>
           {t('friendManagement.title')}
