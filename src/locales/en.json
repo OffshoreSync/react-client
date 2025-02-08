@@ -19,7 +19,9 @@
   "login": {
     "title": "Offshore Worker Login",
     "username": "Username",
+    "usernamePlaceholder": "Enter your username",
     "password": "Password",
+    "passwordPlaceholder": "Enter your password",
     "googleLogin": "Login with Google",
     "forgotPassword": "Forgot Password?",
     "noAccount": "Don't have an account?",

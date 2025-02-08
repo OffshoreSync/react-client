@@ -19,7 +19,9 @@
   "login": {
     "title": "Inicio de Sesión para Trabajadores Offshore",
     "username": "Nombre de Usuario",
+    "usernamePlaceholder": "Ingrese su nombre de usuario",
     "password": "Contraseña",
+    "passwordPlaceholder": "Ingrese su contraseña",
     "googleLogin": "Iniciar Sesión con Google",
     "forgotPassword": "¿Olvidaste tu Contraseña?",
     "noAccount": "¿No tienes una cuenta?",

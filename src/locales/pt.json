@@ -19,7 +19,9 @@
   "login": {
     "title": "Login de Trabalhador Offshore",
     "username": "Nome de Usuário",
+    "usernamePlaceholder": "Digite seu nome de usuário",
     "password": "Senha",
+    "passwordPlaceholder": "Digite sua senha",
     "googleLogin": "Entrar com Google",
     "forgotPassword": "Esqueceu sua Senha?",
     "noAccount": "Não tem uma conta?",

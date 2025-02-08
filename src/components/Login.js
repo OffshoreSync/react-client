@@ -9,9 +9,15 @@ import {
   Box, 
   Paper, 
   Link as MuiLink,
-  Alert
+  Alert,
+  IconButton,
+  InputAdornment
 } from '@mui/material';
-import LoginIcon from '@mui/icons-material/Login';
+import { 
+  Login as LoginIcon, 
+  Visibility, 
+  VisibilityOff 
+} from '@mui/icons-material';
 import { GoogleLogin } from '@react-oauth/google';
 
 // Import translation hook
@@ -63,6 +69,7 @@ const Login = () => {
   const [loginAttempts, setLoginAttempts] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
   const [lockExpiry, setLockExpiry] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
 
@@ -285,11 +292,24 @@ const Login = () => {
               fullWidth
               name="password"
               label={t('login.password')}
-              type="password"
+              type={showPassword ? 'text' : 'password'}
               id="password"
               autoComplete="current-password"
               value={password}
               onChange={onChange}
+              InputProps={{
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
             />
             
             <Typography variant="body2" align="right" sx={{ mt: 1 }}>
