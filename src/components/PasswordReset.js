@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
+import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import getBackendUrl from '../utils/apiUtils';
 
 // Enhanced input validation functions
@@ -27,14 +28,39 @@ const validatePassword = (password) => {
 
 const PasswordReset = () => {
   const { t } = useTranslation();
+  const location = useLocation();
+  const params = useParams();
+  const navigate = useNavigate();
+
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [resetToken, setResetToken] = useState('');
-  const [stage, setStage] = useState('request'); // 'request', 'verify', 'reset'
+  const [stage, setStage] = useState('request'); // 'request', 'check-email', 'reset'
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [passwordErrors, setPasswordErrors] = useState([]);
+
+  useEffect(() => {
+    // Check for token in URL query or route params
+    const searchParams = new URLSearchParams(location.search);
+    const urlToken = searchParams.get('token') || params.token;
+
+    if (urlToken) {
+      setResetToken(urlToken);
+      setStage('reset');
+    }
+  }, [location.search, params.token]);
+
+  useEffect(() => {
+    if (params.token) {
+      // Try to retrieve email from the previous password reset request
+      const storedEmail = localStorage.getItem('resetEmail');
+      if (storedEmail) {
+        setEmail(storedEmail);
+      }
+    }
+  }, [params.token]);
 
   const requestPasswordReset = async (e) => {
     e.preventDefault();
@@ -44,30 +70,13 @@ const PasswordReset = () => {
         { email }
       );
       setMessage(t('passwordReset.requestSent'));
-      setStage('verify');
+      setStage('check-email');
+      localStorage.setItem('resetEmail', email);
     } catch (error) {
       console.error('Password reset request error:', error);
       setError(
         error.response?.data?.message || 
         t('passwordReset.requestError')
-      );
-    }
-  };
-
-  const verifyResetToken = async (e) => {
-    e.preventDefault();
-    try {
-      await axios.post(
-        getBackendUrl('/api/password/verify-token'), 
-        { token: resetToken, email }
-      );
-      setMessage(t('passwordReset.tokenValid'));
-      setStage('reset');
-    } catch (error) {
-      console.error('Token verification error:', error);
-      setError(
-        error.response?.data?.message || 
-        t('passwordReset.invalidToken')
       );
     }
   };
@@ -79,15 +88,34 @@ const PasswordReset = () => {
     setPasswordErrors([]);
     setError('');
 
+    // Attempt to retrieve email if not set
+    const resetEmail = email || localStorage.getItem('resetEmail');
+
+    // Log input details for debugging
+    console.log('Password Reset Attempt:', {
+      resetEmail,
+      newPasswordLength: newPassword.length,
+      confirmPasswordLength: confirmPassword.length,
+      passwordsMatch: newPassword === confirmPassword,
+      resetToken: resetToken ? 'Token Present' : 'No Token'
+    });
+
+    // Validate email
+    if (!resetEmail) {
+      setError(t('passwordReset.emailRequired'));
+      return;
+    }
+
     // Validate password
     if (!validatePassword(newPassword)) {
-      setPasswordErrors([
+      const errors = [
         t('passwordReset.requirements.length'),
         t('passwordReset.requirements.uppercase'),
         t('passwordReset.requirements.lowercase'),
         t('passwordReset.requirements.number'),
         t('passwordReset.requirements.special')
-      ]);
+      ];
+      setPasswordErrors(errors);
       return;
     }
 
@@ -98,24 +126,28 @@ const PasswordReset = () => {
     }
 
     try {
-      await axios.post(
+      const response = await axios.post(
         getBackendUrl('/api/password/reset'), 
         { 
           token: resetToken, 
           newPassword, 
           confirmPassword,
-          email 
+          email: resetEmail
         }
       );
-      setMessage(t('passwordReset.success'));
-      setStage('request');
       
-      // Clear sensitive data
-      setNewPassword('');
-      setConfirmPassword('');
-      setResetToken('');
+      console.log('Password Reset Response:', response.data);
+      setMessage(t('passwordReset.success'));
+      
+      // Clear stored email
+      localStorage.removeItem('resetEmail');
+      
+      // Redirect to login after successful reset
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
     } catch (error) {
-      console.error('Password reset error:', error);
+      console.error('Password reset error:', error.response || error);
       setError(
         error.response?.data?.message || 
         t('passwordReset.resetError')
@@ -145,20 +177,14 @@ const PasswordReset = () => {
         </form>
       )}
 
-      {stage === 'verify' && (
-        <form onSubmit={verifyResetToken}>
-          <input
-            type="text"
-            value={resetToken}
-            onChange={(e) => {
-              setResetToken(e.target.value);
-              setError('');
-            }}
-            placeholder={t('passwordReset.tokenPlaceholder')}
-            required
-          />
-          <button type="submit">{t('passwordReset.verifyButton')}</button>
-        </form>
+      {stage === 'check-email' && (
+        <div className="check-email-instructions">
+          <p>{t('passwordReset.checkEmailInstructions')}</p>
+          <p>{t('passwordReset.linkExpiration')}</p>
+          <button onClick={() => setStage('request')}>
+            {t('passwordReset.changeEmail')}
+          </button>
+        </div>
       )}
 
       {stage === 'reset' && (

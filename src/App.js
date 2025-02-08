@@ -97,6 +97,8 @@ function App() {
               } />
               <Route path="/login" element={<Login />} />
               <Route path="/forgot-password" element={<PasswordReset />} />
+              <Route path="/reset-password" element={<PasswordReset />} />
+              <Route path="/reset-password/:token" element={<PasswordReset />} />
               <Route path="/register" element={<Register />} />
               <Route 
                 path="/dashboard" 
