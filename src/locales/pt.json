@@ -13,15 +13,19 @@
     "cancel": "Cancelar"
   },
   "login": {
-    "title": "Login de Trabalhadores Offshore",
+    "title": "Login de Trabalhador Offshore",
     "username": "Nome de Usuário",
     "password": "Senha",
     "googleLogin": "Entrar com Google",
-    "forgotPassword": "Esqueceu a Senha?",
+    "forgotPassword": "Esqueceu sua Senha?",
     "noAccount": "Não tem uma conta?",
     "errors": {
       "loginFailed": "Falha no login. Por favor, tente novamente.",
-      "googleLoginFailed": "Falha no login do Google. Por favor, tente novamente."
+      "googleLoginFailed": "Falha no login com Google. Por favor, tente novamente.",
+      "invalidUsername": "O nome de usuário deve ter entre 3 e 20 caracteres e conter apenas letras, números e sublinhados",
+      "invalidPassword": "A senha deve atender aos seguintes requisitos: Mínimo 8 caracteres, pelo menos uma letra maiúscula, uma letra minúscula, um número e um caractere especial",
+      "accountLocked": "Muitas tentativas de login. Sua conta está bloqueada. Tente novamente em {{minutes}} minutos.",
+      "tooManyAttempts": "Muitas tentativas de login. Tente novamente mais tarde."
     }
   },
   "register": {
@@ -46,11 +50,16 @@
     "loginLink": "Entrar",
     "profileUpdateSuccess": "Perfil atualizado com sucesso",
     "errors": {
-      "invalidWorkingRegime": "Por favor, insira números válidos para Dias de Serviço e Dias de Folga",
-      "minimumWorkingDays": "Dias de Serviço e Dias de Folga devem ser de pelo menos 7",
-      "maximumWorkingDays": "Total de Dias de Serviço e Dias de Folga não deve exceder 365",
-      "registrationFailed": "Registro falhou. Por favor, tente novamente.",
-      "missingFields": "Por favor, preencha todos os campos obrigatórios"
+      "invalidWorkingRegime": "Por favor, insira números válidos para Dias de Serviço e Dias de Descanso",
+      "minimumWorkingDays": "Dias de Serviço e Dias de Descanso devem ser de pelo menos 7",
+      "maximumWorkingDays": "Total de Dias de Serviço e Dias de Descanso não deve exceder 365",
+      "registrationFailed": "Registro falhou. Tente novamente.",
+      "missingFields": "Por favor, preencha todos os campos obrigatórios",
+      "invalidUsername": "O nome de usuário deve ter entre 3 e 20 caracteres e conter apenas letras, números e sublinhados",
+      "invalidEmail": "Por favor, insira um endereço de e-mail válido",
+      "invalidPassword": "A senha deve atender aos seguintes requisitos: {{requirements}}",
+      "tooManyAttempts": "Muitas tentativas de registro. Tente novamente em {{minutes}} minutos.",
+      "formError": "Por favor, corrija os erros no formulário antes de enviar."
     }
   },
   "dashboard": {

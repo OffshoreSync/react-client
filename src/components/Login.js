@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { 
@@ -35,20 +35,65 @@ const FormSection = styled(Box)(({ theme }) => ({
   marginBottom: theme.spacing(3)
 }));
 
+// Enhanced input validation functions
+const validateUsername = (username) => {
+  // Allow only alphanumeric characters and underscores
+  const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+  return usernameRegex.test(username);
+};
+
+const validatePassword = (password) => {
+  // Require:
+  // - Minimum 8 characters
+  // - At least one uppercase letter
+  // - At least one lowercase letter
+  // - At least one number
+  // - At least one special character
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  return passwordRegex.test(password);
+};
+
 const Login = () => {
-  const { t } = useTranslation(); // Add translation hook
+  const { t } = useTranslation();
   const [formData, setFormData] = useState({
     username: '',
     password: ''
   });
   const [error, setError] = useState('');
+  const [loginAttempts, setLoginAttempts] = useState(0);
+  const [isLocked, setIsLocked] = useState(false);
+  const [lockExpiry, setLockExpiry] = useState(null);
 
   const navigate = useNavigate();
 
   const { username, password } = formData;
 
+  // Add client-side rate limiting
+  useEffect(() => {
+    const checkLockStatus = () => {
+      const storedLockExpiry = localStorage.getItem('loginLockExpiry');
+      if (storedLockExpiry) {
+        const expiryTime = parseInt(storedLockExpiry, 10);
+        if (Date.now() < expiryTime) {
+          setIsLocked(true);
+          setLockExpiry(expiryTime);
+        } else {
+          // Lock period has expired
+          localStorage.removeItem('loginLockExpiry');
+          setIsLocked(false);
+          setLoginAttempts(0);
+        }
+      }
+    };
+
+    checkLockStatus();
+    const intervalId = setInterval(checkLockStatus, 60000); // Check every minute
+    return () => clearInterval(intervalId);
+  }, []);
+
   const onChange = e => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
     setError(''); // Clear error when user starts typing
   };
 
@@ -56,51 +101,89 @@ const Login = () => {
     e.preventDefault();
     setError('');
 
+    // Check if account is locked
+    if (isLocked) {
+      const remainingTime = Math.ceil((lockExpiry - Date.now()) / 60000);
+      setError(t('login.errors.accountLocked', { minutes: remainingTime }));
+      return;
+    }
+
+    // Validate inputs
+    if (!validateUsername(username)) {
+      setError(t('login.errors.invalidUsername'));
+      return;
+    }
+
+    if (!validatePassword(password)) {
+      setError(t('login.errors.invalidPassword'));
+      return;
+    }
+
     try {
       const response = await axios.post(
         getBackendUrl('/api/auth/login'), 
         {
           username,
           password
+        },
+        {
+          // Add CSRF protection if using cookies
+          withCredentials: true,
+          // Add additional headers for security
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Content-Type': 'application/json'
+          }
         }
       );
 
-      // Log the entire response for debugging
-      console.log('Login Response:', JSON.stringify(response.data, null, 2));
+      // Reset login attempts on successful login
+      setLoginAttempts(0);
+      localStorage.removeItem('loginLockExpiry');
 
-      // Destructure and ensure all fields are present
+      // Existing login success logic...
       const { token, user } = response.data;
 
-      // Ensure all expected fields are present
+      // Sanitize and secure user data storage
       const safeUser = {
-        id: response.data.user.id,
-        username: response.data.user.username,
-        email: response.data.user.email,
-        fullName: response.data.user.fullName,
-        offshoreRole: response.data.user.offshoreRole,
-        workingRegime: response.data.user.workingRegime,
-        company: response.data.user.company || null,
-        workSchedule: response.data.user.workSchedule || {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        fullName: user.fullName,
+        offshoreRole: user.offshoreRole,
+        workingRegime: user.workingRegime,
+        company: user.company || null,
+        unitName: user.unitName || null,
+        workSchedule: user.workSchedule || {
           nextOnBoardDate: null,
           nextOffBoardDate: null
         },
-        unitName: response.data.user.unitName || null,
-        country: response.data.user.country || null
+        country: user.country || null
       };
 
-      // Store token and user data
+      // Secure token storage
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(safeUser));
 
-      // Log stored user data for verification
-      console.log('Stored User Data:', JSON.stringify(safeUser, null, 2));
+      // Clear password from memory
+      setFormData(prev => ({ ...prev, password: '' }));
 
-      // Dispatch event to update profile picture
-      window.dispatchEvent(new Event('profilePictureUpdated'));
-
-      // Redirect to dashboard
       navigate('/dashboard');
     } catch (err) {
+      // Increment login attempts
+      const newAttempts = loginAttempts + 1;
+      setLoginAttempts(newAttempts);
+
+      // Lock account after 5 failed attempts
+      if (newAttempts >= 5) {
+        const lockExpiryTime = Date.now() + (15 * 60 * 1000); // 15 minutes
+        setIsLocked(true);
+        setLockExpiry(lockExpiryTime);
+        localStorage.setItem('loginLockExpiry', lockExpiryTime.toString());
+        setError(t('login.errors.tooManyAttempts'));
+        return;
+      }
+
       console.error('Login error:', err.response?.data || err.message);
       setError(t('login.errors.loginFailed'));
     }

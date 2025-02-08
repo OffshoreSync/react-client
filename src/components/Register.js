@@ -19,6 +19,41 @@ import {
 import { OFFSHORE_COUNTRIES, getTranslatedCountries } from '../utils/countries';
 import { OFFSHORE_ROLES, getTranslatedRoles } from '../utils/offshoreRoles';
 
+// Enhanced input validation functions
+const validateUsername = (username) => {
+  // Allow only alphanumeric characters and underscores
+  // 3-20 characters long
+  const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
+  return usernameRegex.test(username);
+};
+
+const validateEmail = (email) => {
+  // Standard email validation regex
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+const validatePassword = (password) => {
+  // Require:
+  // - Minimum 8 characters
+  // - At least one uppercase letter
+  // - At least one lowercase letter
+  // - At least one number
+  // - At least one special character
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  const isValid = passwordRegex.test(password);
+  console.log('Password validation:', {
+    password,
+    isValid,
+    hasLowercase: /(?=.*[a-z])/.test(password),
+    hasUppercase: /(?=.*[A-Z])/.test(password),
+    hasNumber: /(?=.*\d)/.test(password),
+    hasSpecialChar: /(?=.*[@$!%*?&])/.test(password),
+    length: password.length
+  });
+  return isValid;
+};
+
 const Register = () => {
   const { t, i18n } = useTranslation();
   const location = useLocation();
@@ -49,6 +84,10 @@ const Register = () => {
     workingRegime: '',
     customWorkingRegime: ''
   });
+
+  const [registrationAttempts, setRegistrationAttempts] = useState(0);
+  const [isLocked, setIsLocked] = useState(false);
+  const [lockExpiry, setLockExpiry] = useState(null);
 
   const navigate = useNavigate();
 
@@ -120,6 +159,28 @@ const Register = () => {
     };
   }, [formData.country[0], i18n.language, t]);
 
+  useEffect(() => {
+    const checkLockStatus = () => {
+      const storedLockExpiry = localStorage.getItem('registrationLockExpiry');
+      if (storedLockExpiry) {
+        const expiryTime = parseInt(storedLockExpiry, 10);
+        if (Date.now() < expiryTime) {
+          setIsLocked(true);
+          setLockExpiry(expiryTime);
+        } else {
+          // Lock period has expired
+          localStorage.removeItem('registrationLockExpiry');
+          setIsLocked(false);
+          setRegistrationAttempts(0);
+        }
+      }
+    };
+
+    checkLockStatus();
+    const intervalId = setInterval(checkLockStatus, 60000); // Check every minute
+    return () => clearInterval(intervalId);
+  }, []);
+
   const onChange = e => {
     // Disable changes if Google login
     if (isGoogleLogin && e.target.name !== 'password' && e.target.name !== 'offshoreRole' && e.target.name !== 'workingRegime' && e.target.name !== 'customOnDutyDays' && e.target.name !== 'customOffDutyDays' && e.target.name !== 'company' && e.target.name !== 'unitName' && e.target.name !== 'country') {
@@ -153,9 +214,28 @@ const Register = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!username) newErrors.username = t('register.errors.requiredField');
-    if (!email) newErrors.email = t('register.errors.requiredField');
-    if (!password) newErrors.password = t('register.errors.requiredField');
+    // Enhanced validations
+    if (!validateUsername(username)) {
+      newErrors.username = t('register.errors.invalidUsername');
+    }
+
+    if (!validateEmail(email)) {
+      newErrors.email = t('register.errors.invalidEmail');
+    }
+
+    if (!validatePassword(password)) {
+      newErrors.password = t('register.errors.invalidPassword', {
+        requirements: [
+          'Minimum 8 characters',
+          'At least one uppercase letter',
+          'At least one lowercase letter', 
+          'At least one number',
+          'At least one special character'
+        ].join(', ')
+      });
+    }
+
+    // Existing validations...
     if (!fullName) newErrors.fullName = t('register.errors.requiredField');
     if (!offshoreRole) newErrors.offshoreRole = t('register.errors.requiredField');
     if (!formData.country[0]) newErrors.country = t('register.errors.requiredField');
@@ -184,35 +264,42 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Check if registration is locked
+    if (isLocked) {
+      const remainingTime = Math.ceil((lockExpiry - Date.now()) / 60000);
+      setError(t('register.errors.tooManyAttempts', { minutes: remainingTime }));
+      return;
+    }
+
     // Validate form
     if (!validateForm()) return;
 
-    // Determine working regime
-    let finalWorkingRegime;
-    if (workingRegime === 'custom') {
-      const onDutyDays = parseInt(customOnDutyDays, 10);
-      const offDutyDays = parseInt(customOffDutyDays, 10);
+    try {
+      // Determine working regime
+      let finalWorkingRegime;
+      if (workingRegime === 'custom') {
+        const onDutyDays = parseInt(customOnDutyDays, 10);
+        const offDutyDays = parseInt(customOffDutyDays, 10);
 
-      // Validate custom working regime
-      if (isNaN(onDutyDays) || isNaN(offDutyDays)) {
-        setError(t('register.errors.invalidWorkingRegime'));
-        return;
+        // Validate custom working regime
+        if (isNaN(onDutyDays) || isNaN(offDutyDays)) {
+          setError(t('register.errors.invalidWorkingRegime'));
+          return;
+        }
+
+        finalWorkingRegime = { 
+          onDutyDays, 
+          offDutyDays 
+        };
+      } else {
+        // Predefined regimes
+        const [onDutyDays, offDutyDays] = workingRegime.split('/').map(Number);
+        finalWorkingRegime = { 
+          onDutyDays, 
+          offDutyDays 
+        };
       }
 
-      finalWorkingRegime = { 
-        onDutyDays, 
-        offDutyDays 
-      };
-    } else {
-      // Predefined regimes
-      const [onDutyDays, offDutyDays] = workingRegime.split('/').map(Number);
-      finalWorkingRegime = { 
-        onDutyDays, 
-        offDutyDays 
-      };
-    }
-
-    try {
       // Prepare data for submission
       const submitData = {
         username,
@@ -235,13 +322,62 @@ const Register = () => {
         ? getBackendUrl('/api/auth/google-register')
         : getBackendUrl('/api/auth/register');
 
-      const response = await axios.post(registrationEndpoint, submitData);
+      const response = await axios.post(registrationEndpoint, submitData, {
+        // Add CSRF protection if using cookies
+        withCredentials: true,
+        // Add additional headers for security
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
 
-      // Handle successful registration
+      // Reset registration attempts
+      setRegistrationAttempts(0);
+      localStorage.removeItem('registrationLockExpiry');
+
+      // Sanitize and secure user data storage
+      const safeUser = {
+        id: response.data.user._id,
+        username: response.data.user.username,
+        email: response.data.user.email,
+        fullName: response.data.user.fullName,
+        offshoreRole: response.data.user.offshoreRole,
+        workingRegime: response.data.user.workingRegime,
+        company: response.data.user.company || null,
+        unitName: response.data.user.unitName || null,
+        workSchedule: response.data.user.workSchedule || {
+          nextOnBoardDate: null,
+          nextOffBoardDate: null
+        },
+        country: response.data.user.country || null
+      };
+
+      // Secure token storage
       localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(safeUser));
+
+      // Clear password from memory
+      setFormData(prev => ({ ...prev, password: '' }));
+
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || t('register.errors.registrationFailed'));
+      // Increment registration attempts
+      const newAttempts = registrationAttempts + 1;
+      setRegistrationAttempts(newAttempts);
+
+      // Lock registration after 5 failed attempts
+      if (newAttempts >= 5) {
+        const lockExpiryTime = Date.now() + (15 * 60 * 1000); // 15 minutes
+        setIsLocked(true);
+        setLockExpiry(lockExpiryTime);
+        localStorage.setItem('registrationLockExpiry', lockExpiryTime.toString());
+        setError(t('register.errors.tooManyAttempts'));
+        return;
+      }
+
+      console.error('Registration error:', err.response?.data || err.message);
+      setError(t('register.errors.registrationFailed'));
     }
   };
 

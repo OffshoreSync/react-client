@@ -300,14 +300,30 @@ const Dashboard = () => {
       
       // Only remove token and user if the error is related to authentication
       if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+        // Token is invalid or expired
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        navigate('/');
         return null;
       }
 
-      // For other errors, return the existing user from localStorage
-      const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
-      return storedUser ? { user: storedUser, showProfileAlert: false } : null;
+      // For other errors, still attempt to return stored user data
+      const storedUser = localStorage.getItem('user');
+      if (storedUser) {
+        try {
+          const parsedUser = JSON.parse(storedUser);
+          return {
+            user: parsedUser,
+            showProfileAlert: false  // Default to false if authentication fails
+          };
+        } catch (parseError) {
+          console.error('Failed to parse stored user data:', parseError);
+        }
+      }
+
+      // If no stored user or parsing fails, navigate to home
+      navigate('/');
+      return null;
     }
   }, []);
 

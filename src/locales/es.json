@@ -21,7 +21,11 @@
     "noAccount": "¿No tienes una cuenta?",
     "errors": {
       "loginFailed": "Inicio de sesión fallido. Por favor, intenta de nuevo.",
-      "googleLoginFailed": "Inicio de sesión con Google fallido. Por favor, intenta de nuevo."
+      "googleLoginFailed": "Inicio de sesión con Google fallido. Por favor, intenta de nuevo.",
+      "invalidUsername": "El nombre de usuario debe tener entre 3 y 20 caracteres y contener solo letras, números y guiones bajos",
+      "invalidPassword": "La contraseña debe cumplir con los siguientes requisitos: Mínimo 8 caracteres, al menos una letra mayúscula, una letra minúscula, un número y un carácter especial",
+      "accountLocked": "Demasiados intentos de inicio de sesión. Su cuenta está bloqueada. Intente de nuevo en {{minutes}} minutos.",
+      "tooManyAttempts": "Demasiados intentos de inicio de sesión. Intente de nuevo más tarde."
     }
   },
   "register": {
@@ -49,8 +53,13 @@
       "invalidWorkingRegime": "Por favor, ingrese números válidos para Días de Servicio y Días de Descanso",
       "minimumWorkingDays": "Días de Servicio y Días de Descanso deben ser de al menos 7",
       "maximumWorkingDays": "Total de Días de Servicio y Días de Descanso no debe exceder 365",
-      "registrationFailed": "Registro fallido. Por favor, intente de nuevo.",
-      "missingFields": "Por favor, completa todos los campos requeridos"
+      "registrationFailed": "Registro fallido. Intente de nuevo.",
+      "missingFields": "Por favor, complete todos los campos obligatorios",
+      "invalidUsername": "El nombre de usuario debe tener entre 3 y 20 caracteres y contener solo letras, números y guiones bajos",
+      "invalidEmail": "Por favor, ingrese una dirección de correo electrónico válida",
+      "invalidPassword": "La contraseña debe cumplir con los siguientes requisitos: {{requirements}}",
+      "tooManyAttempts": "Demasiados intentos de registro. Intente de nuevo en {{minutes}} minutos.",
+      "formError": "Por favor, corrija los errores en el formulario antes de enviar."
     }
   },
   "dashboard": {

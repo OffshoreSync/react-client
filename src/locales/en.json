@@ -21,7 +21,11 @@
     "noAccount": "Don't have an account?",
     "errors": {
       "loginFailed": "Login failed. Please try again.",
-      "googleLoginFailed": "Google login failed. Please try again."
+      "googleLoginFailed": "Google login failed. Please try again.",
+      "invalidUsername": "Username must be 3-20 characters long and contain only letters, numbers, and underscores",
+      "invalidPassword": "Password must meet the following requirements: Minimum 8 characters, at least one uppercase letter, one lowercase letter, one number, and one special character",
+      "accountLocked": "Too many login attempts. Your account is locked. Please try again in {{minutes}} minutes.",
+      "tooManyAttempts": "Too many login attempts. Please try again later."
     }
   },
   "register": {
@@ -50,7 +54,12 @@
       "minimumWorkingDays": "On and Off Duty days must be at least 7",
       "maximumWorkingDays": "Total On and Off Duty days must not exceed 365",
       "registrationFailed": "Registration failed. Please try again.",
-      "missingFields": "Please fill in all required fields"
+      "missingFields": "Please fill in all required fields",
+      "invalidUsername": "Username must be 3-20 characters long and contain only letters, numbers, and underscores",
+      "invalidEmail": "Please enter a valid email address",
+      "invalidPassword": "Password must meet the following requirements: {{requirements}}",
+      "tooManyAttempts": "Too many registration attempts. Please try again in {{minutes}} minutes.",
+      "formError": "Please correct the errors in the form before submitting."
     }
   },
   "dashboard": {
