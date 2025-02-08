@@ -262,18 +262,28 @@
     "syncOff": "Sincronização Desativada"
   },
   "passwordReset": {
-    "title": "Redefinir Sua Senha",
-    "emailPlaceholder": "Digite seu email",
+    "title": "Redefinir Senha",
+    "emailPlaceholder": "Digite seu e-mail",
     "tokenPlaceholder": "Digite o token de redefinição",
     "newPasswordPlaceholder": "Digite a nova senha",
+    "confirmPasswordPlaceholder": "Confirme a nova senha",
     "requestButton": "Solicitar Redefinição",
     "verifyButton": "Verificar Token",
     "resetButton": "Redefinir Senha",
-    "requestSent": "Link de redefinição de senha enviado para seu email",
-    "requestError": "Falha ao enviar link de redefinição",
-    "tokenValid": "Token é válido. Defina uma nova senha.",
+    "requestSent": "Link de redefinição de senha enviado para seu e-mail",
+    "requestError": "Falha ao enviar link de redefinição de senha",
+    "tokenValid": "Token verificado com sucesso",
     "invalidToken": "Token inválido ou expirado",
     "success": "Senha redefinida com sucesso",
-    "resetError": "Falha ao redefinir a senha"
+    "resetError": "Falha ao redefinir a senha",
+    "passwordMismatch": "As senhas não coincidem",
+    "passwordRequirements": "A senha deve atender aos seguintes requisitos",
+    "requirements": {
+      "length": "Pelo menos 8 caracteres de comprimento",
+      "uppercase": "Contém pelo menos uma letra maiúscula",
+      "lowercase": "Contém pelo menos uma letra minúscula",
+      "number": "Contém pelo menos um número",
+      "special": "Contém pelo menos um caractere especial"
+    }
   }
 }

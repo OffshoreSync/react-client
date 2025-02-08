@@ -265,18 +265,28 @@
     "syncOff": "Sync Off"
   },
   "passwordReset": {
-    "title": "Reset Your Password",
+    "title": "Reset Password",
     "emailPlaceholder": "Enter your email",
     "tokenPlaceholder": "Enter reset token",
     "newPasswordPlaceholder": "Enter new password",
+    "confirmPasswordPlaceholder": "Confirm new password",
     "requestButton": "Request Reset",
     "verifyButton": "Verify Token",
     "resetButton": "Reset Password",
     "requestSent": "Password reset link sent to your email",
-    "requestError": "Failed to send reset link",
-    "tokenValid": "Token is valid. Set a new password.",
+    "requestError": "Failed to send password reset link",
+    "tokenValid": "Token verified successfully",
     "invalidToken": "Invalid or expired token",
-    "success": "Password reset successful",
-    "resetError": "Failed to reset password"
+    "success": "Password reset successfully",
+    "resetError": "Failed to reset password",
+    "passwordMismatch": "Passwords do not match",
+    "passwordRequirements": "Password must meet the following requirements",
+    "requirements": {
+      "length": "At least 8 characters long",
+      "uppercase": "Contains at least one uppercase letter",
+      "lowercase": "Contains at least one lowercase letter",
+      "number": "Contains at least one number",
+      "special": "Contains at least one special character"
+    }
   }
 }

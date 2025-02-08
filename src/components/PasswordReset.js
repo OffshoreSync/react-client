@@ -3,14 +3,38 @@ import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import getBackendUrl from '../utils/apiUtils';
 
+// Enhanced input validation functions
+const validatePassword = (password) => {
+  // Require:
+  // - Minimum 8 characters
+  // - At least one uppercase letter
+  // - At least one lowercase letter
+  // - At least one number
+  // - At least one special character
+  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  const isValid = passwordRegex.test(password);
+  console.log('Password validation:', {
+    password,
+    isValid,
+    hasLowercase: /(?=.*[a-z])/.test(password),
+    hasUppercase: /(?=.*[A-Z])/.test(password),
+    hasNumber: /(?=.*\d)/.test(password),
+    hasSpecialChar: /(?=.*[@$!%*?&])/.test(password),
+    length: password.length
+  });
+  return isValid;
+};
+
 const PasswordReset = () => {
   const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [resetToken, setResetToken] = useState('');
   const [stage, setStage] = useState('request'); // 'request', 'verify', 'reset'
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [passwordErrors, setPasswordErrors] = useState([]);
 
   const requestPasswordReset = async (e) => {
     e.preventDefault();
@@ -35,7 +59,7 @@ const PasswordReset = () => {
     try {
       await axios.post(
         getBackendUrl('/api/password/verify-token'), 
-        { token: resetToken }
+        { token: resetToken, email }
       );
       setMessage(t('passwordReset.tokenValid'));
       setStage('reset');
@@ -50,13 +74,46 @@ const PasswordReset = () => {
 
   const resetPassword = async (e) => {
     e.preventDefault();
+    
+    // Clear previous errors
+    setPasswordErrors([]);
+    setError('');
+
+    // Validate password
+    if (!validatePassword(newPassword)) {
+      setPasswordErrors([
+        t('passwordReset.requirements.length'),
+        t('passwordReset.requirements.uppercase'),
+        t('passwordReset.requirements.lowercase'),
+        t('passwordReset.requirements.number'),
+        t('passwordReset.requirements.special')
+      ]);
+      return;
+    }
+
+    // Check password confirmation
+    if (newPassword !== confirmPassword) {
+      setError(t('passwordReset.passwordMismatch'));
+      return;
+    }
+
     try {
       await axios.post(
         getBackendUrl('/api/password/reset'), 
-        { token: resetToken, newPassword }
+        { 
+          token: resetToken, 
+          newPassword, 
+          confirmPassword,
+          email 
+        }
       );
       setMessage(t('passwordReset.success'));
       setStage('request');
+      
+      // Clear sensitive data
+      setNewPassword('');
+      setConfirmPassword('');
+      setResetToken('');
     } catch (error) {
       console.error('Password reset error:', error);
       setError(
@@ -112,10 +169,31 @@ const PasswordReset = () => {
             onChange={(e) => {
               setNewPassword(e.target.value);
               setError('');
+              setPasswordErrors([]);
             }}
             placeholder={t('passwordReset.newPasswordPlaceholder')}
             required
           />
+          <input
+            type="password"
+            value={confirmPassword}
+            onChange={(e) => {
+              setConfirmPassword(e.target.value);
+              setError('');
+            }}
+            placeholder={t('passwordReset.confirmPasswordPlaceholder')}
+            required
+          />
+          {passwordErrors.length > 0 && (
+            <div className="password-requirements">
+              <p>{t('passwordReset.passwordRequirements')}:</p>
+              <ul>
+                {passwordErrors.map((error, index) => (
+                  <li key={index}>{error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           <button type="submit">{t('passwordReset.resetButton')}</button>
         </form>
       )}

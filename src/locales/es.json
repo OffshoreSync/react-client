@@ -262,18 +262,28 @@
     "syncOff": "Sincronización Desactivada"
   },
   "passwordReset": {
-    "title": "Restablecer tu Contraseña",
-    "emailPlaceholder": "Ingresa tu correo electrónico",
-    "tokenPlaceholder": "Ingresa el token de restablecimiento",
-    "newPasswordPlaceholder": "Ingresa la nueva contraseña",
+    "title": "Restablecer Contraseña",
+    "emailPlaceholder": "Ingrese su correo electrónico",
+    "tokenPlaceholder": "Ingrese el token de restablecimiento",
+    "newPasswordPlaceholder": "Ingrese la nueva contraseña",
+    "confirmPasswordPlaceholder": "Confirme la nueva contraseña",
     "requestButton": "Solicitar Restablecimiento",
     "verifyButton": "Verificar Token",
     "resetButton": "Restablecer Contraseña",
-    "requestSent": "Enlace de restablecimiento de contraseña enviado a tu correo electrónico",
-    "requestError": "Error al enviar el enlace de restablecimiento",
-    "tokenValid": "Token válido. Establece una nueva contraseña.",
+    "requestSent": "Enlace de restablecimiento de contraseña enviado a su correo electrónico",
+    "requestError": "Error al enviar el enlace de restablecimiento de contraseña",
+    "tokenValid": "Token verificado exitosamente",
     "invalidToken": "Token inválido o expirado",
     "success": "Contraseña restablecida exitosamente",
-    "resetError": "Error al restablecer la contraseña"
+    "resetError": "Error al restablecer la contraseña",
+    "passwordMismatch": "Las contraseñas no coinciden",
+    "passwordRequirements": "La contraseña debe cumplir con los siguientes requisitos",
+    "requirements": {
+      "length": "Al menos 8 caracteres de longitud",
+      "uppercase": "Contiene al menos una letra mayúscula",
+      "lowercase": "Contiene al menos una letra minúscula",
+      "number": "Contiene al menos un número",
+      "special": "Contiene al menos un carácter especial"
+    }
   }
 }
