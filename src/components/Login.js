@@ -209,6 +209,22 @@ const Login = () => {
               onChange={onChange}
             />
             
+            <Typography variant="body2" align="right" sx={{ mt: 1 }}>
+              <MuiLink 
+                component={Link} 
+                to="/forgot-password" 
+                sx={{ 
+                  textDecoration: 'none', 
+                  color: 'primary.main',
+                  '&:hover': {
+                    textDecoration: 'underline'
+                  }
+                }}
+              >
+                {t('login.forgotPassword')}
+              </MuiLink>
+            </Typography>
+            
             {error && (
               <Alert severity="error" sx={{ width: '100%', mt: 2 }}>
                 {error}

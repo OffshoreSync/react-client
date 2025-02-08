@@ -251,5 +251,20 @@
     "syncDisabled": "La sincronización de horarios está deshabilitada para este amigo",
     "syncOn": "Sincronización Activada",
     "syncOff": "Sincronización Desactivada"
+  },
+  "passwordReset": {
+    "title": "Restablecer tu Contraseña",
+    "emailPlaceholder": "Ingresa tu correo electrónico",
+    "tokenPlaceholder": "Ingresa el token de restablecimiento",
+    "newPasswordPlaceholder": "Ingresa la nueva contraseña",
+    "requestButton": "Solicitar Restablecimiento",
+    "verifyButton": "Verificar Token",
+    "resetButton": "Restablecer Contraseña",
+    "requestSent": "Enlace de restablecimiento de contraseña enviado a tu correo electrónico",
+    "requestError": "Error al enviar el enlace de restablecimiento",
+    "tokenValid": "Token válido. Establece una nueva contraseña.",
+    "invalidToken": "Token inválido o expirado",
+    "success": "Contraseña restablecida exitosamente",
+    "resetError": "Error al restablecer la contraseña"
   }
 }

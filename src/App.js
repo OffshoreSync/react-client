@@ -1,31 +1,38 @@
-import React, { Suspense } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, createTheme, CssBaseline } from '@mui/material';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { blue, green } from '@mui/material/colors';
+import CssBaseline from '@mui/material/CssBaseline';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { useTranslation } from 'react-i18next';
 
 // Import i18n configuration
 import './i18n';
-import { useTranslation } from 'react-i18next';
 
-import Navbar from './components/Navbar';
+// Import components
 import Home from './components/Home';
-import Login from './components/Login';
-import Register from './components/Register';
 import Dashboard from './components/Dashboard';
+import Login from './components/Login';
+import PasswordReset from './components/PasswordReset';
 import Settings from './components/Settings';
-import EditProfile from './components/EditProfile';
 import Sync from './components/Sync';
+import Navbar from './components/Navbar';
+import Register from './components/Register';
+import EditProfile from './components/EditProfile';
 import FriendManagement from './components/FriendManagement';
+
+// Explicitly declare colors to prevent no-undef
+const primaryColor = blue[500];
+const secondaryColor = green[500];
 
 // Create custom theme
 const theme = createTheme({
   palette: {
     primary: {
-      main: blue[600],
+      main: primaryColor,
     },
     secondary: {
-      main: green[600],
+      main: secondaryColor,
     },
     background: {
       default: '#f4f4f4',
@@ -89,6 +96,7 @@ function App() {
                 localStorage.getItem('token') ? <Navigate to="/dashboard" /> : <Home />
               } />
               <Route path="/login" element={<Login />} />
+              <Route path="/forgot-password" element={<PasswordReset />} />
               <Route path="/register" element={<Register />} />
               <Route 
                 path="/dashboard" 

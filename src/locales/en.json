@@ -254,5 +254,20 @@
     "syncDisabled": "Schedule sync is disabled for this friend",
     "syncOn": "Sync On",
     "syncOff": "Sync Off"
+  },
+  "passwordReset": {
+    "title": "Reset Your Password",
+    "emailPlaceholder": "Enter your email",
+    "tokenPlaceholder": "Enter reset token",
+    "newPasswordPlaceholder": "Enter new password",
+    "requestButton": "Request Reset",
+    "verifyButton": "Verify Token",
+    "resetButton": "Reset Password",
+    "requestSent": "Password reset link sent to your email",
+    "requestError": "Failed to send reset link",
+    "tokenValid": "Token is valid. Set a new password.",
+    "invalidToken": "Invalid or expired token",
+    "success": "Password reset successful",
+    "resetError": "Failed to reset password"
   }
 }

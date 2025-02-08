@@ -251,5 +251,20 @@
     "syncDisabled": "Sincronização de agenda está desabilitada para este amigo",
     "syncOn": "Sincronização Ativada",
     "syncOff": "Sincronização Desativada"
+  },
+  "passwordReset": {
+    "title": "Redefinir Sua Senha",
+    "emailPlaceholder": "Digite seu email",
+    "tokenPlaceholder": "Digite o token de redefinição",
+    "newPasswordPlaceholder": "Digite a nova senha",
+    "requestButton": "Solicitar Redefinição",
+    "verifyButton": "Verificar Token",
+    "resetButton": "Redefinir Senha",
+    "requestSent": "Link de redefinição de senha enviado para seu email",
+    "requestError": "Falha ao enviar link de redefinição",
+    "tokenValid": "Token é válido. Defina uma nova senha.",
+    "invalidToken": "Token inválido ou expirado",
+    "success": "Senha redefinida com sucesso",
+    "resetError": "Falha ao redefinir a senha"
   }
 }
