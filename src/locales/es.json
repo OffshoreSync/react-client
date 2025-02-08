@@ -10,7 +10,11 @@
     "settings": "Configuración",
     "language": "Idioma",
     "save": "Guardar",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "error": "Error",
+    "success": "Éxito",
+    "confirm": "Confirmar",
+    "close": "Cerrar"
   },
   "login": {
     "title": "Inicio de Sesión para Trabajadores Offshore",

@@ -10,7 +10,11 @@
     "settings": "Configurações",
     "language": "Idioma",
     "save": "Salvar",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "error": "Erro",
+    "success": "Sucesso",
+    "confirm": "Confirmar",
+    "close": "Fechar"
   },
   "login": {
     "title": "Login de Trabalhador Offshore",

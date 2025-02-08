@@ -10,7 +10,11 @@
     "settings": "Settings",
     "language": "Language",
     "save": "Save",
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "error": "Error",
+    "success": "Success",
+    "confirm": "Confirm",
+    "close": "Close"
   },
   "login": {
     "title": "Offshore Worker Login",

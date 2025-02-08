@@ -4,14 +4,30 @@ import { useTranslation } from 'react-i18next';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import getBackendUrl from '../utils/apiUtils';
 
+// Material-UI Imports
+import { 
+  Box, 
+  Button, 
+  Container, 
+  CssBaseline, 
+  TextField, 
+  Typography, 
+  Paper, 
+  Alert, 
+  AlertTitle,
+  IconButton,
+  InputAdornment
+} from '@mui/material';
+import { 
+  Visibility, 
+  VisibilityOff, 
+  LockReset, 
+  Email, 
+  VpnKey 
+} from '@mui/icons-material';
+
 // Enhanced input validation functions
 const validatePassword = (password) => {
-  // Require:
-  // - Minimum 8 characters
-  // - At least one uppercase letter
-  // - At least one lowercase letter
-  // - At least one number
-  // - At least one special character
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
   const isValid = passwordRegex.test(password);
   console.log('Password validation:', {
@@ -40,6 +56,7 @@ const PasswordReset = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [passwordErrors, setPasswordErrors] = useState([]);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     // Check for token in URL query or route params
@@ -65,7 +82,7 @@ const PasswordReset = () => {
   const requestPasswordReset = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(
+      await axios.post(
         getBackendUrl('/api/password/request-reset'), 
         { email }
       );
@@ -156,74 +173,226 @@ const PasswordReset = () => {
   };
 
   return (
-    <div className="password-reset-container">
-      <h2>{t('passwordReset.title')}</h2>
-      {message && <p className="success-message">{message}</p>}
-      {error && <p className="error-message">{error}</p>}
-      
-      {stage === 'request' && (
-        <form onSubmit={requestPasswordReset}>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setError('');
-            }}
-            placeholder={t('passwordReset.emailPlaceholder')}
-            required
-          />
-          <button type="submit">{t('passwordReset.requestButton')}</button>
-        </form>
-      )}
+    <Container component="main" maxWidth="xs">
+      <CssBaseline />
+      <Box
+        sx={{
+          marginTop: 8,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
+        <LockReset sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
+        <Typography component="h1" variant="h5">
+          {t('passwordReset.title')}
+        </Typography>
 
-      {stage === 'check-email' && (
-        <div className="check-email-instructions">
-          <p>{t('passwordReset.checkEmailInstructions')}</p>
-          <p>{t('passwordReset.linkExpiration')}</p>
-          <button onClick={() => setStage('request')}>
-            {t('passwordReset.changeEmail')}
-          </button>
-        </div>
-      )}
+        {/* Error and Success Messages */}
+        {error && (
+          <Alert 
+            severity="error" 
+            sx={{ width: '100%', mt: 2 }}
+          >
+            <AlertTitle>{t('common.error')}</AlertTitle>
+            {error}
+          </Alert>
+        )}
+        {message && (
+          <Alert 
+            severity="success" 
+            sx={{ width: '100%', mt: 2 }}
+          >
+            <AlertTitle>{t('common.success')}</AlertTitle>
+            {message}
+          </Alert>
+        )}
 
-      {stage === 'reset' && (
-        <form onSubmit={resetPassword}>
-          <input
-            type="password"
-            value={newPassword}
-            onChange={(e) => {
-              setNewPassword(e.target.value);
-              setError('');
-              setPasswordErrors([]);
+        {/* Request Reset Stage */}
+        {stage === 'request' && (
+          <Box 
+            component="form" 
+            onSubmit={requestPasswordReset} 
+            noValidate 
+            sx={{ mt: 1, width: '100%' }}
+          >
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              id="email"
+              label={t('passwordReset.emailPlaceholder')}
+              name="email"
+              autoComplete="email"
+              autoFocus
+              value={email}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                setError('');
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Email />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              sx={{ mt: 3, mb: 2 }}
+            >
+              {t('passwordReset.requestButton')}
+            </Button>
+          </Box>
+        )}
+
+        {/* Check Email Stage */}
+        {stage === 'check-email' && (
+          <Paper 
+            elevation={3} 
+            sx={{ 
+              p: 3, 
+              mt: 2, 
+              display: 'flex', 
+              flexDirection: 'column', 
+              alignItems: 'center',
+              width: '100%'
             }}
-            placeholder={t('passwordReset.newPasswordPlaceholder')}
-            required
-          />
-          <input
-            type="password"
-            value={confirmPassword}
-            onChange={(e) => {
-              setConfirmPassword(e.target.value);
-              setError('');
-            }}
-            placeholder={t('passwordReset.confirmPasswordPlaceholder')}
-            required
-          />
-          {passwordErrors.length > 0 && (
-            <div className="password-requirements">
-              <p>{t('passwordReset.passwordRequirements')}:</p>
-              <ul>
+          >
+            <Typography variant="body1" align="center" sx={{ mb: 2 }}>
+              {t('passwordReset.checkEmailInstructions')}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" align="center">
+              {t('passwordReset.linkExpiration')}
+            </Typography>
+            <Button
+              variant="outlined"
+              color="primary"
+              sx={{ mt: 2 }}
+              onClick={() => setStage('request')}
+            >
+              {t('passwordReset.changeEmail')}
+            </Button>
+          </Paper>
+        )}
+
+        {/* Reset Password Stage */}
+        {stage === 'reset' && (
+          <Box 
+            component="form" 
+            onSubmit={resetPassword} 
+            noValidate 
+            sx={{ mt: 1, width: '100%' }}
+          >
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="newPassword"
+              label={t('passwordReset.newPasswordPlaceholder')}
+              type={showPassword ? 'text' : 'password'}
+              id="newPassword"
+              autoComplete="new-password"
+              value={newPassword}
+              onChange={(e) => {
+                setNewPassword(e.target.value);
+                setError('');
+                setPasswordErrors([]);
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <VpnKey />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <TextField
+              margin="normal"
+              required
+              fullWidth
+              name="confirmPassword"
+              label={t('passwordReset.confirmPasswordPlaceholder')}
+              type={showPassword ? 'text' : 'password'}
+              id="confirmPassword"
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(e) => {
+                setConfirmPassword(e.target.value);
+                setError('');
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <VpnKey />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      aria-label="toggle password visibility"
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            {/* Password Requirements */}
+            {passwordErrors.length > 0 && (
+              <Paper 
+                elevation={2} 
+                sx={{ 
+                  mt: 2, 
+                  p: 2, 
+                  backgroundColor: 'background.default' 
+                }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  {t('passwordReset.passwordRequirements')}:
+                </Typography>
                 {passwordErrors.map((error, index) => (
-                  <li key={index}>{error}</li>
+                  <Typography 
+                    key={index} 
+                    variant="body2" 
+                    color="error" 
+                    sx={{ ml: 2 }}
+                  >
+                    • {error}
+                  </Typography>
                 ))}
-              </ul>
-            </div>
-          )}
-          <button type="submit">{t('passwordReset.resetButton')}</button>
-        </form>
-      )}
-    </div>
+              </Paper>
+            )}
+
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              sx={{ mt: 3, mb: 2 }}
+            >
+              {t('passwordReset.resetButton')}
+            </Button>
+          </Box>
+        )}
+      </Box>
+    </Container>
   );
 };
 
