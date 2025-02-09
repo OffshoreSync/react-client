@@ -7,7 +7,8 @@ import {
   Typography, 
   Box, 
   Button, 
-  CircularProgress 
+  CircularProgress,
+  Alert
 } from '@mui/material';
 
 import getBackendUrl from '../utils/apiUtils';
@@ -21,7 +22,8 @@ const VerifyEmail = () => {
   const [verificationStatus, setVerificationStatus] = useState({
     success: false,
     message: '',
-    alreadyVerified: false
+    alreadyVerified: false,
+    error: null
   });
 
   useEffect(() => {
@@ -43,14 +45,31 @@ const VerifyEmail = () => {
         setVerificationStatus({
           success: true,
           message: response.data.message || t('verifyEmail.success.message'),
-          alreadyVerified: response.data.alreadyVerified || false
+          alreadyVerified: response.data.alreadyVerified || false,
+          error: null
         });
+
+        // Redirect to login page after 2 seconds if verification is successful
+        setTimeout(() => {
+          navigate('/login', {
+            state: { 
+              successMessage: response.data.message || t('verifyEmail.success.message') 
+            }
+          });
+        }, 2000);
       } catch (error) {
+        console.error('Email Verification Error:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status
+        });
+
         setVerificationStatus({
           success: false,
           message: error.response?.data?.error || 
                    t('verifyEmail.error.serverError'),
-          alreadyVerified: false
+          alreadyVerified: false,
+          error: error.response?.data || error.message
         });
       } finally {
         setIsVerifying(false);
@@ -58,11 +77,7 @@ const VerifyEmail = () => {
     };
 
     verifyEmail();
-  }, [location.search, t]);
-
-  const handleRedirectToLogin = () => {
-    navigate('/login');
-  };
+  }, [location.search, t, navigate]);
 
   return (
     <Container maxWidth="xs">
@@ -82,11 +97,17 @@ const VerifyEmail = () => {
             </Typography>
             <CircularProgress />
             <Typography variant="body1" sx={{ mt: 2 }}>
-              {t('verifyEmail.success.message')}
+              {t('verifyEmail.verifying')}
             </Typography>
           </>
         ) : (
           <>
+            {verificationStatus.error && (
+              <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
+                {verificationStatus.message}
+              </Alert>
+            )}
+
             <Typography 
               component="h1" 
               variant="h5"
@@ -108,14 +129,16 @@ const VerifyEmail = () => {
               {verificationStatus.message}
             </Typography>
             
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={handleRedirectToLogin}
-              sx={{ mt: 2 }}
-            >
-              {t('verifyEmail.buttons.goToLogin')}
-            </Button>
+            {!verificationStatus.success && (
+              <Button
+                variant="contained"
+                color="primary"
+                onClick={() => navigate('/login')}
+                sx={{ mt: 2 }}
+              >
+                {t('verifyEmail.buttons.goToLogin')}
+              </Button>
+            )}
           </>
         )}
       </Box>
