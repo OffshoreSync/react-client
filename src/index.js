@@ -2,15 +2,65 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
 import App from './App';
+import axios from 'axios';
+import getBackendUrl from './utils/apiUtils';
 import reportWebVitals from './reportWebVitals';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import theme from './theme';
+import { I18nextProvider } from 'react-i18next';
+import i18n from './i18n';
 
 // Import i18n configuration
 import './i18n';
-import { I18nextProvider } from 'react-i18next';
-import i18n from './i18n';
+
+// Configure axios for CSRF protection
+const configureAxios = async () => {
+  try {
+    // Set base URL
+    axios.defaults.baseURL = getBackendUrl();
+    
+    // Global axios configurations
+    axios.defaults.withCredentials = true;
+    axios.defaults.timeout = 5000;
+
+    // Configure default headers
+    axios.defaults.headers.common['Content-Type'] = 'application/json';
+    axios.defaults.headers.common['Accept'] = 'application/json';
+
+    // Fetch CSRF token
+    const csrfResponse = await axios.get('/api/csrf-token', {
+      withCredentials: true,
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    });
+
+    // Safely access and set CSRF token
+    const csrfToken = csrfResponse.data?.csrfToken;
+    if (csrfToken) {
+      // Set the CSRF token in both headers and defaults
+      axios.defaults.headers.common['X-XSRF-TOKEN'] = csrfToken;
+      
+      console.log('CSRF token successfully configured:', {
+        token: csrfToken,
+        baseURL: axios.defaults.baseURL
+      });
+    } else {
+      console.warn('CSRF token not found in response');
+    }
+  } catch (error) {
+    console.error('Failed to configure CSRF protection:', {
+      errorMessage: error.message,
+      response: error.response ? error.response.data : 'No response',
+      config: error.config
+    });
+  }
+};
+
+// Call configuration before rendering
+configureAxios();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
@@ -18,7 +68,9 @@ root.render(
     <I18nextProvider i18n={i18n}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <App />
+        <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
+          <App />
+        </GoogleOAuthProvider>
       </ThemeProvider>
     </I18nextProvider>
   </React.StrictMode>
