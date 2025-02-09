@@ -14,7 +14,8 @@ import {
   FormControl, 
   InputLabel, 
   Paper, 
-  Alert 
+  Alert, 
+  FormHelperText
 } from '@mui/material';
 import { OFFSHORE_COUNTRIES, getTranslatedCountries } from '../utils/countries';
 import { OFFSHORE_ROLES, getTranslatedRoles } from '../utils/offshoreRoles';
@@ -64,6 +65,7 @@ const Register = () => {
     username: '',
     email: '',
     password: '',
+    confirmPassword: '',
     fullName: '',
     offshoreRole: '',
     workingRegime: '28/28', // Default to 28/28
@@ -78,6 +80,7 @@ const Register = () => {
     username: '',
     email: '',
     password: '',
+    confirmPassword: '',
     fullName: '',
     offshoreRole: '',
     country: '',
@@ -95,6 +98,7 @@ const Register = () => {
     username, 
     email, 
     password, 
+    confirmPassword, 
     fullName, 
     offshoreRole, 
     workingRegime,
@@ -183,7 +187,7 @@ const Register = () => {
 
   const onChange = e => {
     // Disable changes if Google login
-    if (isGoogleLogin && e.target.name !== 'password' && e.target.name !== 'offshoreRole' && e.target.name !== 'workingRegime' && e.target.name !== 'customOnDutyDays' && e.target.name !== 'customOffDutyDays' && e.target.name !== 'company' && e.target.name !== 'unitName' && e.target.name !== 'country') {
+    if (isGoogleLogin && e.target.name !== 'password' && e.target.name !== 'confirmPassword' && e.target.name !== 'offshoreRole' && e.target.name !== 'workingRegime' && e.target.name !== 'customOnDutyDays' && e.target.name !== 'customOffDutyDays' && e.target.name !== 'company' && e.target.name !== 'unitName' && e.target.name !== 'country') {
       return;
     }
     const { name, value } = e.target;
@@ -226,13 +230,17 @@ const Register = () => {
     if (!validatePassword(password)) {
       newErrors.password = t('register.errors.invalidPassword', {
         requirements: [
-          'Minimum 8 characters',
-          'At least one uppercase letter',
-          'At least one lowercase letter', 
-          'At least one number',
-          'At least one special character'
+          t('register.passwordRequirements.length'),
+          t('register.passwordRequirements.uppercase'),
+          t('register.passwordRequirements.lowercase'), 
+          t('register.passwordRequirements.number'),
+          t('register.passwordRequirements.specialChar')
         ].join(', ')
       });
+    }
+
+    if (password !== confirmPassword) {
+      newErrors.confirmPassword = t('register.errors.passwordMismatch');
     }
 
     // Existing validations...
@@ -358,7 +366,7 @@ const Register = () => {
       localStorage.setItem('user', JSON.stringify(safeUser));
 
       // Clear password from memory
-      setFormData(prev => ({ ...prev, password: '' }));
+      setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
 
       navigate('/dashboard');
     } catch (err) {
@@ -394,7 +402,15 @@ const Register = () => {
           </Alert>
         )}
 
-        <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Box 
+          component="form" 
+          onSubmit={handleSubmit} 
+          sx={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: 2 // Consistent 2-unit gap between form elements
+          }}
+        >
           <TextField
             fullWidth
             label={t('register.username')}
@@ -409,7 +425,6 @@ const Register = () => {
             }}
             error={!!errors.username}
             helperText={errors.username}
-            margin="normal"
           />
 
           <TextField
@@ -426,7 +441,6 @@ const Register = () => {
             }}
             error={!!errors.email}
             helperText={errors.email}
-            margin="normal"
           />
           
           <TextField
@@ -443,10 +457,9 @@ const Register = () => {
             }}
             error={!!errors.fullName}
             helperText={errors.fullName}
-            margin="normal"
           />
           
-          <FormControl fullWidth required sx={{ mb: 2 }}>
+          <FormControl fullWidth required>
             <InputLabel>{t('register.offshoreRole')}</InputLabel>
             <Select
               name="offshoreRole"
@@ -462,10 +475,10 @@ const Register = () => {
                 </MenuItem>
               ))}
             </Select>
-            {errors.offshoreRole && <div style={{ color: 'red' }}>{errors.offshoreRole}</div>}
+            {errors.offshoreRole && <FormHelperText error>{errors.offshoreRole}</FormHelperText>}
           </FormControl>
           
-          <FormControl fullWidth required sx={{ mb: 2 }}>
+          <FormControl fullWidth required>
             <InputLabel>{t('register.workingRegime')}</InputLabel>
             <Select
               name="workingRegime"
@@ -479,7 +492,7 @@ const Register = () => {
               <MenuItem value="28/28">28/28</MenuItem>
               <MenuItem value="custom">{t('register.customRegime')}</MenuItem>
             </Select>
-            {errors.workingRegime && <div style={{ color: 'red' }}>{errors.workingRegime}</div>}
+            {errors.workingRegime && <FormHelperText error>{errors.workingRegime}</FormHelperText>}
           </FormControl>
           
           {workingRegime === 'custom' && (
@@ -529,7 +542,7 @@ const Register = () => {
             onChange={onChange}
             variant="outlined"
           />
-          <FormControl fullWidth required sx={{ mb: 2 }}>
+          <FormControl fullWidth required>
             <InputLabel>{t('register.country')}</InputLabel>
             <Select
               name="country"
@@ -557,7 +570,7 @@ const Register = () => {
                 </MenuItem>
               ))}
             </Select>
-            {errors.country && <div style={{ color: 'red' }}>{errors.country}</div>}
+            {errors.country && <FormHelperText error>{errors.country}</FormHelperText>}
           </FormControl>
           
           <TextField
@@ -572,15 +585,26 @@ const Register = () => {
             inputProps={{ minLength: 6 }}
             error={!!errors.password}
             helperText={errors.password}
-            margin="normal"
+          />
+          <TextField
+            fullWidth
+            type="password"
+            label={t('register.confirmPassword')}
+            name="confirmPassword"
+            value={confirmPassword}
+            onChange={onChange}
+            required
+            variant="outlined"
+            inputProps={{ minLength: 6 }}
+            error={!!errors.confirmPassword}
+            helperText={errors.confirmPassword}
           />
           
           <Button 
             type="submit" 
             variant="contained" 
             color="primary" 
-            size="large"
-            sx={{ mt: 2 }}
+            fullWidth
           >
             {isGoogleLogin ? t('register.completeProfileButton') : t('register.registerButton')}
           </Button>

@@ -42,6 +42,7 @@
     "fullName": "Nome Completo",
     "username": "Nome de Usuário",
     "password": "Senha",
+    "confirmPassword": "Confirmar Senha",
     "offshoreRole": "Função Offshore",
     "workingRegime": "Regime de Trabalho",
     "customRegime": "Regime Personalizado",
@@ -65,7 +66,15 @@
       "invalidEmail": "Por favor, insira um endereço de e-mail válido",
       "invalidPassword": "A senha deve atender aos seguintes requisitos: {{requirements}}",
       "tooManyAttempts": "Muitas tentativas de registro. Tente novamente em {{minutes}} minutos.",
-      "formError": "Por favor, corrija os erros no formulário antes de enviar."
+      "formError": "Por favor, corrija os erros no formulário antes de enviar.",
+      "passwordMismatch": "As senhas não coincidem!"
+    },
+    "passwordRequirements": {
+      "length": "Mínimo de 8 caracteres",
+      "uppercase": "Pelo menos uma letra maiúscula",
+      "lowercase": "Pelo menos uma letra minúscula", 
+      "number": "Pelo menos um número",
+      "specialChar": "Pelo menos um caractere especial"
     }
   },
   "dashboard": {

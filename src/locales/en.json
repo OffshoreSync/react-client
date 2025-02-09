@@ -42,6 +42,7 @@
     "fullName": "Full Name",
     "username": "Username",
     "password": "Password",
+    "confirmPassword": "Confirm Password",
     "offshoreRole": "Offshore Role",
     "workingRegime": "Working Regime",
     "customRegime": "Custom Regime",
@@ -65,7 +66,15 @@
       "invalidEmail": "Please enter a valid email address",
       "invalidPassword": "Password must meet the following requirements: {{requirements}}",
       "tooManyAttempts": "Too many registration attempts. Please try again in {{minutes}} minutes.",
-      "formError": "Please correct the errors in the form before submitting."
+      "formError": "Please correct the errors in the form before submitting.",
+      "passwordMismatch": "Passwords do not match!"
+    },
+    "passwordRequirements": {
+      "length": "Minimum 8 characters",
+      "uppercase": "At least one uppercase letter",
+      "lowercase": "At least one lowercase letter", 
+      "number": "At least one number",
+      "specialChar": "At least one special character"
     }
   },
   "dashboard": {
