@@ -17,6 +17,7 @@
     "country-flag-icons": "^1.5.14",
     "cra-template": "1.2.0",
     "date-fns": "^4.1.0",
+    "formik": "^2.4.6",
     "i18next": "^24.2.2",
     "react": "^19.0.0",
     "react-calendar": "^5.1.0",
@@ -26,7 +27,8 @@
     "react-router-dom": "^7.1.3",
     "react-scripts": "5.0.1",
     "recharts": "^2.15.0",
-    "web-vitals": "^4.2.4"
+    "web-vitals": "^4.2.4",
+    "yup": "^1.6.1"
   },
   "scripts": {
     "start": "react-scripts start",

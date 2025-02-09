@@ -1,24 +1,38 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
-import axios from 'axios';
-import getBackendUrl from '../utils/apiUtils';
 import { 
   Container, 
   Typography, 
   TextField, 
   Button, 
   Box, 
-  MenuItem, 
-  Select, 
   FormControl, 
   InputLabel, 
+  Select, 
+  MenuItem, 
+  FormHelperText, 
   Paper, 
-  Alert, 
-  FormHelperText
+  Alert,
+  IconButton,
+  InputAdornment
 } from '@mui/material';
-import { OFFSHORE_COUNTRIES, getTranslatedCountries } from '../utils/countries';
-import { OFFSHORE_ROLES, getTranslatedRoles } from '../utils/offshoreRoles';
+import { 
+  Visibility, 
+  VisibilityOff 
+} from '@mui/icons-material';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import { Formik, Form, Field } from 'formik';
+import * as Yup from 'yup';
+import axios from 'axios';
+import getBackendUrl from '../utils/apiUtils';
+import { 
+  OFFSHORE_COUNTRIES, 
+  getTranslatedCountries 
+} from '../utils/countries';
+import { 
+  OFFSHORE_ROLES, 
+  getTranslatedRoles 
+} from '../utils/offshoreRoles';
 
 // Enhanced input validation functions
 const validateUsername = (username) => {
@@ -57,112 +71,118 @@ const validatePassword = (password) => {
 
 const Register = () => {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const location = useLocation();
   const [isGoogleLogin, setIsGoogleLogin] = useState(false);
   const [googleUserData, setGoogleUserData] = useState(null);
-
-  const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    fullName: '',
-    offshoreRole: '',
-    workingRegime: '28/28', // Default to 28/28
-    customOnDutyDays: '',
-    customOffDutyDays: '',
-    company: '',
-    unitName: '',
-    country: ['', ''] // Store as [countryCode, countryName]
-  });
-  const [error, setError] = useState('');
-  const [errors, setErrors] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    fullName: '',
-    offshoreRole: '',
-    country: '',
-    workingRegime: '',
-    customWorkingRegime: ''
-  });
-
-  const [registrationAttempts, setRegistrationAttempts] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
   const [lockExpiry, setLockExpiry] = useState(null);
+  
+  // New state for password visibility
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const navigate = useNavigate();
+  // Password visibility toggle handlers
+  const handleClickShowPassword = () => {
+    setShowPassword(!showPassword);
+  };
 
-  const { 
-    username, 
-    email, 
-    password, 
-    confirmPassword, 
-    fullName, 
-    offshoreRole, 
-    workingRegime,
-    customOnDutyDays,
-    customOffDutyDays,
-    company, 
-    unitName,
-    country 
-  } = formData;
+  const handleClickShowConfirmPassword = () => {
+    setShowConfirmPassword(!showConfirmPassword);
+  };
 
+  const handleMouseDownPassword = (event) => {
+    event.preventDefault();
+  };
+
+  // Dynamic password validation schema
+  const PasswordValidationSchema = Yup.object().shape({
+    username: Yup.string()
+      .min(3, t('register.errors.usernameTooShort'))
+      .max(50, t('register.errors.usernameTooLong'))
+      .required(t('register.errors.usernameRequired')),
+    
+    email: Yup.string()
+      .email(t('register.errors.invalidEmail'))
+      .required(t('register.errors.emailRequired')),
+    
+    password: Yup.string()
+      .min(8, t('register.passwordRequirements.length'))
+      .matches(/[A-Z]/, t('register.passwordRequirements.uppercase'))
+      .matches(/[a-z]/, t('register.passwordRequirements.lowercase'))
+      .matches(/[0-9]/, t('register.passwordRequirements.number'))
+      .matches(/[@$!%*?&]/, t('register.passwordRequirements.specialChar'))
+      .required(t('register.errors.passwordRequired')),
+    
+    confirmPassword: Yup.string()
+      .oneOf([Yup.ref('password'), null], t('register.errors.passwordMismatch'))
+      .required(t('register.errors.confirmPasswordRequired')),
+    
+    fullName: Yup.string()
+      .required(t('register.errors.fullNameRequired')),
+    
+    offshoreRole: Yup.string()
+      .required(t('register.errors.offshoreRoleRequired')),
+    
+    country: Yup.array()
+      .of(Yup.string())
+      .min(1, t('register.errors.countryRequired')),
+    
+    workingRegime: Yup.string()
+      .required(t('register.errors.workingRegimeRequired')),
+    
+    customOnDutyDays: Yup.number()
+      .min(7, t('register.errors.minimumWorkingDays'))
+      .max(365, t('register.errors.maximumWorkingDays')),
+    
+    customOffDutyDays: Yup.number()
+      .min(7, t('register.errors.minimumWorkingDays'))
+      .max(365, t('register.errors.maximumWorkingDays')),
+    
+    company: Yup.string(),
+    
+    unitName: Yup.string(),
+  });
+
+  const handleSubmit = async (values, { setSubmitting, setErrors }) => {
+    try {
+      const response = await axios.post(getBackendUrl('/api/auth/register'), {
+        username: values.username,
+        email: values.email,
+        password: values.password,
+        fullName: values.fullName,
+        offshoreRole: values.offshoreRole,
+        workingRegime: values.workingRegime,
+        customOnDutyDays: values.customOnDutyDays,
+        customOffDutyDays: values.customOffDutyDays,
+        company: values.company,
+        unitName: values.unitName,
+        country: values.country
+      });
+
+      // Handle successful registration
+      localStorage.setItem('user', JSON.stringify(response.data));
+      navigate('/dashboard');
+    } catch (err) {
+      // Handle registration errors
+      if (err.response?.data) {
+        setErrors({ submit: err.response.data.message });
+      }
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Check for Google login data
   useEffect(() => {
-    // Check if there's Google login data passed from Login component
     const googleData = location.state?.googleUserData;
     if (googleData) {
-      setIsGoogleLogin(true);
       setGoogleUserData(googleData);
-      
-      // Pre-fill form with Google data
-      setFormData(prevState => ({
-        ...prevState,
-        email: googleData.email,
-        fullName: googleData.name,
-        username: googleData.email.split('@')[0], // Use email prefix as username
-      }));
+      setIsGoogleLogin(true);
     }
   }, [location.state]);
 
-  useEffect(() => {
-    // Update country name when language changes
-    const updateCountryName = () => {
-      if (formData.country[0]) {
-        // Find the country object by its current code
-        const countryObj = OFFSHORE_COUNTRIES.find(c => c.code === formData.country[0]);
-
-        if (countryObj) {
-          const translatedCountryName = t(`countries.${countryObj.code}`);
-          
-          // Only update if the translated name is different from the current name
-          if (translatedCountryName.toLowerCase() !== formData.country[1].toLowerCase()) {
-            setFormData(prevState => ({
-              ...prevState,
-              country: [prevState.country[0], translatedCountryName]
-            }));
-          }
-        }
-      }
-    };
-
-    // Initial translation
-    updateCountryName();
-
-    // Optional: Add event listener for language changes if needed
-    const languageChangeHandler = () => {
-      updateCountryName();
-    };
-
-    i18n.on('languageChanged', languageChangeHandler);
-
-    // Cleanup
-    return () => {
-      i18n.off('languageChanged', languageChangeHandler);
-    };
-  }, [formData.country[0], i18n.language, t]);
-
+  // Registration lock status check
   useEffect(() => {
     const checkLockStatus = () => {
       const storedLockExpiry = localStorage.getItem('registrationLockExpiry');
@@ -172,453 +192,316 @@ const Register = () => {
           setIsLocked(true);
           setLockExpiry(expiryTime);
         } else {
-          // Lock period has expired
           localStorage.removeItem('registrationLockExpiry');
           setIsLocked(false);
-          setRegistrationAttempts(0);
+          setLockExpiry(null);
         }
       }
     };
 
     checkLockStatus();
     const intervalId = setInterval(checkLockStatus, 60000); // Check every minute
+
     return () => clearInterval(intervalId);
   }, []);
 
-  const onChange = e => {
-    // Disable changes if Google login
-    if (isGoogleLogin && e.target.name !== 'password' && e.target.name !== 'confirmPassword' && e.target.name !== 'offshoreRole' && e.target.name !== 'workingRegime' && e.target.name !== 'customOnDutyDays' && e.target.name !== 'customOffDutyDays' && e.target.name !== 'company' && e.target.name !== 'unitName' && e.target.name !== 'country') {
-      return;
-    }
-    const { name, value } = e.target;
-    setFormData(prevState => {
-      // Special handling for working regime
-      if (name === 'workingRegime') {
-        // If predefined regime is selected, reset custom inputs
-        if (value !== 'custom') {
-          return {
-            ...prevState,
-            workingRegime: value,
-            customOnDutyDays: '',
-            customOffDutyDays: ''
-          };
-        }
-      }
+  // Language-based country name update
+  const updateCountryName = (currentCountry) => {
+    if (currentCountry[0]) {
+      // Find the country object by its current code
+      const countryObj = OFFSHORE_COUNTRIES.find(c => c.code === currentCountry[0]);
 
-      // Normal input handling
-      return {
-        ...prevState,
-        [name]: value
-      };
-    });
-    setError(''); // Clear error when user starts typing
-    setErrors(prevState => ({ ...prevState, [name]: '' }));
-  };
-
-  const validateForm = () => {
-    const newErrors = {};
-
-    // Enhanced validations
-    if (!validateUsername(username)) {
-      newErrors.username = t('register.errors.invalidUsername');
-    }
-
-    if (!validateEmail(email)) {
-      newErrors.email = t('register.errors.invalidEmail');
-    }
-
-    if (!validatePassword(password)) {
-      newErrors.password = t('register.errors.invalidPassword', {
-        requirements: [
-          t('register.passwordRequirements.length'),
-          t('register.passwordRequirements.uppercase'),
-          t('register.passwordRequirements.lowercase'), 
-          t('register.passwordRequirements.number'),
-          t('register.passwordRequirements.specialChar')
-        ].join(', ')
-      });
-    }
-
-    if (password !== confirmPassword) {
-      newErrors.confirmPassword = t('register.errors.passwordMismatch');
-    }
-
-    // Existing validations...
-    if (!fullName) newErrors.fullName = t('register.errors.requiredField');
-    if (!offshoreRole) newErrors.offshoreRole = t('register.errors.requiredField');
-    if (!formData.country[0]) newErrors.country = t('register.errors.requiredField');
-
-    if (workingRegime === 'custom') {
-      const onDutyDays = parseInt(customOnDutyDays, 10);
-      const offDutyDays = parseInt(customOffDutyDays, 10);
-
-      if (isNaN(onDutyDays) || isNaN(offDutyDays)) {
-        newErrors.customWorkingRegime = t('register.errors.invalidWorkingRegime');
-      } else {
-        if (onDutyDays < 7 || offDutyDays < 7) {
-          newErrors.customWorkingRegime = t('register.errors.minimumWorkingDays');
-        }
-        if (onDutyDays + offDutyDays > 365) {
-          newErrors.customWorkingRegime = t('register.errors.maximumWorkingDays');
+      if (countryObj) {
+        const translatedCountryName = t(`countries.${countryObj.code}`);
+        
+        // Only update if the translated name is different from the current name
+        if (translatedCountryName.toLowerCase() !== currentCountry[1].toLowerCase()) {
+          return [currentCountry[0], translatedCountryName];
         }
       }
     }
-
-    setError(Object.keys(newErrors).length > 0 ? t('register.errors.formError') : '');
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // Check if registration is locked
-    if (isLocked) {
-      const remainingTime = Math.ceil((lockExpiry - Date.now()) / 60000);
-      setError(t('register.errors.tooManyAttempts', { minutes: remainingTime }));
-      return;
-    }
-
-    // Validate form
-    if (!validateForm()) return;
-
-    try {
-      // Determine working regime
-      let finalWorkingRegime;
-      if (workingRegime === 'custom') {
-        const onDutyDays = parseInt(customOnDutyDays, 10);
-        const offDutyDays = parseInt(customOffDutyDays, 10);
-
-        // Validate custom working regime
-        if (isNaN(onDutyDays) || isNaN(offDutyDays)) {
-          setError(t('register.errors.invalidWorkingRegime'));
-          return;
-        }
-
-        finalWorkingRegime = { 
-          onDutyDays, 
-          offDutyDays 
-        };
-      } else {
-        // Predefined regimes
-        const [onDutyDays, offDutyDays] = workingRegime.split('/').map(Number);
-        finalWorkingRegime = { 
-          onDutyDays, 
-          offDutyDays 
-        };
-      }
-
-      // Prepare data for submission
-      const submitData = {
-        username,
-        email,
-        password,
-        fullName,
-        offshoreRole,
-        workingRegime: finalWorkingRegime,
-        company: company.trim() || null,
-        unitName: unitName.trim() || null,
-        country: formData.country[0] // Use country code for submission
-      };
-
-      // Remove custom working regime inputs from submitted data
-      delete submitData.customOnDutyDays;
-      delete submitData.customOffDutyDays;
-
-      // Determine registration method
-      const registrationEndpoint = isGoogleLogin 
-        ? getBackendUrl('/api/auth/google-register')
-        : getBackendUrl('/api/auth/register');
-
-      const response = await axios.post(registrationEndpoint, submitData, {
-        // Add CSRF protection if using cookies
-        withCredentials: true,
-        // Add additional headers for security
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        }
-      });
-
-      // Reset registration attempts
-      setRegistrationAttempts(0);
-      localStorage.removeItem('registrationLockExpiry');
-
-      // Sanitize and secure user data storage
-      const safeUser = {
-        id: response.data.user._id,
-        username: response.data.user.username,
-        email: response.data.user.email,
-        fullName: response.data.user.fullName,
-        offshoreRole: response.data.user.offshoreRole,
-        workingRegime: response.data.user.workingRegime,
-        company: response.data.user.company || null,
-        unitName: response.data.user.unitName || null,
-        workSchedule: response.data.user.workSchedule || {
-          nextOnBoardDate: null,
-          nextOffBoardDate: null
-        },
-        country: response.data.user.country || null
-      };
-
-      // Secure token storage
-      localStorage.setItem('token', response.data.token);
-      localStorage.setItem('user', JSON.stringify(safeUser));
-
-      // Clear password from memory
-      setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
-
-      navigate('/dashboard');
-    } catch (err) {
-      // Increment registration attempts
-      const newAttempts = registrationAttempts + 1;
-      setRegistrationAttempts(newAttempts);
-
-      // Lock registration after 5 failed attempts
-      if (newAttempts >= 5) {
-        const lockExpiryTime = Date.now() + (15 * 60 * 1000); // 15 minutes
-        setIsLocked(true);
-        setLockExpiry(lockExpiryTime);
-        localStorage.setItem('registrationLockExpiry', lockExpiryTime.toString());
-        setError(t('register.errors.tooManyAttempts'));
-        return;
-      }
-
-      console.error('Registration error:', err.response?.data || err.message);
-      setError(t('register.errors.registrationFailed'));
-    }
+    return currentCountry;
   };
 
   return (
     <Container maxWidth="sm">
       <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
-        <Typography variant="h4" gutterBottom align="center">
+        <Typography variant="h4" align="center" gutterBottom>
           {isGoogleLogin ? t('register.completeProfile') : t('register.title')}
         </Typography>
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
-
-        <Box 
-          component="form" 
-          onSubmit={handleSubmit} 
-          sx={{ 
-            display: 'flex', 
-            flexDirection: 'column', 
-            gap: 2 // Consistent 2-unit gap between form elements
+        <Formik
+          initialValues={{
+            username: googleUserData?.email.split('@')[0] || '',
+            email: googleUserData?.email || '',
+            password: '',
+            confirmPassword: '',
+            fullName: googleUserData?.name || '',
+            offshoreRole: '',
+            workingRegime: '28/28', // Default to 28/28
+            customOnDutyDays: '',
+            customOffDutyDays: '',
+            company: '',
+            unitName: '',
+            country: ['', ''] // Store as [countryCode, countryName]
           }}
+          validationSchema={PasswordValidationSchema}
+          onSubmit={handleSubmit}
         >
-          <TextField
-            fullWidth
-            label={t('register.username')}
-            name="username"
-            value={username}
-            onChange={onChange}
-            required
-            variant="outlined"
-            disabled={isGoogleLogin}
-            InputProps={{
-              readOnly: isGoogleLogin
-            }}
-            error={!!errors.username}
-            helperText={errors.username}
-          />
+          {(formikProps) => {
+            const { 
+              values, 
+              errors, 
+              touched, 
+              isSubmitting, 
+              handleChange, 
+              handleBlur, 
+              setFieldValue 
+            } = formikProps;
 
-          <TextField
-            fullWidth
-            label={t('register.emailAddress')}
-            name="email"
-            value={email}
-            onChange={onChange}
-            required
-            variant="outlined"
-            disabled={isGoogleLogin}
-            InputProps={{
-              readOnly: isGoogleLogin
-            }}
-            error={!!errors.email}
-            helperText={errors.email}
-          />
-          
-          <TextField
-            fullWidth
-            label={t('register.fullName')}
-            name="fullName"
-            value={fullName}
-            onChange={onChange}
-            required
-            variant="outlined"
-            disabled={isGoogleLogin}
-            InputProps={{
-              readOnly: isGoogleLogin
-            }}
-            error={!!errors.fullName}
-            helperText={errors.fullName}
-          />
-          
-          <FormControl fullWidth required>
-            <InputLabel>{t('register.offshoreRole')}</InputLabel>
-            <Select
-              name="offshoreRole"
-              value={offshoreRole}
-              label={t('register.offshoreRole')}
-              onChange={onChange}
-              required
-              error={!!errors.offshoreRole}
-            >
-              {getTranslatedRoles().map((role, index) => (
-                <MenuItem key={OFFSHORE_ROLES[index]} value={OFFSHORE_ROLES[index]}>
-                  {role}
-                </MenuItem>
-              ))}
-            </Select>
-            {errors.offshoreRole && <FormHelperText error>{errors.offshoreRole}</FormHelperText>}
-          </FormControl>
-          
-          <FormControl fullWidth required>
-            <InputLabel>{t('register.workingRegime')}</InputLabel>
-            <Select
-              name="workingRegime"
-              value={workingRegime}
-              label={t('register.workingRegime')}
-              onChange={onChange}
-              error={!!errors.workingRegime}
-            >
-              <MenuItem value="7/7">7/7</MenuItem>
-              <MenuItem value="14/14">14/14</MenuItem>
-              <MenuItem value="28/28">28/28</MenuItem>
-              <MenuItem value="custom">{t('register.customRegime')}</MenuItem>
-            </Select>
-            {errors.workingRegime && <FormHelperText error>{errors.workingRegime}</FormHelperText>}
-          </FormControl>
-          
-          {workingRegime === 'custom' && (
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <TextField
-                fullWidth
-                type="number"
-                label={t('register.customOnDutyDays')}
-                name="customOnDutyDays"
-                value={customOnDutyDays}
-                onChange={onChange}
-                inputProps={{ min: 7, max: 365 }}
-                required
-                variant="outlined"
-                error={!!errors.customWorkingRegime}
-                helperText={errors.customWorkingRegime}
-              />
-              <TextField
-                fullWidth
-                type="number"
-                label={t('register.customOffDutyDays')}
-                name="customOffDutyDays"
-                value={customOffDutyDays}
-                onChange={onChange}
-                inputProps={{ min: 7, max: 365 }}
-                required
-                variant="outlined"
-                error={!!errors.customWorkingRegime}
-                helperText={errors.customWorkingRegime}
-              />
-            </Box>
-          )}
-          
-          <TextField
-            fullWidth
-            label={t('register.company')}
-            name="company"
-            value={company}
-            onChange={onChange}
-            variant="outlined"
-          />
-          <TextField
-            fullWidth
-            label={t('register.unitName')}
-            name="unitName"
-            value={unitName}
-            onChange={onChange}
-            variant="outlined"
-          />
-          <FormControl fullWidth required>
-            <InputLabel>{t('register.country')}</InputLabel>
-            <Select
-              name="country"
-              value={formData.country[1]} // Use country name for display
-              label={t('register.country')}
-              onChange={(e) => {
-                // Find the corresponding country object
-                const selectedCountry = getTranslatedCountries().find(c => 
-                  t(`countries.${c.code}`) === e.target.value
-                );
-                
-                if (selectedCountry) {
-                  setFormData(prev => ({
-                    ...prev,
-                    country: [selectedCountry.code, t(`countries.${selectedCountry.code}`)]
-                  }));
-                }
-              }}
-              error={!!errors.country}
-            >
-              <MenuItem value="">Select Country</MenuItem>
-              {getTranslatedCountries().map(country => (
-                <MenuItem key={country.code} value={t(`countries.${country.code}`)}>
-                  {t(`countries.${country.code}`)}
-                </MenuItem>
-              ))}
-            </Select>
-            {errors.country && <FormHelperText error>{errors.country}</FormHelperText>}
-          </FormControl>
-          
-          <TextField
-            fullWidth
-            type="password"
-            label={t('register.password')}
-            name="password"
-            value={password}
-            onChange={onChange}
-            required
-            variant="outlined"
-            inputProps={{ minLength: 6 }}
-            error={!!errors.password}
-            helperText={errors.password}
-          />
-          <TextField
-            fullWidth
-            type="password"
-            label={t('register.confirmPassword')}
-            name="confirmPassword"
-            value={confirmPassword}
-            onChange={onChange}
-            required
-            variant="outlined"
-            inputProps={{ minLength: 6 }}
-            error={!!errors.confirmPassword}
-            helperText={errors.confirmPassword}
-          />
-          
-          <Button 
-            type="submit" 
-            variant="contained" 
-            color="primary" 
-            fullWidth
-          >
-            {isGoogleLogin ? t('register.completeProfileButton') : t('register.registerButton')}
-          </Button>
-        </Box>
+            return (
+              <Form>
+                <Box sx={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: 2 // Adds consistent 16px spacing between form elements
+                }}>
+                  {isLocked && (
+                    <Alert severity="error">
+                      {t('register.errors.tooManyAttempts', { minutes: Math.ceil((lockExpiry - Date.now()) / 60000) })}
+                    </Alert>
+                  )}
+
+                  <TextField
+                    fullWidth
+                    name="username"
+                    label={t('register.username')}
+                    value={values.username}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={touched.username && Boolean(errors.username)}
+                    helperText={touched.username && errors.username}
+                    disabled={isGoogleLogin}
+                  />
+
+                  <TextField
+                    fullWidth
+                    name="email"
+                    label={t('register.emailAddress')}
+                    value={values.email}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={touched.email && Boolean(errors.email)}
+                    helperText={touched.email && errors.email}
+                    disabled={isGoogleLogin}
+                  />
+                  
+                  <TextField
+                    fullWidth
+                    name="fullName"
+                    label={t('register.fullName')}
+                    value={values.fullName}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={touched.fullName && Boolean(errors.fullName)}
+                    helperText={touched.fullName && errors.fullName}
+                    disabled={isGoogleLogin}
+                  />
+                  
+                  <FormControl fullWidth>
+                    <InputLabel>{t('register.offshoreRole')}</InputLabel>
+                    <Select
+                      name="offshoreRole"
+                      value={values.offshoreRole}
+                      label={t('register.offshoreRole')}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.offshoreRole && Boolean(errors.offshoreRole)}
+                    >
+                      {getTranslatedRoles().map((role, index) => (
+                        <MenuItem key={OFFSHORE_ROLES[index]} value={OFFSHORE_ROLES[index]}>
+                          {role}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {touched.offshoreRole && errors.offshoreRole && (
+                      <FormHelperText error>{errors.offshoreRole}</FormHelperText>
+                    )}
+                  </FormControl>
+                  
+                  <FormControl fullWidth>
+                    <InputLabel>{t('register.workingRegime')}</InputLabel>
+                    <Select
+                      name="workingRegime"
+                      value={values.workingRegime}
+                      label={t('register.workingRegime')}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      error={touched.workingRegime && Boolean(errors.workingRegime)}
+                    >
+                      <MenuItem value="7/7">7/7</MenuItem>
+                      <MenuItem value="14/14">14/14</MenuItem>
+                      <MenuItem value="28/28">28/28</MenuItem>
+                      <MenuItem value="custom">{t('register.customRegime')}</MenuItem>
+                    </Select>
+                    {touched.workingRegime && errors.workingRegime && (
+                      <FormHelperText error>{errors.workingRegime}</FormHelperText>
+                    )}
+                  </FormControl>
+                  
+                  {values.workingRegime === 'custom' && (
+                    <Box sx={{ display: 'flex', gap: 2 }}>
+                      <TextField
+                        fullWidth
+                        type="number"
+                        label={t('register.customOnDutyDays')}
+                        name="customOnDutyDays"
+                        value={values.customOnDutyDays}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        inputProps={{ min: 7, max: 365 }}
+                        error={touched.customOnDutyDays && Boolean(errors.customOnDutyDays)}
+                        helperText={touched.customOnDutyDays && errors.customOnDutyDays}
+                      />
+                      <TextField
+                        fullWidth
+                        type="number"
+                        label={t('register.customOffDutyDays')}
+                        name="customOffDutyDays"
+                        value={values.customOffDutyDays}
+                        onChange={handleChange}
+                        onBlur={handleBlur}
+                        inputProps={{ min: 7, max: 365 }}
+                        error={touched.customOffDutyDays && Boolean(errors.customOffDutyDays)}
+                        helperText={touched.customOffDutyDays && errors.customOffDutyDays}
+                      />
+                    </Box>
+                  )}
+                  
+                  <TextField
+                    fullWidth
+                    label={t('register.company')}
+                    name="company"
+                    value={values.company}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                  />
+                  <TextField
+                    fullWidth
+                    label={t('register.unitName')}
+                    name="unitName"
+                    value={values.unitName}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                  />
+                  <FormControl fullWidth>
+                    <InputLabel>{t('register.country')}</InputLabel>
+                    <Select
+                      name="country"
+                      value={values.country[1]} // Use country name for display
+                      label={t('register.country')}
+                      onChange={(e) => {
+                        // Find the corresponding country object
+                        const selectedCountry = getTranslatedCountries().find(c => 
+                          t(`countries.${c.code}`) === e.target.value
+                        );
+                        
+                        if (selectedCountry) {
+                          const updatedCountry = updateCountryName([
+                            selectedCountry.code, 
+                            t(`countries.${selectedCountry.code}`)
+                          ]);
+                          setFieldValue('country', updatedCountry);
+                        }
+                      }}
+                      onBlur={handleBlur}
+                      error={touched.country && Boolean(errors.country)}
+                    >
+                      <MenuItem value="">Select Country</MenuItem>
+                      {getTranslatedCountries().map(country => (
+                        <MenuItem key={country.code} value={t(`countries.${country.code}`)}>
+                          {t(`countries.${country.code}`)}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                    {touched.country && errors.country && (
+                      <FormHelperText error>{errors.country}</FormHelperText>
+                    )}
+                  </FormControl>
+                  
+                  <TextField
+                    fullWidth
+                    type={showPassword ? 'text' : 'password'}
+                    label={t('register.password')}
+                    name="password"
+                    value={values.password}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={touched.password && Boolean(errors.password)}
+                    helperText={touched.password && errors.password}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            aria-label="toggle password visibility"
+                            onClick={handleClickShowPassword}
+                            onMouseDown={handleMouseDownPassword}
+                            edge="end"
+                          >
+                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      )
+                    }}
+                  />
+                  <TextField
+                    fullWidth
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    label={t('register.confirmPassword')}
+                    name="confirmPassword"
+                    value={values.confirmPassword}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    error={touched.confirmPassword && Boolean(errors.confirmPassword)}
+                    helperText={touched.confirmPassword && errors.confirmPassword}
+                    InputProps={{
+                      endAdornment: (
+                        <InputAdornment position="end">
+                          <IconButton
+                            aria-label="toggle confirm password visibility"
+                            onClick={handleClickShowConfirmPassword}
+                            onMouseDown={handleMouseDownPassword}
+                            edge="end"
+                          >
+                            {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                          </IconButton>
+                        </InputAdornment>
+                      )
+                    }}
+                  />
+                  
+                  <Button 
+                    type="submit" 
+                    variant="contained" 
+                    color="primary" 
+                    disabled={isSubmitting || isLocked}
+                    fullWidth
+                  >
+                    {isGoogleLogin ? t('register.completeProfileButton') : t('register.registerButton')}
+                  </Button>
+                </Box>
+              </Form>
+            );
+          }}
+        </Formik>
 
         <Typography variant="body2" align="center" sx={{ mt: 2 }}>
           {t('register.alreadyHaveAccount')}{' '}
-          <Link to="/login" style={{ textDecoration: 'none' }}>
-            {t('register.loginLink')}
-          </Link>
+          <Link to="/login">{t('register.loginLink')}</Link>
         </Typography>
       </Paper>
     </Container>
   );
-}
+};
 
 export default Register;
