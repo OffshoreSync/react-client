@@ -395,7 +395,7 @@ const Register = () => {
         )}
 
         <Box component="form" onSubmit={handleSubmit} sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <TextField
+          <TextField
             fullWidth
             label={t('register.username')}
             name="username"
@@ -409,6 +409,7 @@ const Register = () => {
             }}
             error={!!errors.username}
             helperText={errors.username}
+            margin="normal"
           />
 
           <TextField
@@ -425,6 +426,7 @@ const Register = () => {
             }}
             error={!!errors.email}
             helperText={errors.email}
+            margin="normal"
           />
           
           <TextField
@@ -441,20 +443,7 @@ const Register = () => {
             }}
             error={!!errors.fullName}
             helperText={errors.fullName}
-          />
-          
-          <TextField
-            fullWidth
-            type="password"
-            label={t('register.password')}
-            name="password"
-            value={password}
-            onChange={onChange}
-            required
-            variant="outlined"
-            inputProps={{ minLength: 6 }}
-            error={!!errors.password}
-            helperText={errors.password}
+            margin="normal"
           />
           
           <FormControl fullWidth required sx={{ mb: 2 }}>
@@ -570,6 +559,21 @@ const Register = () => {
             </Select>
             {errors.country && <div style={{ color: 'red' }}>{errors.country}</div>}
           </FormControl>
+          
+          <TextField
+            fullWidth
+            type="password"
+            label={t('register.password')}
+            name="password"
+            value={password}
+            onChange={onChange}
+            required
+            variant="outlined"
+            inputProps={{ minLength: 6 }}
+            error={!!errors.password}
+            helperText={errors.password}
+            margin="normal"
+          />
           
           <Button 
             type="submit" 
