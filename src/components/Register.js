@@ -95,6 +95,16 @@ const Register = () => {
     event.preventDefault();
   };
 
+  // Disposable email domains list
+  const DISPOSABLE_DOMAINS = [
+    'mailinator.com', 'guerrillamail.com', 'guerrillamail.net', 'guerrillamail.org',
+    'guerrillamail.biz', 'temp-mail.org', '10minutemail.com', 'throwawaymail.com', 
+    'tempmail.com', 'tempmail.net', 'tempemail.com', 'tempemails.com', 'tempemails.net',
+    'emailtemporaire.com', 'jetable.org', 'noemail.xyz', 'spam4.me', 'yopmail.com',
+    'dispostable.com', 'sharklasers.com', 'guerrillamail.info', 'grr.la', 'spam.la',
+    'pokemail.net', 'temp.email', 'dropmail.me', 'fakeinbox.com', '33mail.com'
+  ];
+
   // Dynamic password validation schema
   const PasswordValidationSchema = Yup.object().shape({
     username: Yup.string()
@@ -104,6 +114,12 @@ const Register = () => {
     
     email: Yup.string()
       .email(t('register.errors.invalidEmail'))
+      .test('no-disposable-email', t('register.errors.disposableEmail'), (value) => {
+        if (!value) return true; // Let required validator handle empty emails
+        
+        const emailDomain = value.split('@')[1].toLowerCase();
+        return !DISPOSABLE_DOMAINS.includes(emailDomain);
+      })
       .required(t('register.errors.emailRequired')),
     
     password: Yup.string()

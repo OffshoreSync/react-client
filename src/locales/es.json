@@ -73,7 +73,8 @@
       "passwordMismatch": "Las contraseñas no coinciden",
       "tooManyAttempts": "Demasiados intentos de registro. Intente de nuevo en {{minutes}} minutos.",
       "minimumWorkingDays": "Mínimo de 7 días necesarios",
-      "maximumWorkingDays": "Máximo de 365 días permitidos"
+      "maximumWorkingDays": "Máximo de 365 días permitidos",
+      "disposableEmail": "No se permiten direcciones de correo electrónico desechables"
     },
     "passwordRequirements": {
       "length": "Mínimo 8 caracteres",
