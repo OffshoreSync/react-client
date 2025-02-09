@@ -144,6 +144,14 @@ const Login = () => {
         }
       );
 
+      // Check for verification requirement
+      if (response.data.requiresVerification) {
+        setError(t('login.errors.emailNotVerified', { 
+          email: response.data.email 
+        }));
+        return;
+      }
+
       // Reset login attempts on successful login
       setLoginAttempts(0);
       localStorage.removeItem('loginLockExpiry');
@@ -177,22 +185,28 @@ const Login = () => {
 
       navigate('/dashboard');
     } catch (err) {
-      // Increment login attempts
-      const newAttempts = loginAttempts + 1;
-      setLoginAttempts(newAttempts);
+      if (err.response?.data?.requiresVerification) {
+        setError(t('login.errors.emailNotVerified', { 
+          email: err.response.data.email 
+        }));
+      } else {
+        // Increment login attempts
+        const newAttempts = loginAttempts + 1;
+        setLoginAttempts(newAttempts);
 
-      // Lock account after 5 failed attempts
-      if (newAttempts >= 5) {
-        const lockExpiryTime = Date.now() + (15 * 60 * 1000); // 15 minutes
-        setIsLocked(true);
-        setLockExpiry(lockExpiryTime);
-        localStorage.setItem('loginLockExpiry', lockExpiryTime.toString());
-        setError(t('login.errors.tooManyAttempts'));
-        return;
+        // Lock account after 5 failed attempts
+        if (newAttempts >= 5) {
+          const lockExpiryTime = Date.now() + (15 * 60 * 1000); // 15 minutes
+          setIsLocked(true);
+          setLockExpiry(lockExpiryTime);
+          localStorage.setItem('loginLockExpiry', lockExpiryTime.toString());
+          setError(t('login.errors.tooManyAttempts'));
+          return;
+        }
+
+        console.error('Login error:', err.response?.data || err.message);
+        setError(t('login.errors.loginFailed'));
       }
-
-      console.error('Login error:', err.response?.data || err.message);
-      setError(t('login.errors.loginFailed'));
     }
   };
 

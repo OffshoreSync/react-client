@@ -31,7 +31,8 @@
       "invalidUsername": "El nombre de usuario debe tener entre 3 y 20 caracteres y contener solo letras, números y guiones bajos",
       "invalidPassword": "La contraseña debe cumplir con los siguientes requisitos: Mínimo 8 caracteres, al menos una letra mayúscula, una letra minúscula, un número y un carácter especial",
       "accountLocked": "Demasiados intentos de inicio de sesión. Su cuenta está bloqueada. Intente de nuevo en {{minutes}} minutos.",
-      "tooManyAttempts": "Demasiados intentos de inicio de sesión. Intente de nuevo más tarde."
+      "tooManyAttempts": "Demasiados intentos de inicio de sesión. Intente de nuevo más tarde.",
+      "emailNotVerified": "Por favor, verifique su correo electrónico ({{email}}) antes de iniciar sesión. Revise su bandeja de entrada para obtener instrucciones de verificación."
     }
   },
   "register": {
@@ -82,7 +83,8 @@
       "lowercase": "Al menos una letra minúscula", 
       "number": "Al menos un número",
       "specialChar": "Al menos un carácter especial"
-    }
+    },
+    "verificationMessage": "¡Registro exitoso! Revise su correo electrónico para confirmar su cuenta."
   },
   "dashboard": {
     "welcome": "Bienvenido, {{name}}",
@@ -306,6 +308,22 @@
       "lowercase": "Contiene al menos una letra minúscula",
       "number": "Contiene al menos un número",
       "special": "Contiene al menos un carácter especial"
+    }
+  },
+  "verifyEmail": {
+    "title": "Verifique Su Correo Electrónico",
+    "success": {
+      "title": "Correo Electrónico Verificado Exitosamente",
+      "message": "Su correo electrónico ha sido verificado. Ahora puede iniciar sesión en su cuenta."
+    },
+    "error": {
+      "title": "Error en Verificación de Correo Electrónico",
+      "invalidToken": "El enlace de verificación no es válido o ha expirado.",
+      "serverError": "Hubo un problema al verificar su correo electrónico. Intente nuevamente más tarde."
+    },
+    "buttons": {
+      "goToLogin": "Ir a Iniciar Sesión",
+      "resendVerification": "Reenviar Correo de Verificación"
     }
   }
 }

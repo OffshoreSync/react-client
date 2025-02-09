@@ -31,7 +31,8 @@
       "invalidUsername": "Username must be 3-20 characters long and contain only letters, numbers, and underscores",
       "invalidPassword": "Password must meet the following requirements: Minimum 8 characters, at least one uppercase letter, one lowercase letter, one number, and one special character",
       "accountLocked": "Too many login attempts. Your account is locked. Please try again in {{minutes}} minutes.",
-      "tooManyAttempts": "Too many login attempts. Please try again later."
+      "tooManyAttempts": "Too many login attempts. Please try again later.",
+      "emailNotVerified": "Please verify your email ({{email}}) before logging in. Check your inbox for verification instructions."
     }
   },
   "register": {
@@ -82,7 +83,8 @@
       "lowercase": "At least one lowercase letter", 
       "number": "At least one number",
       "specialChar": "At least one special character"
-    }
+    },
+    "verificationMessage": "Registration successful! Please check your email to verify your account."
   },
   "dashboard": {
     "welcome": "Welcome, {{name}}",
@@ -309,6 +311,22 @@
       "lowercase": "Contains at least one lowercase letter",
       "number": "Contains at least one number",
       "special": "Contains at least one special character"
+    }
+  },
+  "verifyEmail": {
+    "title": "Verify Your Email",
+    "success": {
+      "title": "Email Verified Successfully",
+      "message": "Your email has been verified. You can now log in to your account."
+    },
+    "error": {
+      "title": "Email Verification Failed",
+      "invalidToken": "The verification link is invalid or has expired.",
+      "serverError": "There was a problem verifying your email. Please try again later."
+    },
+    "buttons": {
+      "goToLogin": "Go to Login",
+      "resendVerification": "Resend Verification Email"
     }
   }
 }

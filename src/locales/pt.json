@@ -31,7 +31,8 @@
       "invalidUsername": "O nome de usuário deve ter entre 3 e 20 caracteres e conter apenas letras, números e sublinhados",
       "invalidPassword": "A senha deve atender aos seguintes requisitos: Mínimo 8 caracteres, pelo menos uma letra maiúscula, uma letra minúscula, um número e um caractere especial",
       "accountLocked": "Muitas tentativas de login. Sua conta está bloqueada. Tente novamente em {{minutes}} minutos.",
-      "tooManyAttempts": "Muitas tentativas de login. Tente novamente mais tarde."
+      "tooManyAttempts": "Muitas tentativas de login. Tente novamente mais tarde.",
+      "emailNotVerified": "Por favor, verifique seu email ({{email}}) antes de fazer login. Verifique sua caixa de entrada para instruções de verificação."
     }
   },
   "register": {
@@ -82,7 +83,8 @@
       "lowercase": "Pelo menos uma letra minúscula", 
       "number": "Pelo menos um número",
       "specialChar": "Pelo menos um caractere especial"
-    }
+    },
+    "verificationMessage": "Registro bem-sucedido! Verifique seu email para confirmar sua conta."
   },
   "dashboard": {
     "welcome": "Bem-vindo, {{name}}",
@@ -306,6 +308,22 @@
       "lowercase": "Contém pelo menos uma letra minúscula",
       "number": "Contém pelo menos um número",
       "special": "Contém pelo menos um caractere especial"
+    }
+  },
+  "verifyEmail": {
+    "title": "Verifique Seu Email",
+    "success": {
+      "title": "Email Verificado com Sucesso",
+      "message": "Seu email foi verificado. Agora você pode fazer login em sua conta."
+    },
+    "error": {
+      "title": "Falha na Verificação de Email",
+      "invalidToken": "O link de verificação é inválido ou expirou.",
+      "serverError": "Houve um problema ao verificar seu email. Tente novamente mais tarde."
+    },
+    "buttons": {
+      "goToLogin": "Ir para Login",
+      "resendVerification": "Reenviar Email de Verificação"
     }
   }
 }

@@ -20,6 +20,7 @@ import Navbar from './components/Navbar';
 import Register from './components/Register';
 import EditProfile from './components/EditProfile';
 import FriendManagement from './components/FriendManagement';
+import VerifyEmail from './components/VerifyEmail';
 
 // Explicitly declare colors to prevent no-undef
 const primaryColor = blue[500];
@@ -100,6 +101,7 @@ function App() {
               <Route path="/reset-password" element={<PasswordReset />} />
               <Route path="/reset-password/:token" element={<PasswordReset />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/verify-email" element={<VerifyEmail />} />
               <Route 
                 path="/dashboard" 
                 element={
