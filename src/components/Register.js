@@ -115,9 +115,16 @@ const Register = () => {
     email: Yup.string()
       .email(t('register.errors.invalidEmail'))
       .test('no-disposable-email', t('register.errors.disposableEmail'), (value) => {
-        if (!value) return true; // Let required validator handle empty emails
+        // If value is empty or undefined, let other validators handle it
+        if (!value) return true;
         
-        const emailDomain = value.split('@')[1].toLowerCase();
+        // Split email and check domain
+        const emailParts = value.split('@');
+        
+        // Ensure email has both local and domain parts
+        if (emailParts.length !== 2) return false;
+        
+        const emailDomain = emailParts[1].toLowerCase();
         return !DISPOSABLE_DOMAINS.includes(emailDomain);
       })
       .required(t('register.errors.emailRequired')),
