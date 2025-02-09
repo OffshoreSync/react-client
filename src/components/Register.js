@@ -146,29 +146,84 @@ const Register = () => {
 
   const handleSubmit = async (values, { setSubmitting, setErrors }) => {
     try {
-      const response = await axios.post(getBackendUrl('/api/auth/register'), {
-        username: values.username,
-        email: values.email,
-        password: values.password,
-        fullName: values.fullName,
-        offshoreRole: values.offshoreRole,
-        workingRegime: values.workingRegime,
-        customOnDutyDays: values.customOnDutyDays,
-        customOffDutyDays: values.customOffDutyDays,
-        company: values.company,
-        unitName: values.unitName,
-        country: values.country
-      });
+      // Prepare data for submission
+      const submissionData = {
+        ...values,
+        // Convert country from [code, name] to just the code
+        country: values.country[0],
+        
+        // Handle working regime validation
+        ...(values.workingRegime === 'custom' 
+          ? {
+              customWorkingRegime: {
+                onDutyDays: parseInt(values.customOnDutyDays, 10),
+                offDutyDays: parseInt(values.customOffDutyDays, 10)
+              }
+            } 
+          : { workingRegime: values.workingRegime }
+        )
+      };
+
+      // Remove unnecessary fields
+      delete submissionData.customOnDutyDays;
+      delete submissionData.customOffDutyDays;
+
+      // Validate total working days for custom regime
+      if (values.workingRegime === 'custom') {
+        const totalDays = parseInt(values.customOnDutyDays, 10) + 
+                          parseInt(values.customOffDutyDays, 10);
+        
+        if (totalDays > 365) {
+          setErrors({
+            customOnDutyDays: t('register.errors.maximumWorkingDays'),
+            customOffDutyDays: t('register.errors.maximumWorkingDays')
+          });
+          setSubmitting(false);
+          return;
+        }
+      }
+
+      // Proceed with registration
+      const backendUrl = getBackendUrl();
+      const registrationUrl = `${backendUrl.replace(/\/+$/, '')}/api/auth/register`;
+      const response = await axios.post(registrationUrl, submissionData);
 
       // Handle successful registration
-      localStorage.setItem('user', JSON.stringify(response.data));
-      navigate('/dashboard');
-    } catch (err) {
-      // Handle registration errors
-      if (err.response?.data) {
-        setErrors({ submit: err.response.data.message });
+      if (response.data.token) {
+        // Automatically log in the user by storing the token and user data
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+
+        // Redirect to dashboard
+        navigate('/dashboard', { 
+          state: { 
+            message: t('register.registrationSuccess')
+          } 
+        });
       }
-    } finally {
+    } catch (error) {
+      // Handle registration errors
+      console.error('Registration error:', error);
+      
+      if (error.response) {
+        const serverErrors = error.response.data.errors || 
+                             error.response.data.missingFields || 
+                             {};
+        
+        // Map server errors to form errors
+        const formErrors = {};
+        Object.keys(serverErrors).forEach(key => {
+          formErrors[key] = serverErrors[key];
+        });
+
+        setErrors(formErrors);
+      } else {
+        // Generic error handling
+        setErrors({
+          submit: t('register.errors.registrationFailed')
+        });
+      }
+
       setSubmitting(false);
     }
   };
