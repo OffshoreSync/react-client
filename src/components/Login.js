@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { 
   Container, 
@@ -70,8 +70,10 @@ const Login = () => {
   const [isLocked, setIsLocked] = useState(false);
   const [lockExpiry, setLockExpiry] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [successMessage, setSuccessMessage] = useState('');
 
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { username, password } = formData;
 
@@ -97,6 +99,15 @@ const Login = () => {
     const intervalId = setInterval(checkLockStatus, 60000); // Check every minute
     return () => clearInterval(intervalId);
   }, []);
+
+  useEffect(() => {
+    if (location.state?.successMessage) {
+      setSuccessMessage(location.state.successMessage);
+      
+      // Clear the state to prevent message from persisting
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location, navigate]);
 
   const onChange = e => {
     const { name, value } = e.target;
@@ -287,6 +298,11 @@ const Login = () => {
             alignItems: 'center',
           }}
         >
+          {successMessage && (
+            <Alert severity="success" sx={{ width: '100%', mt: 2 }}>
+              {successMessage}
+            </Alert>
+          )}
           <Box component="form" onSubmit={onSubmit} noValidate sx={{ mt: 1 }}>
             <TextField
               margin="normal"

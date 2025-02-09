@@ -20,7 +20,8 @@ const VerifyEmail = () => {
   const [isVerifying, setIsVerifying] = useState(true);
   const [verificationStatus, setVerificationStatus] = useState({
     success: false,
-    message: ''
+    message: '',
+    alreadyVerified: false
   });
 
   useEffect(() => {
@@ -41,13 +42,15 @@ const VerifyEmail = () => {
 
         setVerificationStatus({
           success: true,
-          message: response.data.message || t('verifyEmail.success.message')
+          message: response.data.message || t('verifyEmail.success.message'),
+          alreadyVerified: response.data.alreadyVerified || false
         });
       } catch (error) {
         setVerificationStatus({
           success: false,
-          message: error.response?.data?.message || 
-                   t('verifyEmail.error.serverError')
+          message: error.response?.data?.error || 
+                   t('verifyEmail.error.serverError'),
+          alreadyVerified: false
         });
       } finally {
         setIsVerifying(false);
@@ -91,7 +94,9 @@ const VerifyEmail = () => {
               sx={{ mb: 2 }}
             >
               {verificationStatus.success 
-                ? t('verifyEmail.success.title') 
+                ? (verificationStatus.alreadyVerified 
+                    ? t('verifyEmail.success.title') 
+                    : t('verifyEmail.success.title'))
                 : t('verifyEmail.error.title')
               }
             </Typography>

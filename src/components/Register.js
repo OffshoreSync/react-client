@@ -206,24 +206,21 @@ const Register = () => {
         }
       }
 
-      // Proceed with registration
-      const backendUrl = getBackendUrl();
-      const registrationUrl = `${backendUrl.replace(/\/+$/, '')}/api/auth/register`;
-      const response = await axios.post(registrationUrl, submissionData);
+      // Send registration request
+      const response = await axios.post(
+        `${getBackendUrl()}/api/auth/register`, 
+        submissionData
+      );
 
-      // Handle successful registration
-      if (response.data.token) {
-        // Automatically log in the user by storing the token and user data
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-
-        // Redirect to dashboard
-        navigate('/dashboard', { 
-          state: { 
-            message: t('register.registrationSuccess')
-          } 
-        });
-      }
+      // Show success message
+      const successMessage = t('register.verificationMessage');
+      
+      // Redirect to login page
+      navigate('/login', { 
+        state: { 
+          successMessage: successMessage 
+        } 
+      });
     } catch (error) {
       // Handle registration errors
       console.error('Registration error:', error);
