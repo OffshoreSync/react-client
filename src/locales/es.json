@@ -52,6 +52,7 @@
     "password": "Contraseña",
     "confirmPassword": "Confirmar Contraseña",
     "registerButton": "Registrarse",
+    "profileUpdateSuccess": "Perfil actualizado con éxito",
     "completeProfileButton": "Completar Perfil",
     "alreadyHaveAccount": "¿Ya tienes una cuenta?",
     "loginLink": "Iniciar Sesión",
@@ -152,12 +153,6 @@
     "errors": {
       "updateFailed": "No se pudo actualizar el perfil. Por favor, intenta de nuevo."
     }
-  },
-  "editProfile": {
-    "title": "Editar Perfil",
-    "successMessage": "Perfil actualizado exitosamente",
-    "editProfile": "Editar Perfil",
-    "profileUpdateSuccess": "Perfil actualizado con éxito"
   },
   "home": {
     "title": "Gestione Su Régimen de Trabajo Offshore",

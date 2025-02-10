@@ -264,7 +264,7 @@ const EditProfile = () => {
   return (
     <Container maxWidth="sm">
       <Typography variant="h4" gutterBottom>
-        {t('register.editProfile')}
+        {t('settings.editProfile')}
       </Typography>
       
       {successMessage && (

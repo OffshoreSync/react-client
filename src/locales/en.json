@@ -52,6 +52,7 @@
     "password": "Password",
     "confirmPassword": "Confirm Password",
     "registerButton": "Register",
+    "profileUpdateSuccess": "Profile updated sucessfully",
     "completeProfileButton": "Complete Profile",
     "alreadyHaveAccount": "Already have an account?",
     "loginLink": "Log In",
@@ -157,10 +158,6 @@
     "cancel": "Cancel",
     "confirmDelete": "Confirm Delete",
     "notSet": "Not Set"
-  },
-  "editProfile": {
-    "title": "Edit Profile",
-    "successMessage": "Profile updated successfully"
   },
   "home": {
     "title": "Manage Your Offshore Working Regime",
