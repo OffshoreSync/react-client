@@ -43,6 +43,14 @@ const configureAxios = async () => {
       // Set the CSRF token in both headers and defaults
       axios.defaults.headers.common['X-XSRF-TOKEN'] = csrfToken;
       
+      // Add interceptor to include CSRF token in all requests
+      axios.interceptors.request.use(config => {
+        config.headers['X-XSRF-TOKEN'] = csrfToken;
+        return config;
+      }, error => {
+        return Promise.reject(error);
+      });
+      
       console.log('CSRF token successfully configured:', {
         token: csrfToken,
         baseURL: axios.defaults.baseURL
