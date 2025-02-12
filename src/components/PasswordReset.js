@@ -30,8 +30,8 @@ import {
 const validatePassword = (password) => {
   const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
   const isValid = passwordRegex.test(password);
+
   console.log('Password validation:', {
-    password,
     isValid,
     hasLowercase: /(?=.*[a-z])/.test(password),
     hasUppercase: /(?=.*[A-Z])/.test(password),
