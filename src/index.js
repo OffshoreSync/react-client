@@ -25,11 +25,15 @@ const configureAxios = async () => {
     axios.defaults.withCredentials = true;
     axios.defaults.timeout = 5000;
 
+    // Explicit CSRF token configuration
+    axios.defaults.xsrfCookieName = 'XSRF-TOKEN';
+    axios.defaults.xsrfHeaderName = 'X-XSRF-TOKEN';
+
     // Configure default headers
     axios.defaults.headers.common['Content-Type'] = 'application/json';
     axios.defaults.headers.common['Accept'] = 'application/json';
 
-    // Fetch CSRF token
+    // Fetch CSRF token with comprehensive options
     const csrfResponse = await axios.get('/api/csrf-token', {
       withCredentials: true,
       headers: {
