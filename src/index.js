@@ -56,25 +56,32 @@ const configureAxios = async () => {
       response: error.response ? error.response.data : 'No response',
       config: error.config
     });
+    throw error;  // Rethrow to prevent rendering without CSRF token
   }
 };
 
-// Call configuration before rendering
-configureAxios();
+// Ensure axios is configured before rendering
+const renderApp = async () => {
+  await configureAxios();
+  
+  const root = ReactDOM.createRoot(document.getElementById('root'));
+  root.render(
+    <React.StrictMode>
+      <I18nextProvider i18n={i18n}>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
+            <App />
+          </GoogleOAuthProvider>
+        </ThemeProvider>
+      </I18nextProvider>
+    </React.StrictMode>
+  );
+};
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
-root.render(
-  <React.StrictMode>
-    <I18nextProvider i18n={i18n}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
-          <App />
-        </GoogleOAuthProvider>
-      </ThemeProvider>
-    </I18nextProvider>
-  </React.StrictMode>
-);
+renderApp().catch(error => {
+  console.error('Failed to initialize app:', error);
+});
 
 // If you want to start measuring performance in your app, pass a function
 // to log results (for example: reportWebVitals(console.log))
