@@ -184,7 +184,8 @@ const Login = () => {
           nextOnBoardDate: null,
           nextOffBoardDate: null
         },
-        country: user.country || null
+        country: user.country || null,
+        isVerified: user.isVerified || false // Explicitly track verification status
       };
 
       // Secure token storage
