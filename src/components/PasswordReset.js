@@ -16,7 +16,11 @@ import {
   Alert, 
   AlertTitle,
   IconButton,
-  InputAdornment
+  InputAdornment,
+  Card,
+  CardHeader,
+  CardContent,
+  CircularProgress
 } from '@mui/material';
 import { 
   Visibility, 
@@ -57,6 +61,7 @@ const PasswordReset = () => {
   const [error, setError] = useState('');
   const [passwordErrors, setPasswordErrors] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     // Check for token in URL query or route params
@@ -81,6 +86,7 @@ const PasswordReset = () => {
 
   const requestPasswordReset = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
       await axios.post(
         getBackendUrl('/api/password/request-reset'), 
@@ -95,6 +101,8 @@ const PasswordReset = () => {
         error.response?.data?.message || 
         t('passwordReset.requestError')
       );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -183,16 +191,12 @@ const PasswordReset = () => {
           alignItems: 'center',
         }}
       >
-        <LockReset sx={{ fontSize: 60, color: 'primary.main', mb: 2 }} />
-        <Typography component="h1" variant="h5">
-          {t('passwordReset.title')}
-        </Typography>
 
         {/* Error and Success Messages */}
         {error && (
           <Alert 
             severity="error" 
-            sx={{ width: '100%', mt: 2 }}
+            sx={{ mt: 2, width: '100%', maxWidth: 500 }}
           >
             <AlertTitle>{t('common.error')}</AlertTitle>
             {error}
@@ -201,7 +205,7 @@ const PasswordReset = () => {
         {message && (
           <Alert 
             severity="success" 
-            sx={{ width: '100%', mt: 2 }}
+            sx={{ mt: 2, width: '100%', maxWidth: 500 }}
           >
             <AlertTitle>{t('common.success')}</AlertTitle>
             {message}
@@ -210,43 +214,88 @@ const PasswordReset = () => {
 
         {/* Request Reset Stage */}
         {stage === 'request' && (
-          <Box 
-            component="form" 
-            onSubmit={requestPasswordReset} 
-            noValidate 
-            sx={{ mt: 1, width: '100%' }}
+          <Card 
+            sx={{ 
+              mt: 2, 
+              width: '100%', 
+              maxWidth: 500,
+              margin: 'auto',
+              borderRadius: 2,
+              boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+            }}
           >
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              id="email"
-              label={t('passwordReset.emailPlaceholder')}
-              name="email"
-              autoComplete="email"
-              autoFocus
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                setError('');
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Email />
-                  </InputAdornment>
-                ),
-              }}
+            <CardHeader
+              title={
+                <Typography variant="h5" align="center">
+                  {t('passwordReset.title')}
+                </Typography>
+              }
+              subheader={
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary" 
+                  align="center" 
+                  sx={{ mt: 1 }}
+                >
+                  {t('passwordReset.subtitle')}
+                </Typography>
+              }
+              sx={{ pb: 0 }}
             />
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
-            >
-              {t('passwordReset.requestButton')}
-            </Button>
-          </Box>
+            <CardContent>
+              <Box 
+                component="form" 
+                onSubmit={requestPasswordReset} 
+                noValidate 
+                sx={{ width: '100%' }}
+              >
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  id="email"
+                  label={t('passwordReset.emailPlaceholder')}
+                  name="email"
+                  autoComplete="email"
+                  autoFocus
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setError('');
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Email />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+
+                {error && (
+                  <Alert 
+                    severity="error" 
+                    sx={{ mt: 2, width: '100%' }}
+                  >
+                    {error}
+                  </Alert>
+                )}
+
+                <Button
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  sx={{ mt: 3, mb: 2 }}
+                  disabled={isLoading}
+                >
+                  {isLoading 
+                    ? <CircularProgress size={24} /> 
+                    : t('passwordReset.requestButton')
+                  }
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
         )}
 
         {/* Check Email Stage */}
@@ -281,115 +330,146 @@ const PasswordReset = () => {
 
         {/* Reset Password Stage */}
         {stage === 'reset' && (
-          <Box 
-            component="form" 
-            onSubmit={resetPassword} 
-            noValidate 
-            sx={{ mt: 1, width: '100%' }}
+          <Card 
+            sx={{ 
+              mt: 2, 
+              width: '100%', 
+              maxWidth: 500,
+              margin: 'auto',
+              borderRadius: 2,
+              boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+            }}
           >
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="newPassword"
-              label={t('passwordReset.newPasswordPlaceholder')}
-              type={showPassword ? 'text' : 'password'}
-              id="newPassword"
-              autoComplete="new-password"
-              value={newPassword}
-              onChange={(e) => {
-                setNewPassword(e.target.value);
-                setError('');
-                setPasswordErrors([]);
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <VpnKey />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="toggle password visibility"
-                      onClick={() => setShowPassword(!showPassword)}
-                      edge="end"
-                    >
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-            <TextField
-              margin="normal"
-              required
-              fullWidth
-              name="confirmPassword"
-              label={t('passwordReset.confirmPasswordPlaceholder')}
-              type={showPassword ? 'text' : 'password'}
-              id="confirmPassword"
-              autoComplete="new-password"
-              value={confirmPassword}
-              onChange={(e) => {
-                setConfirmPassword(e.target.value);
-                setError('');
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <VpnKey />
-                  </InputAdornment>
-                ),
-                endAdornment: (
-                  <InputAdornment position="end">
-                    <IconButton
-                      aria-label="toggle password visibility"
-                      onClick={() => setShowPassword(!showPassword)}
-                      edge="end"
-                    >
-                      {showPassword ? <VisibilityOff /> : <Visibility />}
-                    </IconButton>
-                  </InputAdornment>
-                ),
-              }}
-            />
-
-            {/* Password Requirements */}
-            {passwordErrors.length > 0 && (
-              <Paper 
-                elevation={2} 
-                sx={{ 
-                  mt: 2, 
-                  p: 2, 
-                  backgroundColor: 'background.default' 
-                }}
-              >
-                <Typography variant="body2" color="text.secondary">
-                  {t('passwordReset.passwordRequirements')}:
+            <CardHeader 
+              title={
+                <Typography variant="h5" align="center">
+                  {t('passwordReset.title')}
                 </Typography>
-                {passwordErrors.map((error, index) => (
-                  <Typography 
-                    key={index} 
-                    variant="body2" 
-                    color="error" 
-                    sx={{ ml: 2 }}
-                  >
-                    • {error}
-                  </Typography>
-                ))}
-              </Paper>
-            )}
+              }
+              subheader={
+                <Typography 
+                  variant="body2" 
+                  color="text.secondary" 
+                  align="center" 
+                  sx={{ mt: 1 }}
+                >
+                  {t('passwordReset.subtitle')}
+                </Typography>
+              }
+              sx={{ pb: 0 }}
+            />
+            <CardContent>
+              <Box 
+                component="form" 
+                onSubmit={resetPassword} 
+                noValidate 
+                sx={{ width: '100%' }}
+              >
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  name="newPassword"
+                  label={t('passwordReset.newPasswordPlaceholder')}
+                  type={showPassword ? 'text' : 'password'}
+                  id="newPassword"
+                  autoComplete="new-password"
+                  value={newPassword}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value);
+                    setError('');
+                    setPasswordErrors([]);
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <VpnKey />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle password visibility"
+                          onClick={() => setShowPassword(!showPassword)}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <TextField
+                  margin="normal"
+                  required
+                  fullWidth
+                  name="confirmPassword"
+                  label={t('passwordReset.confirmPasswordPlaceholder')}
+                  type={showPassword ? 'text' : 'password'}
+                  id="confirmPassword"
+                  autoComplete="new-password"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                    setError('');
+                  }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <VpnKey />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle password visibility"
+                          onClick={() => setShowPassword(!showPassword)}
+                          edge="end"
+                        >
+                          {showPassword ? <VisibilityOff /> : <Visibility />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
 
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
-            >
-              {t('passwordReset.resetButton')}
-            </Button>
-          </Box>
+                {/* Password Requirements */}
+                {passwordErrors.length > 0 && (
+                  <Paper 
+                    elevation={2} 
+                    sx={{ 
+                      mt: 2, 
+                      p: 2, 
+                      backgroundColor: 'background.default' 
+                    }}
+                  >
+                    <Typography variant="body2" color="text.secondary">
+                      {t('passwordReset.passwordRequirements')}:
+                    </Typography>
+                    {passwordErrors.map((error, index) => (
+                      <Typography 
+                        key={index} 
+                        variant="body2" 
+                        color="error" 
+                        sx={{ ml: 2 }}
+                      >
+                        • {error}
+                      </Typography>
+                    ))}
+                  </Paper>
+                )}
+
+                <Button
+                  type="submit"
+                  fullWidth
+                  variant="contained"
+                  sx={{ mt: 3, mb: 2 }}
+                >
+                  {t('passwordReset.resetButton')}
+                </Button>
+              </Box>
+            </CardContent>
+          </Card>
         )}
       </Box>
     </Container>
