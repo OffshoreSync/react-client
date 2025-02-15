@@ -287,6 +287,8 @@
     "emailPlaceholder": "Ingrese su correo electrónico",
     "newPasswordPlaceholder": "Ingrese la nueva contraseña",
     "confirmPasswordPlaceholder": "Confirme la nueva contraseña",
+    "sendingRequest": "Enviando solicitud...",
+    "tooManyAttempts": "Muchas tentativas de restablecer. Por favor, intente más tarde.",
     "requestButton": "Solicitar Restablecimiento",
     "resetButton": "Restablecer Contraseña",
     "requestSent": "Enlace de restablecimiento de contraseña enviado a su correo electrónico",

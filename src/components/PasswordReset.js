@@ -47,7 +47,7 @@ const validatePassword = (password) => {
 };
 
 const PasswordReset = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const location = useLocation();
   const params = useParams();
   const navigate = useNavigate();
@@ -87,20 +87,41 @@ const PasswordReset = () => {
   const requestPasswordReset = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError(''); // Clear any previous errors
     try {
       await axios.post(
         getBackendUrl('/api/password/request-reset'), 
-        { email }
+        { 
+          email, 
+          language: i18n.language || 'en' // Use current language or default to English
+        }
       );
       setMessage(t('passwordReset.requestSent'));
       setStage('check-email');
       localStorage.setItem('resetEmail', email);
     } catch (error) {
       console.error('Password reset request error:', error);
-      setError(
-        error.response?.data?.message || 
-        t('passwordReset.requestError')
-      );
+      
+      // Specific error handling
+      const errorMessage = error.response?.data?.message;
+      const errorStatus = error.response?.status;
+      
+      if (errorStatus === 429) {
+        // Explicitly handle Too Many Requests
+        setError(t('passwordReset.tooManyAttempts'));
+      } else if (errorMessage) {
+        // Check for specific error conditions
+        if (errorMessage.toLowerCase().includes('too many reset attempts')) {
+          // Use a single, localized error message for too many attempts
+          setError(t('passwordReset.tooManyAttempts'));
+        } else {
+          // Generic error message for other cases
+          setError(errorMessage);
+        }
+      } else {
+        // Fallback to generic error if no specific message
+        setError(t('passwordReset.requestError'));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -192,16 +213,7 @@ const PasswordReset = () => {
         }}
       >
 
-        {/* Error and Success Messages */}
-        {error && (
-          <Alert 
-            severity="error" 
-            sx={{ mt: 2, width: '100%', maxWidth: 500 }}
-          >
-            <AlertTitle>{t('common.error')}</AlertTitle>
-            {error}
-          </Alert>
-        )}
+        {/* Success Messages */}
         {message && (
           <Alert 
             severity="success" 
@@ -224,6 +236,18 @@ const PasswordReset = () => {
               boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
             }}
           >
+            {error && (
+              <Alert 
+                severity="error" 
+                sx={{ 
+                  width: '100%', 
+                  borderRadius: 0,
+                  mb: 2
+                }}
+              >
+                {error}
+              </Alert>
+            )}
             <CardHeader
               title={
                 <Typography variant="h5" align="center">
@@ -247,9 +271,10 @@ const PasswordReset = () => {
                 component="form" 
                 onSubmit={requestPasswordReset} 
                 noValidate 
-                sx={{ width: '100%' }}
+                sx={{ mt: 1 }}
               >
                 <TextField
+                  variant="outlined"
                   margin="normal"
                   required
                   fullWidth
@@ -261,35 +286,27 @@ const PasswordReset = () => {
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value);
-                    setError('');
+                    setError(''); // Clear error when user starts typing
                   }}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">
                         <Email />
                       </InputAdornment>
-                    ),
+                    )
                   }}
                 />
-
-                {error && (
-                  <Alert 
-                    severity="error" 
-                    sx={{ mt: 2, width: '100%' }}
-                  >
-                    {error}
-                  </Alert>
-                )}
-
                 <Button
                   type="submit"
                   fullWidth
                   variant="contained"
+                  color="primary"
                   sx={{ mt: 3, mb: 2 }}
                   disabled={isLoading}
+                  startIcon={isLoading ? <CircularProgress size={20} /> : <LockReset />}
                 >
                   {isLoading 
-                    ? <CircularProgress size={24} /> 
+                    ? t('passwordReset.sendingRequest') 
                     : t('passwordReset.requestButton')
                   }
                 </Button>
@@ -340,6 +357,18 @@ const PasswordReset = () => {
               boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
             }}
           >
+            {error && (
+              <Alert 
+                severity="error" 
+                sx={{ 
+                  width: '100%', 
+                  borderRadius: 0,
+                  mb: 2
+                }}
+              >
+                {error}
+              </Alert>
+            )}
             <CardHeader 
               title={
                 <Typography variant="h5" align="center">

@@ -292,6 +292,8 @@
     "emailPlaceholder": "Enter your email",
     "newPasswordPlaceholder": "Enter new password",
     "confirmPasswordPlaceholder": "Confirm new password",
+    "sendingRequest": "Sending request...",
+    "tooManyAttempts": "Too many reset attempts. Please try again in later.",
     "requestButton": "Request Reset",
     "resetButton": "Reset Password",
     "requestSent": "Password reset link sent to your email",
