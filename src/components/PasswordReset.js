@@ -353,7 +353,7 @@ const PasswordReset = () => {
                   align="center" 
                   sx={{ mt: 1 }}
                 >
-                  {t('passwordReset.subtitle')}
+                  {t('passwordReset.resetSubtitle')}
                 </Typography>
               }
               sx={{ pb: 0 }}

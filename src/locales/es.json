@@ -283,6 +283,7 @@
   "passwordReset": {
     "title": "Restablecer Contraseña",
     "subtitle": "Restablezca su contraseña ingresando su correo electrónico.",
+    "resetSubtitle": "Cree una nueva contraseña segura para su cuenta.",
     "emailPlaceholder": "Ingrese su correo electrónico",
     "newPasswordPlaceholder": "Ingrese la nueva contraseña",
     "confirmPasswordPlaceholder": "Confirme la nueva contraseña",

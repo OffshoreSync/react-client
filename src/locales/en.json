@@ -288,6 +288,7 @@
   "passwordReset": {
     "title": "Reset Password",
     "subtitle": "Enter your email to receive a password reset link.",
+    "resetSubtitle": "Create a new, strong password for your account.",
     "emailPlaceholder": "Enter your email",
     "newPasswordPlaceholder": "Enter new password",
     "confirmPasswordPlaceholder": "Confirm new password",

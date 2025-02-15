@@ -285,6 +285,7 @@
   "passwordReset": {
     "title": "Redefinir Senha",
     "subtitle": "Redefina sua senha inserindo seu e-mail.",
+    "resetSubtitle": "Crie uma nova senha forte para sua conta.",
     "emailPlaceholder": "Digite seu e-mail",
     "newPasswordPlaceholder": "Digite a nova senha",
     "confirmPasswordPlaceholder": "Confirme a nova senha",
