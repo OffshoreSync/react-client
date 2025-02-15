@@ -175,6 +175,9 @@ const Register = () => {
         // Convert country from [code, name] to just the code
         country: values.country[0],
         
+        // Add current language to submission data
+        language: i18n.language.split('-')[0], // Normalize language code
+        
         // Handle working regime validation
         ...(values.workingRegime === 'custom' 
           ? {
