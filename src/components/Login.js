@@ -235,16 +235,41 @@ const Login = () => {
 
   const handleGoogleLogin = async (credentialResponse) => {
     try {
-      // Send full Google token to backend for verification
+      // Comprehensive logging of credential response
+      console.log('Google Credential Response:', {
+        credentialPresent: !!credentialResponse.credential,
+        clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID
+      });
+
+      // Validate credential response
+      if (!credentialResponse.credential) {
+        throw new Error('Google credential is missing');
+      }
+
+      // Send Google token to backend with enhanced configuration
       const response = await axios.post(
         getBackendUrl('/api/auth/google-login'), 
         {
           googleToken: credentialResponse.credential
+        },
+        {
+          // Ensure credentials are sent with the request
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Credentials': 'true'
+          },
+          // Add timeout to prevent hanging
+          timeout: 10000
         }
       );
 
       // Log the entire response for debugging
-      console.log('Google Login Response:', JSON.stringify(response.data, null, 2));
+      console.log('Google Login Backend Response:', {
+        status: response.status,
+        data: JSON.stringify(response.data, null, 2)
+      });
 
       // Destructure and ensure all fields are present
       const { token, user } = response.data;
@@ -255,20 +280,10 @@ const Login = () => {
         username: user.username,
         email: user.email,
         fullName: user.fullName,
-        offshoreRole: user.offshoreRole,
-        workingRegime: user.workingRegime,
-        company: user.company || null,
-        unitName: user.unitName || null,
-        workSchedule: user.workSchedule || {
-          nextOnBoardDate: null,
-          nextOffBoardDate: null
-        },
+        profilePicture: user.profilePicture || null,
         country: user.country || null,
-        profilePicture: user.profilePicture || null, // Ensure profilePicture is saved
+        isGoogleUser: true  // Explicitly set for all Google logins
       };
-
-      // Log the safe user object for verification
-      console.log('Safe User Object:', JSON.stringify(safeUser, null, 2));
 
       // Store token and user data in cookies
       setCookie('token', token, { 
@@ -277,10 +292,7 @@ const Login = () => {
         sameSite: 'strict'  // Protect against CSRF
       });
       
-      setCookie('user', JSON.stringify({
-        ...safeUser,
-        isGoogleUser: true  // Explicitly set this flag
-      }), { 
+      setCookie('user', JSON.stringify(safeUser), { 
         path: '/', 
         secure: true,
         sameSite: 'strict'
@@ -292,7 +304,15 @@ const Login = () => {
       // Redirect to dashboard
       navigate('/dashboard');
     } catch (err) {
-      console.error('Google Login error:', err.response?.data || err.message);
+      // Comprehensive error handling
+      console.error('Google Login Error:', {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status,
+        headers: err.response?.headers
+      });
+
+      // Set user-friendly error message
       setError(t('login.errors.googleLoginFailed'));
     }
   };
