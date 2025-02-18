@@ -24,6 +24,7 @@ import { GoogleLogin } from '@react-oauth/google';
 import { useTranslation } from 'react-i18next';
 import getBackendUrl from '../utils/apiUtils';
 import { styled } from '@mui/material/styles';
+import { useCookies } from 'react-cookie';
 
 // Styling for Google Sign-In button container
 const GoogleSignInContainer = styled(Box)(({ theme }) => ({
@@ -71,6 +72,7 @@ const Login = () => {
   const [lockExpiry, setLockExpiry] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [cookies, setCookie, removeCookie] = useCookies(['token', 'user']);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -189,8 +191,17 @@ const Login = () => {
       };
 
       // Secure token storage
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(safeUser));
+      setCookie('token', token, { 
+        path: '/', 
+        secure: true,  // Only send over HTTPS
+        sameSite: 'strict'  // Protect against CSRF
+      });
+      
+      setCookie('user', JSON.stringify(safeUser), { 
+        path: '/', 
+        secure: true,
+        sameSite: 'strict'
+      });
 
       // Clear password from memory
       setFormData(prev => ({ ...prev, password: '' }));
@@ -254,15 +265,26 @@ const Login = () => {
         },
         country: user.country || null,
         profilePicture: user.profilePicture || null, // Ensure profilePicture is saved
-        isGoogleUser: true  // Explicitly set to true for ALL Google logins
       };
 
       // Log the safe user object for verification
       console.log('Safe User Object:', JSON.stringify(safeUser, null, 2));
 
-      // Store token and user data
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(safeUser));
+      // Store token and user data in cookies
+      setCookie('token', token, { 
+        path: '/', 
+        secure: true,  // Only send over HTTPS
+        sameSite: 'strict'  // Protect against CSRF
+      });
+      
+      setCookie('user', JSON.stringify({
+        ...safeUser,
+        isGoogleUser: true  // Explicitly set this flag
+      }), { 
+        path: '/', 
+        secure: true,
+        sameSite: 'strict'
+      });
 
       // Dispatch event to update profile picture
       window.dispatchEvent(new Event('profilePictureUpdated'));

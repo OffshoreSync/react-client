@@ -5,6 +5,7 @@ import { blue, green } from '@mui/material/colors';
 import CssBaseline from '@mui/material/CssBaseline';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useTranslation } from 'react-i18next';
+import { CookiesProvider, useCookies } from 'react-cookie';
 
 // Import i18n configuration
 import './i18n';
@@ -80,66 +81,112 @@ const theme = createTheme({
 
 // Authentication check component
 const PrivateRoute = ({ children }) => {
-  const isAuthenticated = !!localStorage.getItem('token');
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  const [cookies] = useCookies(['user']);
+  const isAuthenticated = () => {
+    try {
+      // Check for Google login using cookies
+      const googleUser = cookies.user 
+        ? (typeof cookies.user === 'string' 
+            ? JSON.parse(cookies.user) 
+            : cookies.user)
+        : null;
+      
+      const isGoogleLoggedIn = googleUser && googleUser.isGoogleUser;
+      
+      // For normal login, continue using localStorage
+      const localStorageToken = localStorage.getItem('token');
+      
+      return isGoogleLoggedIn || localStorageToken;
+    } catch (error) {
+      console.error('Error parsing user cookie:', error);
+      return false;
+    }
+  };
+  return isAuthenticated() ? children : <Navigate to="/login" replace />;
 };
 
 function App() {
+  const [cookies] = useCookies(['user']);
+
+  // Function to check authentication
+  const isAuthenticated = () => {
+    try {
+      // Check for Google login using cookies
+      const googleUser = cookies.user 
+        ? (typeof cookies.user === 'string' 
+            ? JSON.parse(cookies.user) 
+            : cookies.user)
+        : null;
+      
+      const isGoogleLoggedIn = googleUser && googleUser.isGoogleUser;
+      
+      // For normal login, continue using localStorage
+      const localStorageToken = localStorage.getItem('token');
+      
+      return isGoogleLoggedIn || localStorageToken;
+    } catch (error) {
+      console.error('Error parsing user cookie:', error);
+      return false;
+    }
+  };
+
   return (
-    <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Router>
-          <div className="App">
-            <Navbar />
-            <Routes>
-              <Route path="/" element={
-                localStorage.getItem('token') ? <Navigate to="/dashboard" /> : <Home />
-              } />
-              <Route path="/login" element={<Login />} />
-              <Route path="/forgot-password" element={<PasswordReset />} />
-              <Route path="/reset-password" element={<PasswordReset />} />
-              <Route path="/reset-password/:token" element={<PasswordReset />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/verify-email" element={<VerifyEmail />} />
-              <Route 
-                path="/dashboard" 
-                element={
-                  <PrivateRoute>
-                    <Dashboard />
-                  </PrivateRoute>
-                } 
-              />
-              <Route 
-                path="/settings" 
-                element={
-                  <PrivateRoute>
-                    <Settings />
-                  </PrivateRoute>
-                } 
-              />
-              <Route 
-                path="/edit-profile" 
-                element={
-                  <PrivateRoute>
-                    <EditProfile />
-                  </PrivateRoute>
-                } 
-              />
-              <Route 
-                path="/friends" 
-                element={
-                  <PrivateRoute>
-                    <FriendManagement />
-                  </PrivateRoute>
-                } 
-              />
-              <Route path="/sync" element={<PrivateRoute><Sync /></PrivateRoute>} />
-            </Routes>
-          </div>
-        </Router>
-      </ThemeProvider>
-    </GoogleOAuthProvider>
+    <CookiesProvider>
+      <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <Router>
+            <div className="App">
+              <Navbar />
+              <Routes>
+                <Route path="/" element={
+                  isAuthenticated() ? <Navigate to="/dashboard" /> : <Home />
+                } />
+                <Route path="/login" element={<Login />} />
+                <Route path="/forgot-password" element={<PasswordReset />} />
+                <Route path="/reset-password" element={<PasswordReset />} />
+                <Route path="/reset-password/:token" element={<PasswordReset />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/verify-email" element={<VerifyEmail />} />
+                <Route 
+                  path="/dashboard" 
+                  element={
+                    <PrivateRoute>
+                      <Dashboard />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/settings" 
+                  element={
+                    <PrivateRoute>
+                      <Settings />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/edit-profile" 
+                  element={
+                    <PrivateRoute>
+                      <EditProfile />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route 
+                  path="/friends" 
+                  element={
+                    <PrivateRoute>
+                      <FriendManagement />
+                    </PrivateRoute>
+                  } 
+                />
+                <Route path="/sync" element={<PrivateRoute><Sync /></PrivateRoute>} />
+              </Routes>
+            </div>
+          </Router>
+        </ThemeProvider>
+      </GoogleOAuthProvider>
+    </CookiesProvider>
   );
 }
 
