@@ -53,6 +53,9 @@ import { enUS, ptBR, es } from 'date-fns/locale';
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
 
+// Import cookies
+import { useCookies } from 'react-cookie';
+
 // Custom styled calendar to match Material-UI theme
 const StyledCalendar = styled(FullCalendar)`
   width: 350px !important;
@@ -236,19 +239,33 @@ const Dashboard = () => {
   const [datePickerLocale, setDatePickerLocale] = useState(
     getDateFnsLocale(i18n.language)
   );
+  const [cookies, setCookie, removeCookie] = useCookies(['token']);
 
   // Memoize the checkAuth function to prevent unnecessary re-renders
   const checkAuth = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
+      // Check for token in cookies first, then fallback to localStorage
+      const token = cookies.token || localStorage.getItem('token');
       
+      console.log('Dashboard Authentication Check:', {
+        tokenSource: cookies.token ? 'cookies' : 'localStorage',
+        tokenPresent: !!token,
+        cookiesAvailable: Object.keys(cookies).length
+      });
+
       // If no token, immediately return null
       if (!token) {
+        console.warn('No authentication token found');
+        navigate('/login');
         return null;
       }
 
       const response = await axios.get(getBackendUrl('/api/auth/profile'), {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        withCredentials: true  // Ensure credentials are sent
       });
 
       // Ensure working regime is correctly stored
@@ -296,36 +313,17 @@ const Dashboard = () => {
       };
 
     } catch (error) {
-      console.error('Authentication check failed:', error);
+      console.error('Authentication check failed:', {
+        errorMessage: error.message,
+        errorResponse: error.response?.data,
+        errorStatus: error.response?.status
+      });
       
-      // Only remove token and user if the error is related to authentication
-      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-        // Token is invalid or expired
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        navigate('/');
-        return null;
-      }
-
-      // For other errors, still attempt to return stored user data
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        try {
-          const parsedUser = JSON.parse(storedUser);
-          return {
-            user: parsedUser,
-            showProfileAlert: false  // Default to false if authentication fails
-          };
-        } catch (parseError) {
-          console.error('Failed to parse stored user data:', parseError);
-        }
-      }
-
-      // If no stored user or parsing fails, navigate to home
-      navigate('/');
+      // Redirect to login on authentication failure
+      navigate('/login');
       return null;
     }
-  }, []);
+  }, [navigate, cookies]);
 
   // Use a separate effect for authentication
   useEffect(() => {
@@ -340,9 +338,6 @@ const Dashboard = () => {
           setUser(result.user);
           setShowProfileAlert(result.showProfileAlert);
           
-          // Update localStorage
-          localStorage.setItem('user', JSON.stringify(result.user));
-
           // Automatically open On Board date dialog if no next On Board date is set
           // This covers both first-time login and registration scenarios
           if (!result.user.workSchedule?.nextOnBoardDate) {
@@ -401,7 +396,7 @@ const Dashboard = () => {
 
   const handleSetOnBoardDate = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = cookies.token || localStorage.getItem('token');
       
       // Call backend API to set On Board date
       const response = await axios.put(
@@ -438,9 +433,7 @@ const Dashboard = () => {
       };
 
       // Update local storage with new user data including work cycles
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-      
-      // Update local state
+      // Removed localStorage.setItem as we are using cookies now
       setUser(updatedUser);
       
       // Close dialog and show success message
@@ -471,7 +464,7 @@ const Dashboard = () => {
 
   const handleResetOnBoardDate = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = cookies.token || localStorage.getItem('token');
       
       if (!token) {
         setSnackbarMessage(t('dashboard.errors.noToken'));
@@ -494,7 +487,7 @@ const Dashboard = () => {
       console.log('Reset Onboard Date Response:', response.data);
 
       // Update user in localStorage with reset workSchedule
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const currentUser = user;
       
       // Safely update user object
       const updatedUser = {
@@ -505,9 +498,6 @@ const Dashboard = () => {
         }
       };
 
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-
-      // Update local state
       setUser(updatedUser);
 
       // Open the onboard date dialog
