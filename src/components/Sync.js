@@ -37,6 +37,7 @@ import { useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useTranslation } from 'react-i18next';
 import getBackendUrl from '../utils/apiUtils';
+import { useCookies } from 'react-cookie';
 
 // Utility function to format dates consistently
 const formatDate = (date) => {
@@ -125,6 +126,7 @@ const generateColorPalette = (numUsers) => {
 
 const Sync = () => {
   const { t } = useTranslation();
+  const [cookies] = useCookies(['token', 'user']);
   const [availableUsers, setAvailableUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [graphData, setGraphData] = useState([]);
@@ -147,8 +149,8 @@ const Sync = () => {
   useEffect(() => {
     const fetchAvailableUsers = async () => {
       try {
-        const token = localStorage.getItem('token');
-        const currentUser = JSON.parse(localStorage.getItem('user'));
+        const token = cookies.token;
+        const currentUser = cookies.user;
         
         if (!token || !currentUser) {
           navigate('/login');
@@ -184,8 +186,6 @@ const Sync = () => {
         if (error.response) {
           if (error.response.status === 401) {
             errorMessage = 'Unauthorized. Please log in again.';
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
             navigate('/login');
           } else if (error.response.status === 403) {
             errorMessage = 'Access forbidden. You may not have permission.';
@@ -203,7 +203,7 @@ const Sync = () => {
     };
 
     fetchAvailableUsers();
-  }, [navigate]);
+  }, [navigate, cookies]);
 
   // Adjust line rendering for mobile
   const renderLines = useMemo(() => {
@@ -408,7 +408,7 @@ const Sync = () => {
     }
 
     try {
-      const token = localStorage.getItem('token');
+      const token = cookies.token;
       
       // Fetch work cycles for selected users
       const cyclesPromises = selectedUsers.map(async (userId) => {
@@ -433,8 +433,6 @@ const Sync = () => {
       if (error.response) {
         if (error.response.status === 401) {
           errorMessage = 'Unauthorized. Please log in again.';
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
           navigate('/login');
         } else if (error.response.status === 403) {
           errorMessage = 'Access forbidden. You may not have permission.';

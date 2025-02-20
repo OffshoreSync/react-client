@@ -20,19 +20,21 @@ import WorkIcon from '@mui/icons-material/Work';
 import SecurityIcon from '@mui/icons-material/Security';
 import PublicIcon from '@mui/icons-material/Public';
 import GoogleIcon from '@mui/icons-material/Google';
+import { useCookies } from 'react-cookie';
 
 function Home() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [cookies, setCookie, removeCookie] = useCookies(['token', 'user']);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    // Check if user is logged in
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
+    // Check if user is logged in using cookies
+    const token = cookies.token;
+    const user = cookies.user;
     
     setIsLoggedIn(!!token && !!user);
-  }, []);
+  }, [cookies]);
 
   const handleLogin = () => {
     navigate('/login');
@@ -43,9 +45,9 @@ function Home() {
   };
 
   const handleLogout = () => {
-    // Clear localStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    // Clear cookies
+    removeCookie('token');
+    removeCookie('user');
     
     // Redirect to home page
     navigate('/');

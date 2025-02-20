@@ -31,9 +31,11 @@ import {
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import getBackendUrl from '../utils/apiUtils';
+import { useCookies } from 'react-cookie';
 
 const FriendManagement = () => {
   const { t } = useTranslation();
+  const [cookies] = useCookies(['token']);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
@@ -61,7 +63,7 @@ const FriendManagement = () => {
 
   const fetchPendingRequests = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = cookies.token;
       const response = await axios.get(
         getBackendUrl('/api/auth/friend-requests'), 
         { headers: { Authorization: `Bearer ${token}` } }
@@ -79,7 +81,7 @@ const FriendManagement = () => {
 
   const fetchFriends = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = cookies.token;
       const response = await axios.get(
         getBackendUrl('/api/auth/friends'), 
         { headers: { Authorization: `Bearer ${token}` } }
@@ -97,7 +99,7 @@ const FriendManagement = () => {
 
   const searchUsers = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = cookies.token;
       const response = await axios.get(
         getBackendUrl('/api/auth/search-users'), 
         { 
@@ -120,7 +122,7 @@ const FriendManagement = () => {
 
   const sendFriendRequest = async (targetUserId) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = cookies.token;
       const response = await axios.post(
         getBackendUrl('/api/auth/friend-request'), 
         { friendId: targetUserId },
@@ -158,7 +160,7 @@ const FriendManagement = () => {
 
   const handleFriendRequestResponse = async (requestId, status) => {
     try {
-      const token = localStorage.getItem('token');
+      const token = cookies.token;
       await axios.put(
         getBackendUrl(`/api/auth/friend-request/${requestId}`),
         { status },

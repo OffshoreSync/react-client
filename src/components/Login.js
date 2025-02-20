@@ -169,17 +169,19 @@ const Login = () => {
       setLoginAttempts(0);
       localStorage.removeItem('loginLockExpiry');
 
-      // Store token and user in cookies
+      // Store token and user in cookies with enhanced options
       setCookie('token', response.data.token, { 
         path: '/', 
         secure: true,  // Only send over HTTPS
-        sameSite: 'strict'  // Protect against CSRF
+        sameSite: 'strict',  // Protect against CSRF
+        maxAge: 30 * 24 * 60 * 60 // 30 days expiration
       });
       
-      setCookie('user', JSON.stringify(response.data.user), { 
+      setCookie('user', response.data.user, { 
         path: '/', 
         secure: true,
-        sameSite: 'strict'
+        sameSite: 'strict',
+        maxAge: 30 * 24 * 60 * 60 // 30 days expiration
       });
 
       // Clear password from memory
@@ -250,17 +252,19 @@ const Login = () => {
         data: JSON.stringify(response.data, null, 2)
       });
 
-      // Store token and user in cookies
+      // Store token and user in cookies with enhanced options
       setCookie('token', response.data.token, { 
         path: '/', 
         secure: true,  // Only send over HTTPS
-        sameSite: 'strict'  // Protect against CSRF
+        sameSite: 'strict',  // Protect against CSRF
+        maxAge: 30 * 24 * 60 * 60 // 30 days expiration
       });
       
-      setCookie('user', JSON.stringify(response.data.user), { 
+      setCookie('user', response.data.user, { 
         path: '/', 
         secure: true,
-        sameSite: 'strict'
+        sameSite: 'strict',
+        maxAge: 30 * 24 * 60 * 60 // 30 days expiration
       });
 
       // Dispatch event to update profile picture

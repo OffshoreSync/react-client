@@ -19,64 +19,27 @@ import {
 import { getCountryCode } from '../utils/countries';
 import { useTranslation } from 'react-i18next';
 import getBackendUrl from '../utils/apiUtils';
+import { useCookies } from 'react-cookie';
 
 const Settings = () => {
   const [user, setUser] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const navigate = useNavigate();
+  const [cookies] = useCookies(['user', 'token']);
   const { t } = useTranslation();
 
   useEffect(() => {
-    // Check if user is logged in
-    const storedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
-
-    if (!storedUser || !token) {
-      // Redirect to login if no user or token
+    // Use cookies user directly
+    const parsedUser = cookies.user;
+    
+    // If no user, redirect to login
+    if (!parsedUser) {
       navigate('/login');
       return;
     }
-
-    // Parse and set user
-    try {
-      // Detailed logging of stored user data
-      console.log('Raw Stored User JSON:', storedUser);
-      
-      const parsedUser = JSON.parse(storedUser);
-      
-      // Add comprehensive logging to verify user data
-      console.log('Parsed User Data:', JSON.stringify(parsedUser, null, 2));
-      
-      // Explicitly check and log specific fields
-      console.log('Specific Field Check:', {
-        hasUnitName: 'unitName' in parsedUser,
-        hasCountry: 'country' in parsedUser,
-        unitNameValue: parsedUser.unitName,
-        countryValue: parsedUser.country,
-        unitNameType: typeof parsedUser.unitName,
-        countryType: typeof parsedUser.country
-      });
-
-      // Defensive parsing to ensure fields are present
-      const safeUser = {
-        ...parsedUser,
-        unitName: parsedUser.unitName || null,
-        country: parsedUser.country || null
-      };
-      
-      setUser(safeUser);
-    } catch (error) {
-      console.error('Error parsing user data', error);
-      
-      // Log the raw stored user data for investigation
-      console.error('Stored User Data:', storedUser);
-      
-      // Clear invalid localStorage and redirect
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
-      navigate('/login');
-    }
-  }, [navigate]);
+    
+    setUser(parsedUser);
+  }, [navigate, cookies]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -86,7 +49,7 @@ const Settings = () => {
 
   const handleDeleteAccount = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = cookies.token;
       
       await axios.delete(
         getBackendUrl('/api/auth/delete-account'), 

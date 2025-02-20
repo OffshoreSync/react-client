@@ -244,11 +244,10 @@ const Dashboard = () => {
   // Memoize the checkAuth function to prevent unnecessary re-renders
   const checkAuth = useCallback(async () => {
     try {
-      // Check for token in cookies first, then fallback to localStorage
-      const token = cookies.token || localStorage.getItem('token');
+      const token = cookies.token;
       
       console.log('Dashboard Authentication Check:', {
-        tokenSource: cookies.token ? 'cookies' : 'localStorage',
+        tokenSource: 'cookies',
         tokenPresent: !!token,
         cookiesAvailable: Object.keys(cookies).length
       });
@@ -396,7 +395,7 @@ const Dashboard = () => {
 
   const handleSetOnBoardDate = async () => {
     try {
-      const token = cookies.token || localStorage.getItem('token');
+      const token = cookies.token;
       
       // Call backend API to set On Board date
       const response = await axios.put(
@@ -433,7 +432,6 @@ const Dashboard = () => {
       };
 
       // Update local storage with new user data including work cycles
-      // Removed localStorage.setItem as we are using cookies now
       setUser(updatedUser);
       
       // Close dialog and show success message
@@ -464,7 +462,7 @@ const Dashboard = () => {
 
   const handleResetOnBoardDate = async () => {
     try {
-      const token = cookies.token || localStorage.getItem('token');
+      const token = cookies.token;
       
       if (!token) {
         setSnackbarMessage(t('dashboard.errors.noToken'));

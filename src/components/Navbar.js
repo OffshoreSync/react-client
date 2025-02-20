@@ -35,10 +35,10 @@ import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
 
 // Import cookies
-import { useCookies, setCookie, removeCookie } from 'react-cookie';
+import { useCookies } from 'react-cookie';
 
 function Navbar() {
-  const [cookies, , removeCookie] = useCookies(['token', 'user', 'language']);
+  const [cookies, setCookie, removeCookie] = useCookies(['token', 'user', 'language']);
   const [language, setLanguage] = useState(cookies.language || 'en');
   const navigate = useNavigate();
   const theme = useTheme();
@@ -48,9 +48,6 @@ function Navbar() {
   // Determine if user is logged in
   const isLoggedIn = !!cookies.token;
   
-  // Parse user from cookies
-  const storedUser = cookies.user ? JSON.parse(cookies.user) : null;
-
   // Logout method
   const handleLogout = () => {
     // Remove authentication cookies
@@ -83,15 +80,14 @@ function Navbar() {
 
   // Handle profile picture update event
   const handleProfilePictureUpdate = () => {
-    const storedUser = cookies.user ? JSON.parse(cookies.user) : null;
-    storedUser.profilePicture = cookies.user.profilePicture;
+    if (cookies.user) {
+      // Update profile picture if needed
+      // Assuming cookies.user already contains the updated user object
+    }
   };
 
   // Fetch user from cookies on component mount and add event listener
   useEffect(() => {
-    // Initial user fetch
-    const storedUser = cookies.user ? JSON.parse(cookies.user) : null;
-
     // Add custom event listener for profile picture updates
     window.addEventListener('profilePictureUpdated', handleProfilePictureUpdate);
 
@@ -99,7 +95,7 @@ function Navbar() {
     return () => {
       window.removeEventListener('profilePictureUpdated', handleProfilePictureUpdate);
     };
-  }, []);
+  }, [cookies]);
 
   const handleNavigation = (path) => {
     navigate(path);
@@ -264,7 +260,7 @@ function Navbar() {
               </Menu>
 
               {/* Profile Picture or Menu Button */}
-              {storedUser && storedUser.profilePicture ? (
+              {cookies.user && cookies.user.profilePicture ? (
                 <IconButton 
                   onClick={() => setDrawerOpen(true)}
                   sx={{ 
@@ -275,7 +271,7 @@ function Navbar() {
                   }}
                 >
                   <Avatar 
-                    src={storedUser.profilePicture} 
+                    src={cookies.user.profilePicture} 
                     alt="User Profile" 
                     sx={{ width: 40, height: 40 }} 
                   />

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { useCookies } from 'react-cookie';
 import { 
   TextField, 
   Button, 
@@ -22,6 +23,7 @@ import getBackendUrl from '../utils/apiUtils';
 const EditProfile = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
+  const [cookies] = useCookies(['token']);
   const [formData, setFormData] = useState({
     fullName: '',
     username: '',
@@ -42,7 +44,7 @@ const EditProfile = () => {
     const fetchUserProfile = async () => {
       try {
         const response = await axios.get(getBackendUrl('/api/auth/profile'), {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+          headers: { Authorization: `Bearer ${cookies.token}` }
         });
         
         const { user } = response.data;
@@ -93,7 +95,8 @@ const EditProfile = () => {
           unitName: user.unitName || ''
         });
       } catch (error) {
-        console.error('Error fetching profile:', error);
+        console.error('Profile fetch error:', error);
+        navigate('/login');
       }
     };
 
@@ -245,7 +248,7 @@ const EditProfile = () => {
       delete submitData.customOffDutyDays;
 
       const response = await axios.put(getBackendUrl('/api/auth/update-profile'), submitData, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        headers: { Authorization: `Bearer ${cookies.token}` }
       });
 
       setSuccessMessage(t('register.profileUpdateSuccess'));

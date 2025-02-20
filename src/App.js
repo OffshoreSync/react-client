@@ -1,5 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { 
+  BrowserRouter as Router, 
+  Routes, 
+  Route, 
+  Navigate, 
+  useLocation,
+  useNavigate 
+} from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { blue, green } from '@mui/material/colors';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -79,7 +86,8 @@ const theme = createTheme({
   },
 });
 
-function App() {
+// Wrapper component to handle routing-specific hooks
+function AppRoutes() {
   const [cookies] = useCookies(['token', 'user']);
   const location = useLocation();
   const navigate = useNavigate();
@@ -87,7 +95,7 @@ function App() {
   // Authentication check
   const isAuthenticated = () => {
     const token = cookies.token;
-    const user = cookies.user ? JSON.parse(cookies.user) : null;
+    const user = cookies.user;
 
     // Check token and user existence
     const isValidAuth = !!token && !!user;
@@ -116,58 +124,65 @@ function App() {
   };
 
   return (
+    <div className="App">
+      <Navbar />
+      <Routes>
+        <Route path="/" element={
+          isAuthenticated() ? <Navigate to="/dashboard" /> : <Home />
+        } />
+        <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<PasswordReset />} />
+        <Route path="/reset-password" element={<PasswordReset />} />
+        <Route path="/reset-password/:token" element={<PasswordReset />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route 
+          path="/dashboard" 
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/settings" 
+          element={
+            <ProtectedRoute>
+              <Settings />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/edit-profile" 
+          element={
+            <ProtectedRoute>
+              <EditProfile />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/friends" 
+          element={
+            <ProtectedRoute>
+              <FriendManagement />
+            </ProtectedRoute>
+          } 
+        />
+        <Route path="/sync" element={<ProtectedRoute><Sync /></ProtectedRoute>} />
+      </Routes>
+    </div>
+  );
+}
+
+// Main App component
+function App() {
+  return (
     <CookiesProvider>
       <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
         <ThemeProvider theme={theme}>
           <CssBaseline />
           <Router>
-            <div className="App">
-              <Navbar />
-              <Routes>
-                <Route path="/" element={
-                  isAuthenticated() ? <Navigate to="/dashboard" /> : <Home />
-                } />
-                <Route path="/login" element={<Login />} />
-                <Route path="/forgot-password" element={<PasswordReset />} />
-                <Route path="/reset-password" element={<PasswordReset />} />
-                <Route path="/reset-password/:token" element={<PasswordReset />} />
-                <Route path="/register" element={<Register />} />
-                <Route path="/verify-email" element={<VerifyEmail />} />
-                <Route 
-                  path="/dashboard" 
-                  element={
-                    <ProtectedRoute>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/settings" 
-                  element={
-                    <ProtectedRoute>
-                      <Settings />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/edit-profile" 
-                  element={
-                    <ProtectedRoute>
-                      <EditProfile />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/friends" 
-                  element={
-                    <ProtectedRoute>
-                      <FriendManagement />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route path="/sync" element={<ProtectedRoute><Sync /></ProtectedRoute>} />
-              </Routes>
-            </div>
+            <AppRoutes />
           </Router>
         </ThemeProvider>
       </GoogleOAuthProvider>
