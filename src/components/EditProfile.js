@@ -23,7 +23,7 @@ import getBackendUrl from '../utils/apiUtils';
 const EditProfile = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const [cookies] = useCookies(['token']);
+  const [cookies, setCookie] = useCookies(['token']);
   const [formData, setFormData] = useState({
     fullName: '',
     username: '',
@@ -250,6 +250,11 @@ const EditProfile = () => {
       const response = await axios.put(getBackendUrl('/api/auth/update-profile'), submitData, {
         headers: { Authorization: `Bearer ${cookies.token}` }
       });
+
+      // Update user cookie with new data
+      const { user, token } = response.data;
+      setCookie('token', token, { path: '/' });
+      setCookie('user', JSON.stringify(user), { path: '/' });
 
       setSuccessMessage(t('register.profileUpdateSuccess'));
       setTimeout(() => {

@@ -38,6 +38,13 @@ const Settings = () => {
       return;
     }
     
+    // Debug log to check user data
+    console.log('Settings Component User Data:', {
+      fullUser: JSON.stringify(parsedUser, null, 2),
+      offshoreRole: parsedUser.offshoreRole,
+      workingRegime: JSON.stringify(parsedUser.workingRegime, null, 2)
+    });
+    
     setUser(parsedUser);
   }, [navigate, cookies]);
 
