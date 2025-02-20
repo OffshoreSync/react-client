@@ -72,6 +72,7 @@ const Login = () => {
   const [lockExpiry, setLockExpiry] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  const [reAuthMessage, setReAuthMessage] = useState('');
   const [cookies, setCookie, removeCookie] = useCookies(['token', 'user']);
 
   const navigate = useNavigate();
@@ -110,6 +111,20 @@ const Login = () => {
       navigate(location.pathname, { replace: true, state: {} });
     }
   }, [location, navigate]);
+
+  useEffect(() => {
+    // Check if navigation state contains re-authentication message
+    const locationState = location.state;
+    
+    if (locationState?.requireReAuthentication) {
+      setReAuthMessage(
+        locationState.message || 'Your session has expired. Please log in again.'
+      );
+
+      // Clear the location state to prevent repeated messages
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   const onChange = e => {
     const { name, value } = e.target;
@@ -170,6 +185,13 @@ const Login = () => {
       localStorage.removeItem('loginLockExpiry');
 
       // Store token and user in cookies with enhanced options
+      console.log('Login Token Details:', {
+        tokenLength: response.data.token ? response.data.token.length : 'N/A',
+        tokenFirstChars: response.data.token ? response.data.token.substring(0, 10) : 'N/A',
+        userDataPresent: !!response.data.user,
+        userKeys: response.data.user ? Object.keys(response.data.user) : []
+      });
+
       setCookie('token', response.data.token, { 
         path: '/', 
         secure: true,  // Only send over HTTPS
@@ -182,6 +204,12 @@ const Login = () => {
         secure: true,
         sameSite: 'strict',
         maxAge: 30 * 24 * 60 * 60 // 30 days expiration
+      });
+
+      // Verify cookies after setting
+      console.log('Cookies after login:', {
+        tokenCookie: cookies.token,
+        userCookie: cookies.user
       });
 
       // Clear password from memory
@@ -253,6 +281,13 @@ const Login = () => {
       });
 
       // Store token and user in cookies with enhanced options
+      console.log('Google Login Token Details:', {
+        tokenLength: response.data.token ? response.data.token.length : 'N/A',
+        tokenFirstChars: response.data.token ? response.data.token.substring(0, 10) : 'N/A',
+        userDataPresent: !!response.data.user,
+        userKeys: response.data.user ? Object.keys(response.data.user) : []
+      });
+
       setCookie('token', response.data.token, { 
         path: '/', 
         secure: true,  // Only send over HTTPS
@@ -265,6 +300,12 @@ const Login = () => {
         secure: true,
         sameSite: 'strict',
         maxAge: 30 * 24 * 60 * 60 // 30 days expiration
+      });
+
+      // Verify cookies after setting
+      console.log('Cookies after Google login:', {
+        tokenCookie: cookies.token,
+        userCookie: cookies.user
       });
 
       // Dispatch event to update profile picture
@@ -313,6 +354,11 @@ const Login = () => {
           {successMessage && (
             <Alert severity="success" sx={{ width: '100%', mt: 2 }}>
               {successMessage}
+            </Alert>
+          )}
+          {reAuthMessage && (
+            <Alert severity="error" sx={{ width: '100%', mt: 2 }}>
+              {reAuthMessage}
             </Alert>
           )}
           <Box component="form" onSubmit={onSubmit} noValidate sx={{ mt: 1 }}>

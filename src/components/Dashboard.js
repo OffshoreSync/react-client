@@ -249,6 +249,8 @@ const Dashboard = () => {
       console.log('Dashboard Authentication Check:', {
         tokenSource: 'cookies',
         tokenPresent: !!token,
+        tokenLength: token ? token.length : 'N/A',
+        tokenFirstChars: token ? token.substring(0, 10) : 'N/A',
         cookiesAvailable: Object.keys(cookies).length
       });
 
@@ -259,70 +261,94 @@ const Dashboard = () => {
         return null;
       }
 
-      const response = await axios.get(getBackendUrl('/api/auth/profile'), {
-        headers: { 
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        withCredentials: true  // Ensure credentials are sent
-      });
+      try {
+        const response = await axios.get(getBackendUrl('/api/auth/profile'), {
+          headers: { 
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          withCredentials: true  // Ensure credentials are sent
+        });
 
-      // Ensure working regime is correctly stored
-      const userWithFullData = {
-        ...response.data.user,
-        workingRegime: response.data.user.workingRegime || {
-          onDutyDays: 28,
-          offDutyDays: 28
-        }
-      };
+        console.log('Profile fetch successful:', response.data);
+        
+        // Ensure working regime is correctly stored
+        const userWithFullData = {
+          ...response.data.user,
+          workingRegime: response.data.user.workingRegime || {
+            onDutyDays: 28,
+            offDutyDays: 28
+          }
+        };
 
-      // Explicitly set isGoogleUser based on the server response
-      userWithFullData.isGoogleUser = !!userWithFullData.isGoogleUser;
+        // Explicitly set isGoogleUser based on the server response
+        userWithFullData.isGoogleUser = !!userWithFullData.isGoogleUser;
 
-      // Check if work cycles need generation
-      if (!userWithFullData.workCycles || userWithFullData.workCycles.length === 0) {
-        try {
-          const cyclesResponse = await axios.post(
-            getBackendUrl('/api/auth/generate-work-cycles'),
-            {},
-            {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
+        // Check if work cycles need generation
+        if (!userWithFullData.workCycles || userWithFullData.workCycles.length === 0) {
+          try {
+            const cyclesResponse = await axios.post(
+              getBackendUrl('/api/auth/generate-work-cycles'),
+              {},
+              {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json'
+                }
               }
-            }
+            );
+
+            userWithFullData.workCycles = cyclesResponse.data.workCycles;
+          } catch (cyclesError) {
+            console.error('Error generating work cycles:', cyclesError);
+          }
+        }
+
+        // Determine if profile alert should be shown
+        const criticalFieldsMissing = 
+          userWithFullData.isGoogleUser && (
+            userWithFullData.company === null || 
+            userWithFullData.unitName === null
           );
 
-          userWithFullData.workCycles = cyclesResponse.data.workCycles;
-        } catch (cyclesError) {
-          console.error('Error generating work cycles:', cyclesError);
+        return {
+          user: userWithFullData,
+          showProfileAlert: criticalFieldsMissing
+        };
+
+      } catch (authError) {
+        console.error('Authentication Error Details:', {
+          status: authError.response?.status,
+          data: authError.response?.data,
+          headers: authError.config?.headers
+        });
+
+        // Specific handling for token expiration
+        if (authError.response?.data?.requiresReAuthentication) {
+          // Clear existing tokens
+          removeCookie('token');
+          removeCookie('user');
+
+          // Redirect to login with a specific message
+          navigate('/login', { 
+            state: { 
+              message: 'Your session has expired. Please log in again.',
+              requireReAuthentication: true 
+            } 
+          });
+          return null;
         }
+        
+        // For other authentication errors
+        navigate('/login');
+        return null;
       }
-
-      // Determine if profile alert should be shown
-      const criticalFieldsMissing = 
-        userWithFullData.isGoogleUser && (
-          userWithFullData.company === null || 
-          userWithFullData.unitName === null
-        );
-
-      return {
-        user: userWithFullData,
-        showProfileAlert: criticalFieldsMissing
-      };
-
     } catch (error) {
-      console.error('Authentication check failed:', {
-        errorMessage: error.message,
-        errorResponse: error.response?.data,
-        errorStatus: error.response?.status
-      });
-      
-      // Redirect to login on authentication failure
+      console.error('Unexpected error in checkAuth:', error);
       navigate('/login');
       return null;
     }
-  }, [navigate, cookies]);
+  }, [navigate, cookies, removeCookie]);
 
   // Use a separate effect for authentication
   useEffect(() => {
