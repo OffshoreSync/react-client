@@ -169,35 +169,14 @@ const Login = () => {
       setLoginAttempts(0);
       localStorage.removeItem('loginLockExpiry');
 
-      // Existing login success logic...
-      const { token, user } = response.data;
-
-      // Sanitize and secure user data storage
-      const safeUser = {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        fullName: user.fullName,
-        offshoreRole: user.offshoreRole,
-        workingRegime: user.workingRegime,
-        company: user.company || null,
-        unitName: user.unitName || null,
-        workSchedule: user.workSchedule || {
-          nextOnBoardDate: null,
-          nextOffBoardDate: null
-        },
-        country: user.country || null,
-        isVerified: user.isVerified || false // Explicitly track verification status
-      };
-
-      // Secure token storage
-      setCookie('token', token, { 
+      // Store token and user in cookies
+      setCookie('token', response.data.token, { 
         path: '/', 
         secure: true,  // Only send over HTTPS
         sameSite: 'strict'  // Protect against CSRF
       });
       
-      setCookie('user', JSON.stringify(safeUser), { 
+      setCookie('user', JSON.stringify(response.data.user), { 
         path: '/', 
         secure: true,
         sameSite: 'strict'
@@ -271,28 +250,14 @@ const Login = () => {
         data: JSON.stringify(response.data, null, 2)
       });
 
-      // Destructure and ensure all fields are present
-      const { token, user } = response.data;
-
-      // Ensure all expected fields are present
-      const safeUser = {
-        id: user._id,
-        username: user.username,
-        email: user.email,
-        fullName: user.fullName,
-        profilePicture: user.profilePicture || null,
-        country: user.country || null,
-        isGoogleUser: true  // Explicitly set for all Google logins
-      };
-
-      // Store token and user data in cookies
-      setCookie('token', token, { 
+      // Store token and user in cookies
+      setCookie('token', response.data.token, { 
         path: '/', 
         secure: true,  // Only send over HTTPS
         sameSite: 'strict'  // Protect against CSRF
       });
       
-      setCookie('user', JSON.stringify(safeUser), { 
+      setCookie('user', JSON.stringify(response.data.user), { 
         path: '/', 
         secure: true,
         sameSite: 'strict'

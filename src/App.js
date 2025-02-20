@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { blue, green } from '@mui/material/colors';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -79,55 +79,40 @@ const theme = createTheme({
   },
 });
 
-// Authentication check component
-const PrivateRoute = ({ children }) => {
-  const [cookies] = useCookies(['user']);
-  const isAuthenticated = () => {
-    try {
-      // Check for Google login using cookies
-      const googleUser = cookies.user 
-        ? (typeof cookies.user === 'string' 
-            ? JSON.parse(cookies.user) 
-            : cookies.user)
-        : null;
-      
-      const isGoogleLoggedIn = googleUser && googleUser.isGoogleUser;
-      
-      // For normal login, continue using localStorage
-      const localStorageToken = localStorage.getItem('token');
-      
-      return isGoogleLoggedIn || localStorageToken;
-    } catch (error) {
-      console.error('Error parsing user cookie:', error);
-      return false;
-    }
-  };
-  return isAuthenticated() ? children : <Navigate to="/login" replace />;
-};
-
 function App() {
-  const [cookies] = useCookies(['user']);
+  const [cookies] = useCookies(['token', 'user']);
+  const location = useLocation();
+  const navigate = useNavigate();
 
-  // Function to check authentication
+  // Authentication check
   const isAuthenticated = () => {
-    try {
-      // Check for Google login using cookies
-      const googleUser = cookies.user 
-        ? (typeof cookies.user === 'string' 
-            ? JSON.parse(cookies.user) 
-            : cookies.user)
-        : null;
-      
-      const isGoogleLoggedIn = googleUser && googleUser.isGoogleUser;
-      
-      // For normal login, continue using localStorage
-      const localStorageToken = localStorage.getItem('token');
-      
-      return isGoogleLoggedIn || localStorageToken;
-    } catch (error) {
-      console.error('Error parsing user cookie:', error);
-      return false;
+    const token = cookies.token;
+    const user = cookies.user ? JSON.parse(cookies.user) : null;
+
+    // Check token and user existence
+    const isValidAuth = !!token && !!user;
+
+    console.log('Authentication Check:', {
+      tokenPresent: !!token,
+      userPresent: !!user,
+      isAuthenticated: isValidAuth
+    });
+
+    return isValidAuth;
+  };
+
+  // Protected route component
+  const ProtectedRoute = ({ children }) => {
+    if (!isAuthenticated()) {
+      // Redirect to login, preserving the intended destination
+      return <Navigate 
+        to="/login" 
+        state={{ from: location }} 
+        replace 
+      />;
     }
+
+    return children;
   };
 
   return (
@@ -151,36 +136,36 @@ function App() {
                 <Route 
                   path="/dashboard" 
                   element={
-                    <PrivateRoute>
+                    <ProtectedRoute>
                       <Dashboard />
-                    </PrivateRoute>
+                    </ProtectedRoute>
                   } 
                 />
                 <Route 
                   path="/settings" 
                   element={
-                    <PrivateRoute>
+                    <ProtectedRoute>
                       <Settings />
-                    </PrivateRoute>
+                    </ProtectedRoute>
                   } 
                 />
                 <Route 
                   path="/edit-profile" 
                   element={
-                    <PrivateRoute>
+                    <ProtectedRoute>
                       <EditProfile />
-                    </PrivateRoute>
+                    </ProtectedRoute>
                   } 
                 />
                 <Route 
                   path="/friends" 
                   element={
-                    <PrivateRoute>
+                    <ProtectedRoute>
                       <FriendManagement />
-                    </PrivateRoute>
+                    </ProtectedRoute>
                   } 
                 />
-                <Route path="/sync" element={<PrivateRoute><Sync /></PrivateRoute>} />
+                <Route path="/sync" element={<ProtectedRoute><Sync /></ProtectedRoute>} />
               </Routes>
             </div>
           </Router>
