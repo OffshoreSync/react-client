@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import getBackendUrl from '../utils/apiUtils';
+import { useCookies } from 'react-cookie';
 
 // Material-UI Imports
 import { 
@@ -51,6 +52,7 @@ const PasswordReset = () => {
   const location = useLocation();
   const params = useParams();
   const navigate = useNavigate();
+  const [cookies, setCookie, removeCookie] = useCookies(['resetEmail']);
 
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -75,14 +77,12 @@ const PasswordReset = () => {
   }, [location.search, params.token]);
 
   useEffect(() => {
-    if (params.token) {
-      // Try to retrieve email from the previous password reset request
-      const storedEmail = localStorage.getItem('resetEmail');
-      if (storedEmail) {
-        setEmail(storedEmail);
-      }
+    // Retrieve reset email from cookies
+    const storedEmail = cookies.resetEmail;
+    if (storedEmail) {
+      setEmail(storedEmail);
     }
-  }, [params.token]);
+  }, [cookies]);
 
   const requestPasswordReset = async (e) => {
     e.preventDefault();
@@ -98,7 +98,10 @@ const PasswordReset = () => {
       );
       setMessage(t('passwordReset.requestSent'));
       setStage('check-email');
-      localStorage.setItem('resetEmail', email);
+      setCookie('resetEmail', email, { 
+        path: '/', 
+        maxAge: 15 * 60 // 15 minutes
+      });
     } catch (error) {
       console.error('Password reset request error:', error);
       
@@ -135,7 +138,7 @@ const PasswordReset = () => {
     setError('');
 
     // Attempt to retrieve email if not set
-    const resetEmail = email || localStorage.getItem('resetEmail');
+    const resetEmail = email || cookies.resetEmail;
 
     // Log input details for debugging
     console.log('Password Reset Attempt:', {
@@ -185,8 +188,8 @@ const PasswordReset = () => {
       console.log('Password Reset Response:', response.data);
       setMessage(t('passwordReset.success'));
       
-      // Clear stored email
-      localStorage.removeItem('resetEmail');
+      // Clear stored email cookie
+      removeCookie('resetEmail', { path: '/' });
       
       // Redirect to login after successful reset
       setTimeout(() => {

@@ -239,7 +239,11 @@ const Dashboard = () => {
   const [datePickerLocale, setDatePickerLocale] = useState(
     getDateFnsLocale(i18n.language)
   );
-  const [cookies, setCookie, removeCookie] = useCookies(['token']);
+  const [cookies, setCookie, removeCookie] = useCookies(['token', 'user']);
+
+  const updateUserInCookies = (updatedUser) => {
+    setCookie('user', JSON.stringify(updatedUser), { path: '/' });
+  };
 
   // Memoize the checkAuth function to prevent unnecessary re-renders
   const checkAuth = useCallback(async () => {
@@ -348,7 +352,7 @@ const Dashboard = () => {
       navigate('/login');
       return null;
     }
-  }, [navigate, cookies, removeCookie]);
+  }, [navigate, removeCookie, cookies.token]); // Explicitly depend on token
 
   // Use a separate effect for authentication
   useEffect(() => {
@@ -356,24 +360,42 @@ const Dashboard = () => {
 
     const performAuth = async () => {
       setIsLoading(true);
-      const result = await checkAuth();
-      
-      if (isMounted) {
-        if (result) {
-          setUser(result.user);
-          setShowProfileAlert(result.showProfileAlert);
-          
-          // Automatically open On Board date dialog if no next On Board date is set
-          // This covers both first-time login and registration scenarios
-          if (!result.user.workSchedule?.nextOnBoardDate) {
-            console.log('No next OnBoard date found, opening dialog');
-            setOpenOnBoardDialog(true);
+      try {
+        const result = await checkAuth();
+        
+        if (isMounted) {
+          if (result) {
+            // Use functional update to prevent unnecessary re-renders
+            setUser(prevUser => {
+              // Only update if the user is different
+              const isUserChanged = JSON.stringify(prevUser) !== JSON.stringify(result.user);
+              return isUserChanged ? result.user : prevUser;
+            });
+
+            // Use functional update for showProfileAlert
+            setShowProfileAlert(prevShowAlert => {
+              return prevShowAlert !== result.showProfileAlert 
+                ? result.showProfileAlert 
+                : prevShowAlert;
+            });
+            
+            // Automatically open On Board date dialog if no next On Board date is set
+            if (!result.user.workSchedule?.nextOnBoardDate) {
+              console.log('No next OnBoard date found, opening dialog');
+              setOpenOnBoardDialog(true);
+            }
+          } else {
+            // If no valid user, navigate to home
+            navigate('/');
           }
-        } else {
-          // If no valid user, navigate to home
+          setIsLoading(false);
+        }
+      } catch (error) {
+        console.error('Authentication performance error:', error);
+        if (isMounted) {
+          setIsLoading(false);
           navigate('/');
         }
-        setIsLoading(false);
       }
     };
 
@@ -458,7 +480,7 @@ const Dashboard = () => {
       };
 
       // Update local storage with new user data including work cycles
-      setUser(updatedUser);
+      updateUserInCookies(updatedUser);
       
       // Close dialog and show success message
       setOpenOnBoardDialog(false);
@@ -522,7 +544,7 @@ const Dashboard = () => {
         }
       };
 
-      setUser(updatedUser);
+      updateUserInCookies(updatedUser);
 
       // Open the onboard date dialog
       setOpenOnBoardDialog(true);

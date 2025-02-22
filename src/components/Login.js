@@ -73,7 +73,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [reAuthMessage, setReAuthMessage] = useState('');
-  const [cookies, setCookie, removeCookie] = useCookies(['token', 'user']);
+  const [cookies, setCookie, removeCookie] = useCookies(['token', 'user', 'loginLockExpiry']);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -82,26 +82,26 @@ const Login = () => {
 
   // Add client-side rate limiting
   useEffect(() => {
-    const checkLockStatus = () => {
-      const storedLockExpiry = localStorage.getItem('loginLockExpiry');
-      if (storedLockExpiry) {
-        const expiryTime = parseInt(storedLockExpiry, 10);
-        if (Date.now() < expiryTime) {
-          setIsLocked(true);
-          setLockExpiry(expiryTime);
-        } else {
-          // Lock period has expired
-          localStorage.removeItem('loginLockExpiry');
-          setIsLocked(false);
-          setLoginAttempts(0);
-        }
+    const checkLoginLock = () => {
+      const lockExpiryTime = cookies.loginLockExpiry ? parseInt(cookies.loginLockExpiry, 10) : 0;
+      const currentTime = Date.now();
+
+      if (lockExpiryTime > currentTime) {
+        const remainingTime = Math.ceil((lockExpiryTime - currentTime) / 1000);
+        setIsLocked(true);
+        setLockExpiry(lockExpiryTime);
+        return true;
       }
+      
+      removeCookie('loginLockExpiry', { path: '/' });
+      setIsLocked(false);
+      return false;
     };
 
-    checkLockStatus();
-    const intervalId = setInterval(checkLockStatus, 60000); // Check every minute
+    checkLoginLock();
+    const intervalId = setInterval(checkLoginLock, 60000); // Check every minute
     return () => clearInterval(intervalId);
-  }, []);
+  }, [cookies, removeCookie, setIsLocked, setLockExpiry]);
 
   useEffect(() => {
     if (location.state?.successMessage) {
@@ -182,7 +182,7 @@ const Login = () => {
 
       // Reset login attempts on successful login
       setLoginAttempts(0);
-      localStorage.removeItem('loginLockExpiry');
+      removeCookie('loginLockExpiry', { path: '/' });
 
       // Store token and user in cookies with enhanced options
       console.log('Login Token Details:', {
@@ -231,7 +231,10 @@ const Login = () => {
           const lockExpiryTime = Date.now() + (15 * 60 * 1000); // 15 minutes
           setIsLocked(true);
           setLockExpiry(lockExpiryTime);
-          localStorage.setItem('loginLockExpiry', lockExpiryTime.toString());
+          setCookie('loginLockExpiry', lockExpiryTime.toString(), { 
+            path: '/', 
+            maxAge: Math.floor(15 * 60) 
+          });
           setError(t('login.errors.tooManyAttempts'));
           return;
         }

@@ -25,7 +25,7 @@ const Settings = () => {
   const [user, setUser] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const navigate = useNavigate();
-  const [cookies] = useCookies(['user', 'token']);
+  const [cookies, setCookie, removeCookie] = useCookies(['token', 'user']);
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -49,8 +49,9 @@ const Settings = () => {
   }, [navigate, cookies]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    // Remove cookies instead of localStorage
+    removeCookie('token', { path: '/' });
+    removeCookie('user', { path: '/' });
     navigate('/login');
   };
 
@@ -67,9 +68,9 @@ const Settings = () => {
         }
       );
 
-      // Clear local storage
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      // Clear cookies
+      removeCookie('token', { path: '/' });
+      removeCookie('user', { path: '/' });
 
       // Dispatch event to update profile picture
       window.dispatchEvent(new Event('profilePictureUpdated'));

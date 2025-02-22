@@ -33,6 +33,7 @@ import {
   OFFSHORE_ROLES, 
   getTranslatedRoles 
 } from '../utils/offshoreRoles';
+import { useCookies, Cookies } from 'react-cookie';
 
 // Enhanced input validation functions
 const validateUsername = (username) => {
@@ -77,6 +78,7 @@ const Register = () => {
   const [googleUserData, setGoogleUserData] = useState(null);
   const [isLocked, setIsLocked] = useState(false);
   const [lockExpiry, setLockExpiry] = useState(null);
+  const [cookies, setCookie, removeCookie] = useCookies(['registrationLockExpiry']);
   
   // New state for password visibility
   const [showPassword, setShowPassword] = useState(false);
@@ -261,27 +263,37 @@ const Register = () => {
   }, [location.state]);
 
   // Registration lock status check
-  useEffect(() => {
-    const checkLockStatus = () => {
-      const storedLockExpiry = localStorage.getItem('registrationLockExpiry');
-      if (storedLockExpiry) {
-        const expiryTime = parseInt(storedLockExpiry, 10);
-        if (Date.now() < expiryTime) {
-          setIsLocked(true);
-          setLockExpiry(expiryTime);
-        } else {
-          localStorage.removeItem('registrationLockExpiry');
-          setIsLocked(false);
-          setLockExpiry(null);
-        }
-      }
-    };
+  const checkRegistrationLock = () => {
+    const lockExpiryTime = cookies.registrationLockExpiry ? 
+      parseInt(cookies.registrationLockExpiry, 10) : 0;
+    const currentTime = Date.now();
 
-    checkLockStatus();
-    const intervalId = setInterval(checkLockStatus, 60000); // Check every minute
+    if (lockExpiryTime > currentTime) {
+      setIsLocked(true);
+      setLockExpiry(lockExpiryTime);
+      return true;
+    }
+    
+    removeCookie('registrationLockExpiry', { path: '/' });
+    setIsLocked(false);
+    setLockExpiry(null);
+    return false;
+  };
+
+  useEffect(() => {
+    checkRegistrationLock();
+    const intervalId = setInterval(checkRegistrationLock, 60000); // Check every minute
 
     return () => clearInterval(intervalId);
-  }, []);
+  }, [cookies]);
+
+  const setRegistrationLockExpiry = (lockDuration) => {
+    const lockExpiryTime = Date.now() + lockDuration;
+    setCookie('registrationLockExpiry', lockExpiryTime.toString(), { 
+      path: '/', 
+      maxAge: Math.floor(lockDuration / 1000) 
+    });
+  };
 
   // Language-based country name update
   const updateCountryName = (currentCountry) => {
