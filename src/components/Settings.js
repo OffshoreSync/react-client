@@ -29,7 +29,7 @@ const Settings = () => {
   const { t } = useTranslation();
 
   useEffect(() => {
-    // Use cookies user directly
+    // Use cookies user directly as an object
     const parsedUser = cookies.user;
     
     // If no user, redirect to login
@@ -39,11 +39,7 @@ const Settings = () => {
     }
     
     // Debug log to check user data
-    console.log('Settings Component User Data:', {
-      fullUser: JSON.stringify(parsedUser, null, 2),
-      offshoreRole: parsedUser.offshoreRole,
-      workingRegime: JSON.stringify(parsedUser.workingRegime, null, 2)
-    });
+    console.log('Settings Component User Data:', parsedUser);
     
     setUser(parsedUser);
   }, [navigate, cookies]);
