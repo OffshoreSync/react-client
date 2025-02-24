@@ -88,20 +88,24 @@ const Login = () => {
 
       if (lockExpiryTime > currentTime) {
         const remainingTime = Math.ceil((lockExpiryTime - currentTime) / 1000);
-        setIsLocked(true);
-        setLockExpiry(lockExpiryTime);
+        if (!isLocked) { 
+          setIsLocked(true);
+          setLockExpiry(lockExpiryTime);
+        }
         return true;
       }
       
-      removeCookie('loginLockExpiry', { path: '/' });
-      setIsLocked(false);
+      if (isLocked) { 
+        removeCookie('loginLockExpiry', { path: '/' });
+        setIsLocked(false);
+      }
       return false;
     };
 
     checkLoginLock();
     const intervalId = setInterval(checkLoginLock, 60000); // Check every minute
     return () => clearInterval(intervalId);
-  }, [cookies, removeCookie, setIsLocked, setLockExpiry]);
+  }, [cookies.loginLockExpiry, isLocked, setIsLocked, setLockExpiry, removeCookie]);
 
   useEffect(() => {
     if (location.state?.successMessage) {
@@ -247,43 +251,50 @@ const Login = () => {
 
   const handleGoogleLogin = async (credentialResponse) => {
     try {
-      // Comprehensive logging of credential response
       console.log('Google Credential Response:', {
         credentialPresent: !!credentialResponse.credential,
         clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID
       });
 
-      // Validate credential response
       if (!credentialResponse.credential) {
         throw new Error('Google credential is missing');
       }
 
-      // Send Google token to backend with enhanced configuration
       const response = await axios.post(
         getBackendUrl('/api/auth/google-login'), 
         {
           googleToken: credentialResponse.credential
         },
         {
-          // Ensure credentials are sent with the request
           withCredentials: true,
           headers: {
             'Content-Type': 'application/json',
             'Access-Control-Allow-Origin': '*',
             'Access-Control-Allow-Credentials': 'true'
           },
-          // Add timeout to prevent hanging
           timeout: 10000
         }
       );
 
-      // Log the entire response for debugging
       console.log('Google Login Backend Response:', {
         status: response.status,
         data: JSON.stringify(response.data, null, 2)
       });
 
-      // Store token and user in cookies with enhanced options
+      setCookie('token', response.data.token, { 
+        path: '/', 
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 30 * 24 * 60 * 60 
+      });
+      
+      setCookie('user', response.data.user, { 
+        path: '/', 
+        secure: true,
+        sameSite: 'strict',
+        maxAge: 30 * 24 * 60 * 60 
+      });
+
       console.log('Google Login Token Details:', {
         tokenLength: response.data.token ? response.data.token.length : 'N/A',
         tokenFirstChars: response.data.token ? response.data.token.substring(0, 10) : 'N/A',
@@ -291,41 +302,14 @@ const Login = () => {
         userKeys: response.data.user ? Object.keys(response.data.user) : []
       });
 
-      setCookie('token', response.data.token, { 
-        path: '/', 
-        secure: true,  // Only send over HTTPS
-        sameSite: 'strict',  // Protect against CSRF
-        maxAge: 30 * 24 * 60 * 60 // 30 days expiration
-      });
-      
-      setCookie('user', response.data.user, { 
-        path: '/', 
-        secure: true,
-        sameSite: 'strict',
-        maxAge: 30 * 24 * 60 * 60 // 30 days expiration
-      });
+      // Clear password from memory if applicable
+      setFormData(prev => ({ ...prev, password: '' }));
 
-      // Verify cookies after setting
-      console.log('Cookies after Google login:', {
-        tokenCookie: cookies.token,
-        userCookie: cookies.user
-      });
-
-      // Dispatch event to update profile picture
-      window.dispatchEvent(new Event('profilePictureUpdated'));
-
-      // Redirect to dashboard
+      // Navigate to the dashboard after successful login
       navigate('/dashboard');
+      
     } catch (err) {
-      // Comprehensive error handling
-      console.error('Google Login Error:', {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status,
-        headers: err.response?.headers
-      });
-
-      // Set user-friendly error message
+      console.error('Login error:', err.response?.data || err.message);
       setError(t('login.errors.googleLoginFailed'));
     }
   };
