@@ -39,7 +39,7 @@ import { styled } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 
 // Import getBackendUrl
-import getBackendUrl from '../utils/apiUtils';
+import { api, getCookie, setCookie, removeCookie } from '../utils/apiUtils';
 
 // Import FullCalendar locales
 import ptLocale from '@fullcalendar/core/locales/pt-br';
@@ -52,9 +52,6 @@ import { enUS, ptBR, es } from 'date-fns/locale';
 // Import MUI date picker components
 import { DatePicker, LocalizationProvider } from '@mui/x-date-pickers';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFnsV3';
-
-// Import cookies
-import { useCookies } from 'react-cookie';
 
 // Custom styled calendar to match Material-UI theme
 const StyledCalendar = styled(FullCalendar)`
@@ -224,7 +221,8 @@ const Dashboard = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [date, setDate] = useState(new Date());
   const [openOnBoardDialog, setOpenOnBoardDialog] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -239,23 +237,38 @@ const Dashboard = () => {
   const [datePickerLocale, setDatePickerLocale] = useState(
     getDateFnsLocale(i18n.language)
   );
-  const [cookies, setCookie, removeCookie] = useCookies(['token', 'user']);
 
   const updateUserInCookies = (updatedUser) => {
-    setCookie('user', JSON.stringify(updatedUser), { path: '/' });
+    setCookie('user', updatedUser);
   };
 
   // Memoize the checkAuth function to prevent unnecessary re-renders
   const checkAuth = useCallback(async () => {
     try {
-      const token = cookies.token;
+      // Debug logging for cookie state
+      console.debug('Cookie Debug:', {
+        tokenExists: !!getCookie('token'),
+        userExists: !!getCookie('user'),
+        cookiesPresent: !!(getCookie('token') || getCookie('user'))
+      });
+
+      // Handle token expiration
+      if (!getCookie('token')) {
+        console.debug('Token not found, redirecting to login');
+        removeCookie('token');
+        removeCookie('user');
+        navigate('/login');
+        return;
+      }
+
+      const token = getCookie('token');
       
       console.log('Dashboard Authentication Check:', {
-        tokenSource: 'cookies',
+        timestamp: new Date().toISOString(),
         tokenPresent: !!token,
         tokenLength: token ? token.length : 'N/A',
         tokenFirstChars: token ? token.substring(0, 10) : 'N/A',
-        cookiesAvailable: Object.keys(cookies).length
+        userPresent: !!getCookie('user')
       });
 
       // If no token, immediately return null
@@ -266,13 +279,7 @@ const Dashboard = () => {
       }
 
       try {
-        const response = await axios.get(getBackendUrl('/api/auth/profile'), {
-          headers: { 
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          withCredentials: true  // Ensure credentials are sent
-        });
+        const response = await api.get('/api/auth/profile');
 
         console.log('Profile fetch successful:', response.data);
         
@@ -291,15 +298,8 @@ const Dashboard = () => {
         // Check if work cycles need generation
         if (!userWithFullData.workCycles || userWithFullData.workCycles.length === 0) {
           try {
-            const cyclesResponse = await axios.post(
-              getBackendUrl('/api/auth/generate-work-cycles'),
-              {},
-              {
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                }
-              }
+            const cyclesResponse = await api.post(
+              '/api/auth/generate-work-cycles'
             );
 
             userWithFullData.workCycles = cyclesResponse.data.workCycles;
@@ -352,14 +352,14 @@ const Dashboard = () => {
       navigate('/login');
       return null;
     }
-  }, [navigate, removeCookie, cookies.token]); // Explicitly depend on token
+  }, [navigate]); // Explicitly depend on token
 
   // Use a separate effect for authentication
   useEffect(() => {
     let isMounted = true;
 
     const performAuth = async () => {
-      setIsLoading(true);
+      setLoading(true);
       try {
         const result = await checkAuth();
         
@@ -388,12 +388,12 @@ const Dashboard = () => {
             // If no valid user, navigate to home
             navigate('/');
           }
-          setIsLoading(false);
+          setLoading(false);
         }
       } catch (error) {
         console.error('Authentication performance error:', error);
         if (isMounted) {
-          setIsLoading(false);
+          setLoading(false);
           navigate('/');
         }
       }
@@ -421,7 +421,7 @@ const Dashboard = () => {
   const calendarEvents = useMemo(() => generateCalendarEvents(user, t), [user, t]);
 
   // If loading, show a loading indicator
-  if (isLoading) {
+  if (loading) {
     return (
       <Box 
         display="flex" 
@@ -443,33 +443,13 @@ const Dashboard = () => {
 
   const handleSetOnBoardDate = async () => {
     try {
-      const token = cookies.token;
-      
       // Call backend API to set On Board date
-      const response = await axios.put(
-        getBackendUrl('/api/auth/set-onboard-date'), 
-        { nextOnBoardDate: date },
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const response = await api.put('/api/auth/set-onboard-date', { nextOnBoardDate: date });
 
       console.log('Set On Board Date Response:', response.data);
 
       // Generate work cycles
-      const cyclesResponse = await axios.post(
-        getBackendUrl('/api/auth/generate-work-cycles'),
-        {},
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const cyclesResponse = await api.post('/api/auth/generate-work-cycles');
 
       console.log('Generate Work Cycles Response:', cyclesResponse.data);
 
@@ -481,6 +461,9 @@ const Dashboard = () => {
 
       // Update local storage with new user data including work cycles
       updateUserInCookies(updatedUser);
+      
+      // Update the user state to trigger re-render
+      setUser(updatedUser);
       
       // Close dialog and show success message
       setOpenOnBoardDialog(false);
@@ -510,24 +493,7 @@ const Dashboard = () => {
 
   const handleResetOnBoardDate = async () => {
     try {
-      const token = cookies.token;
-      
-      if (!token) {
-        setSnackbarMessage(t('dashboard.errors.noToken'));
-        setSnackbarSeverity('error');
-        setSnackbarOpen(true);
-        return;
-      }
-
-      const response = await axios.put(
-        getBackendUrl('/api/auth/reset-next-onboard-date'), 
-        {}, 
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
+      const response = await api.put('/api/auth/reset-next-onboard-date');
 
       // Detailed logging for debugging
       console.log('Reset Onboard Date Response:', response.data);
@@ -544,7 +510,9 @@ const Dashboard = () => {
         }
       };
 
+      // Update cookies and state
       updateUserInCookies(updatedUser);
+      setUser(updatedUser);
 
       // Open the onboard date dialog
       setOpenOnBoardDialog(true);

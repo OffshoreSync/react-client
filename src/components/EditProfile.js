@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import axios from 'axios';
+import { api, getCookie, setCookie } from '../utils/apiUtils';
 import { useNavigate } from 'react-router-dom';
-import { useCookies } from 'react-cookie';
 import { 
   TextField, 
   Button, 
@@ -18,12 +17,10 @@ import {
 
 import { OFFSHORE_COUNTRIES, getTranslatedCountries } from '../utils/countries';
 import { OFFSHORE_ROLES, getTranslatedRoles } from '../utils/offshoreRoles';
-import getBackendUrl from '../utils/apiUtils';
 
 const EditProfile = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const [cookies, setCookie] = useCookies(['token']);
   const [formData, setFormData] = useState({
     fullName: '',
     username: '',
@@ -43,10 +40,8 @@ const EditProfile = () => {
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        const response = await axios.get(getBackendUrl('/api/auth/profile'), {
-          headers: { Authorization: `Bearer ${cookies.token}` }
-        });
-        
+        const response = await api.get('/api/auth/profile');
+
         const { user } = response.data;
         
         // Find the country name for the fetched country code
@@ -247,14 +242,11 @@ const EditProfile = () => {
       delete submitData.customOnDutyDays;
       delete submitData.customOffDutyDays;
 
-      const response = await axios.put(getBackendUrl('/api/auth/update-profile'), submitData, {
-        headers: { Authorization: `Bearer ${cookies.token}` }
-      });
+      const response = await api.put('/api/auth/update-profile', submitData);
 
       // Update user cookie with new data
-      const { user, token } = response.data;
-      setCookie('token', token, { path: '/' });
-      setCookie('user', JSON.stringify(user), { path: '/' });
+      const { user } = response.data;
+      setCookie('user', user);
 
       setSuccessMessage(t('register.profileUpdateSuccess'));
       setTimeout(() => {

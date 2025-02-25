@@ -1,83 +1,47 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { useTranslation } from 'react-i18next';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { 
   Container, 
   Typography, 
-  Box, 
   Button, 
-  CircularProgress,
-  Alert
+  Box, 
+  Paper, 
+  Alert,
+  CircularProgress
 } from '@mui/material';
-
-import getBackendUrl from '../utils/apiUtils';
+import { useTranslation } from 'react-i18next';
+import { api } from '../utils/apiUtils';
 
 const VerifyEmail = () => {
-  const { t } = useTranslation();
+  const { token } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
-  
-  const [isVerifying, setIsVerifying] = useState(true);
-  const [verificationStatus, setVerificationStatus] = useState({
-    success: false,
-    message: '',
-    alreadyVerified: false,
-    error: null
-  });
+  const { t } = useTranslation();
+  const [verifying, setVerifying] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   useEffect(() => {
     const verifyEmail = async () => {
+      if (!token) {
+        setVerifying(false);
+        return;
+      }
+
       try {
-        // Extract token from URL query parameters
-        const searchParams = new URLSearchParams(location.search);
-        const token = searchParams.get('token');
-
-        if (!token) {
-          throw new Error('No verification token provided');
-        }
-
-        // Call backend verification endpoint
-        const response = await axios.get(
-          `${getBackendUrl()}/api/auth/verify-email?token=${token}`
-        );
-
-        setVerificationStatus({
-          success: true,
-          message: response.data.message || t('verifyEmail.success.message'),
-          alreadyVerified: response.data.alreadyVerified || false,
-          error: null
-        });
-
-        // Redirect to login page after 2 seconds if verification is successful
-        setTimeout(() => {
-          navigate('/login', {
-            state: { 
-              successMessage: response.data.message || t('verifyEmail.success.message') 
-            }
-          });
-        }, 2000);
+        await api.post('/api/auth/verify-email', { token });
+        setSuccess(t('verifyEmail.success'));
+        setTimeout(() => navigate('/login'), 3000);
       } catch (error) {
-        console.error('Email Verification Error:', {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status
-        });
-
-        setVerificationStatus({
-          success: false,
-          message: error.response?.data?.error || 
-                   t('verifyEmail.error.serverError'),
-          alreadyVerified: false,
-          error: error.response?.data || error.message
-        });
+        console.error('Email verification error:', error);
+        setError(t('verifyEmail.errors.verificationFailed'));
       } finally {
-        setIsVerifying(false);
+        setVerifying(false);
       }
     };
 
     verifyEmail();
-  }, [location.search, t, navigate]);
+  }, [token, navigate, t]);
 
   return (
     <Container maxWidth="xs">
@@ -90,7 +54,7 @@ const VerifyEmail = () => {
           textAlign: 'center'
         }}
       >
-        {isVerifying ? (
+        {verifying ? (
           <>
             <Typography variant="h5" sx={{ mb: 2 }}>
               {t('verifyEmail.title')}
@@ -102,34 +66,29 @@ const VerifyEmail = () => {
           </>
         ) : (
           <>
-            {verificationStatus.error && (
+            {error && (
               <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
-                {verificationStatus.message}
+                {error}
               </Alert>
             )}
 
             <Typography 
               component="h1" 
               variant="h5"
-              color={verificationStatus.success ? 'primary' : 'error'}
+              color={success ? 'primary' : 'error'}
               sx={{ mb: 2 }}
             >
-              {verificationStatus.success 
-                ? (verificationStatus.alreadyVerified 
-                    ? t('verifyEmail.success.title') 
-                    : t('verifyEmail.success.title'))
-                : t('verifyEmail.error.title')
-              }
+              {success ? t('verifyEmail.success.title') : t('verifyEmail.error.title')}
             </Typography>
             
             <Typography 
               variant="body1" 
               sx={{ mb: 3 }}
             >
-              {verificationStatus.message}
+              {success ? success : error}
             </Typography>
             
-            {!verificationStatus.success && (
+            {!success && (
               <Button
                 variant="contained"
                 color="primary"

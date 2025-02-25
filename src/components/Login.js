@@ -22,9 +22,8 @@ import { GoogleLogin } from '@react-oauth/google';
 
 // Import translation hook
 import { useTranslation } from 'react-i18next';
-import getBackendUrl from '../utils/apiUtils';
+import { api, setCookie, getCookie, removeCookie } from '../utils/apiUtils';
 import { styled } from '@mui/material/styles';
-import { useCookies } from 'react-cookie';
 
 // Styling for Google Sign-In button container
 const GoogleSignInContainer = styled(Box)(({ theme }) => ({
@@ -73,7 +72,6 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [reAuthMessage, setReAuthMessage] = useState('');
-  const [cookies, setCookie, removeCookie] = useCookies(['token', 'user', 'loginLockExpiry']);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -83,29 +81,27 @@ const Login = () => {
   // Add client-side rate limiting
   useEffect(() => {
     const checkLoginLock = () => {
-      const lockExpiryTime = cookies.loginLockExpiry ? parseInt(cookies.loginLockExpiry, 10) : 0;
+      const lockExpiryTime = getCookie('loginLockExpiry');
       const currentTime = Date.now();
 
-      if (lockExpiryTime > currentTime) {
-        const remainingTime = Math.ceil((lockExpiryTime - currentTime) / 1000);
+      if (lockExpiryTime && parseInt(lockExpiryTime, 10) > currentTime) {
+        const remainingTime = Math.ceil((parseInt(lockExpiryTime, 10) - currentTime) / 1000);
         if (!isLocked) { 
           setIsLocked(true);
-          setLockExpiry(lockExpiryTime);
+          setLockExpiry(parseInt(lockExpiryTime, 10));
         }
         return true;
       }
       
       if (isLocked) { 
-        removeCookie('loginLockExpiry', { path: '/' });
+        removeCookie('loginLockExpiry');
         setIsLocked(false);
       }
       return false;
     };
 
     checkLoginLock();
-    const intervalId = setInterval(checkLoginLock, 60000); // Check every minute
-    return () => clearInterval(intervalId);
-  }, [cookies.loginLockExpiry, isLocked, setIsLocked, setLockExpiry, removeCookie]);
+  }, [isLocked]);
 
   useEffect(() => {
     if (location.state?.successMessage) {
@@ -159,157 +155,58 @@ const Login = () => {
     }
 
     try {
-      const response = await axios.post(
-        getBackendUrl('/api/auth/login'), 
-        {
-          username,
-          password
-        },
-        {
-          // Add CSRF protection if using cookies
-          withCredentials: true,
-          // Add additional headers for security
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const response = await api.post('/api/auth/login', {
+        username,
+        password
+      });
 
-      // Check for verification requirement
-      if (response.data.requiresVerification) {
-        setError(t('login.errors.emailNotVerified', { 
-          email: response.data.email 
-        }));
-        return;
+      if (response.data.user) {
+        setCookie('user', response.data.user);
+        
+        // Reset login attempts
+        setLoginAttempts(0);
+        removeCookie('loginLockExpiry');
+        
+        // Redirect to the intended page or dashboard
+        const { from } = location.state || { from: { pathname: '/dashboard' } };
+        navigate(from);
       }
-
-      // Reset login attempts on successful login
-      setLoginAttempts(0);
-      removeCookie('loginLockExpiry', { path: '/' });
-
-      // Store token and user in cookies with enhanced options
-      console.log('Login Token Details:', {
-        tokenLength: response.data.token ? response.data.token.length : 'N/A',
-        tokenFirstChars: response.data.token ? response.data.token.substring(0, 10) : 'N/A',
-        userDataPresent: !!response.data.user,
-        userKeys: response.data.user ? Object.keys(response.data.user) : []
-      });
-
-      setCookie('token', response.data.token, { 
-        path: '/', 
-        secure: true,  // Only send over HTTPS
-        sameSite: 'strict',  // Protect against CSRF
-        maxAge: 30 * 24 * 60 * 60 // 30 days expiration
-      });
+    } catch (error) {
+      console.error('Login error:', error);
       
-      setCookie('user', response.data.user, { 
-        path: '/', 
-        secure: true,
-        sameSite: 'strict',
-        maxAge: 30 * 24 * 60 * 60 // 30 days expiration
-      });
-
-      // Verify cookies after setting
-      console.log('Cookies after login:', {
-        tokenCookie: cookies.token,
-        userCookie: cookies.user
-      });
-
-      // Clear password from memory
-      setFormData(prev => ({ ...prev, password: '' }));
-
-      navigate('/dashboard');
-    } catch (err) {
-      if (err.response?.data?.requiresVerification) {
-        setError(t('login.errors.emailNotVerified', { 
-          email: err.response.data.email 
-        }));
+      // Increment login attempts
+      const newAttempts = loginAttempts + 1;
+      setLoginAttempts(newAttempts);
+      
+      // Lock account after 5 failed attempts
+      if (newAttempts >= 5) {
+        const lockExpiryTime = Date.now() + (15 * 60 * 1000); // 15 minutes
+        setCookie('loginLockExpiry', lockExpiryTime);
+        setIsLocked(true);
+        setLockExpiry(lockExpiryTime);
+        setError(t('login.errors.accountLocked', { minutes: 15 }));
       } else {
-        // Increment login attempts
-        const newAttempts = loginAttempts + 1;
-        setLoginAttempts(newAttempts);
-
-        // Lock account after 5 failed attempts
-        if (newAttempts >= 5) {
-          const lockExpiryTime = Date.now() + (15 * 60 * 1000); // 15 minutes
-          setIsLocked(true);
-          setLockExpiry(lockExpiryTime);
-          setCookie('loginLockExpiry', lockExpiryTime.toString(), { 
-            path: '/', 
-            maxAge: Math.floor(15 * 60) 
-          });
-          setError(t('login.errors.tooManyAttempts'));
-          return;
-        }
-
-        console.error('Login error:', err.response?.data || err.message);
-        setError(t('login.errors.loginFailed'));
+        setError(t('login.errors.invalidCredentials'));
       }
     }
   };
 
   const handleGoogleLogin = async (credentialResponse) => {
     try {
-      console.log('Google Credential Response:', {
-        credentialPresent: !!credentialResponse.credential,
-        clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID
-      });
-
       if (!credentialResponse.credential) {
         throw new Error('Google credential is missing');
       }
 
-      const response = await axios.post(
-        getBackendUrl('/api/auth/google-login'), 
-        {
-          googleToken: credentialResponse.credential
-        },
-        {
-          withCredentials: true,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Credentials': 'true'
-          },
-          timeout: 10000
-        }
-      );
-
-      console.log('Google Login Backend Response:', {
-        status: response.status,
-        data: JSON.stringify(response.data, null, 2)
+      const response = await api.post('/api/auth/google-login', {
+        googleToken: credentialResponse.credential
       });
 
-      setCookie('token', response.data.token, { 
-        path: '/', 
-        secure: true,
-        sameSite: 'strict',
-        maxAge: 30 * 24 * 60 * 60 
-      });
-      
-      setCookie('user', response.data.user, { 
-        path: '/', 
-        secure: true,
-        sameSite: 'strict',
-        maxAge: 30 * 24 * 60 * 60 
-      });
-
-      console.log('Google Login Token Details:', {
-        tokenLength: response.data.token ? response.data.token.length : 'N/A',
-        tokenFirstChars: response.data.token ? response.data.token.substring(0, 10) : 'N/A',
-        userDataPresent: !!response.data.user,
-        userKeys: response.data.user ? Object.keys(response.data.user) : []
-      });
-
-      // Clear password from memory if applicable
-      setFormData(prev => ({ ...prev, password: '' }));
-
-      // Navigate to the dashboard after successful login
-      navigate('/dashboard');
-      
-    } catch (err) {
-      console.error('Login error:', err.response?.data || err.message);
+      if (response.data.user) {
+        setCookie('user', response.data.user);
+        navigate('/dashboard');
+      }
+    } catch (error) {
+      console.error('Google login error:', error);
       setError(t('login.errors.googleLoginFailed'));
     }
   };

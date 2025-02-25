@@ -12,7 +12,7 @@ import { blue, green } from '@mui/material/colors';
 import CssBaseline from '@mui/material/CssBaseline';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useTranslation } from 'react-i18next';
-import { CookiesProvider, useCookies } from 'react-cookie';
+import { CookiesProvider } from 'react-cookie';
 
 // Import i18n configuration
 import './i18n';
@@ -29,6 +29,7 @@ import Register from './components/Register';
 import EditProfile from './components/EditProfile';
 import FriendManagement from './components/FriendManagement';
 import VerifyEmail from './components/VerifyEmail';
+import { getCookie } from './utils/apiUtils';
 
 // Explicitly declare colors to prevent no-undef
 const primaryColor = blue[500];
@@ -88,23 +89,21 @@ const theme = createTheme({
 
 // Wrapper component to handle routing-specific hooks
 function AppRoutes() {
-  const [cookies] = useCookies(['token', 'user']);
   const location = useLocation();
   const navigate = useNavigate();
 
   // Authentication check
   const isAuthenticated = () => {
-    const token = cookies.token;
-    const user = cookies.user;
+    const token = getCookie('token');
+    const user = getCookie('user');
 
     // Check token and user existence
     const isValidAuth = !!token && !!user;
 
-    console.log('Authentication Check:', {
-      tokenPresent: !!token,
-      userPresent: !!user,
-      isAuthenticated: isValidAuth
-    });
+    // If not authenticated and trying to access a protected route, redirect to login
+    if (!isValidAuth && location.pathname !== '/login' && !location.pathname.startsWith('/verify-email')) {
+      return false;
+    }
 
     return isValidAuth;
   };
@@ -112,12 +111,8 @@ function AppRoutes() {
   // Protected route component
   const ProtectedRoute = ({ children }) => {
     if (!isAuthenticated()) {
-      // Redirect to login, preserving the intended destination
-      return <Navigate 
-        to="/login" 
-        state={{ from: location }} 
-        replace 
-      />;
+      // Redirect to login with return path
+      return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
     return children;

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import ReactCountryFlag from "react-country-flag";
 import { 
   Typography, 
@@ -18,55 +17,47 @@ import {
 } from '@mui/material';
 import { getCountryCode } from '../utils/countries';
 import { useTranslation } from 'react-i18next';
-import getBackendUrl from '../utils/apiUtils';
-import { useCookies } from 'react-cookie';
+import { api, getCookie, removeCookie, setCookie } from '../utils/apiUtils';
 
 const Settings = () => {
   const [user, setUser] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const navigate = useNavigate();
-  const [cookies, setCookie, removeCookie] = useCookies(['token', 'user']);
   const { t } = useTranslation();
 
   useEffect(() => {
-    // Use cookies user directly as an object
-    const parsedUser = cookies.user;
-    
-    // If no user, redirect to login
-    if (!parsedUser) {
-      navigate('/login');
-      return;
-    }
-    
-    // Debug log to check user data
-    console.log('Settings Component User Data:', parsedUser);
-    
-    setUser(parsedUser);
-  }, [navigate, cookies]);
+    const fetchUserData = async () => {
+      try {
+        const response = await api.get('/api/auth/profile');
+        if (response.data.user) {
+          setUser(response.data.user);
+          // Update the user cookie with fresh data
+          setCookie('user', response.data.user);
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        if (error.response?.status === 401) {
+          navigate('/login');
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [navigate]);
 
   const handleLogout = () => {
-    // Remove cookies instead of localStorage
-    removeCookie('token', { path: '/' });
-    removeCookie('user', { path: '/' });
+    removeCookie('token');
+    removeCookie('user');
     navigate('/login');
   };
 
   const handleDeleteAccount = async () => {
     try {
-      const token = cookies.token;
-      
-      await axios.delete(
-        getBackendUrl('/api/auth/delete-account'), 
-        { 
-          headers: { 
-            Authorization: `Bearer ${token}` 
-          } 
-        }
-      );
+      await api.delete('/api/auth/delete-account');
 
       // Clear cookies
-      removeCookie('token', { path: '/' });
-      removeCookie('user', { path: '/' });
+      removeCookie('token');
+      removeCookie('user');
 
       // Dispatch event to update profile picture
       window.dispatchEvent(new Event('profilePictureUpdated'));
@@ -99,7 +90,7 @@ const Settings = () => {
     );
 
     if (matchedPredefined) {
-      return `${matchedPredefined[0]} (Predefined)`;
+      return `${matchedPredefined[0]}`;
     }
 
     // Validate custom regime
@@ -176,7 +167,7 @@ const Settings = () => {
                   <Typography variant="body1">
                     <strong>{t('settings.workingRegime')}:</strong> {
                       user.workingRegime 
-                        ? `${user.workingRegime.onDutyDays}/${user.workingRegime.offDutyDays}` 
+                        ? formatWorkingRegime(user.workingRegime) 
                         : t('settings.notSet')
                     }
                   </Typography>

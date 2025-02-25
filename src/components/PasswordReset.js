@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
-import getBackendUrl from '../utils/apiUtils';
-import { useCookies } from 'react-cookie';
+import { api, setCookie, getCookie, removeCookie } from '../utils/apiUtils';
 
 // Material-UI Imports
 import { 
@@ -52,8 +51,6 @@ const PasswordReset = () => {
   const location = useLocation();
   const params = useParams();
   const navigate = useNavigate();
-  const [cookies, setCookie, removeCookie] = useCookies(['resetEmail']);
-
   const [email, setEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -78,24 +75,21 @@ const PasswordReset = () => {
 
   useEffect(() => {
     // Retrieve reset email from cookies
-    const storedEmail = cookies.resetEmail;
+    const storedEmail = getCookie('resetEmail');
     if (storedEmail) {
       setEmail(storedEmail);
     }
-  }, [cookies]);
+  }, []);
 
   const requestPasswordReset = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError(''); // Clear any previous errors
     try {
-      await axios.post(
-        getBackendUrl('/api/password/request-reset'), 
-        { 
-          email, 
-          language: i18n.language || 'en' // Use current language or default to English
-        }
-      );
+      await api.post('/api/auth/request-password-reset', { 
+        email, 
+        language: i18n.language || 'en' // Use current language or default to English
+      });
       setMessage(t('passwordReset.requestSent'));
       setStage('check-email');
       setCookie('resetEmail', email, { 
@@ -138,7 +132,7 @@ const PasswordReset = () => {
     setError('');
 
     // Attempt to retrieve email if not set
-    const resetEmail = email || cookies.resetEmail;
+    const resetEmail = email || getCookie('resetEmail');
 
     // Log input details for debugging
     console.log('Password Reset Attempt:', {
@@ -175,15 +169,11 @@ const PasswordReset = () => {
     }
 
     try {
-      const response = await axios.post(
-        getBackendUrl('/api/password/reset'), 
-        { 
-          token: resetToken, 
-          newPassword, 
-          confirmPassword,
-          email: resetEmail
-        }
-      );
+      const response = await api.post('/api/auth/reset-password', {
+        token: resetToken, 
+        password: newPassword,
+        email: resetEmail
+      });
       
       console.log('Password Reset Response:', response.data);
       setMessage(t('passwordReset.success'));

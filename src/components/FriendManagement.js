@@ -30,12 +30,10 @@ import {
   Search as SearchIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
-import getBackendUrl from '../utils/apiUtils';
-import { useCookies } from 'react-cookie';
+import { api } from '../utils/apiUtils';
 
 const FriendManagement = () => {
   const { t } = useTranslation();
-  const [cookies] = useCookies(['token']);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [pendingRequests, setPendingRequests] = useState([]);
@@ -63,11 +61,7 @@ const FriendManagement = () => {
 
   const fetchPendingRequests = async () => {
     try {
-      const token = cookies.token;
-      const response = await axios.get(
-        getBackendUrl('/api/auth/friend-requests'), 
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await api.get('/api/auth/friend-requests');
       setPendingRequests(response.data.pendingRequests);
     } catch (error) {
       console.error('Error fetching pending requests:', error);
@@ -81,11 +75,7 @@ const FriendManagement = () => {
 
   const fetchFriends = async () => {
     try {
-      const token = cookies.token;
-      const response = await axios.get(
-        getBackendUrl('/api/auth/friends'), 
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      const response = await api.get('/api/auth/friends');
       setFriends(response.data.friends);
     } catch (error) {
       console.error('Error fetching friends:', error);
@@ -99,14 +89,9 @@ const FriendManagement = () => {
 
   const searchUsers = async () => {
     try {
-      const token = cookies.token;
-      const response = await axios.get(
-        getBackendUrl('/api/auth/search-users'), 
-        { 
-          params: { query: searchQuery },
-          headers: { Authorization: `Bearer ${token}` } 
-        }
-      );
+      const response = await api.get('/api/auth/search-users', {
+        params: { query: searchQuery }
+      });
       setSearchResults(response.data.users);
       setError('');
     } catch (error) {
@@ -122,12 +107,7 @@ const FriendManagement = () => {
 
   const sendFriendRequest = async (targetUserId) => {
     try {
-      const token = cookies.token;
-      const response = await axios.post(
-        getBackendUrl('/api/auth/friend-request'), 
-        { friendId: targetUserId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.post('/api/auth/friend-request', { friendId: targetUserId });
       
       // Update search results to reflect sent request
       setSearchResults(prev => 
@@ -141,7 +121,7 @@ const FriendManagement = () => {
       // Show success toast
       setToast({
         open: true,
-        message: response.data.message || t('friendManagement.requestSent'),
+        message: t('friendManagement.requestSent'),
         severity: 'success'
       });
     } catch (error) {
@@ -160,12 +140,7 @@ const FriendManagement = () => {
 
   const handleFriendRequestResponse = async (requestId, status) => {
     try {
-      const token = cookies.token;
-      await axios.put(
-        getBackendUrl(`/api/auth/friend-request/${requestId}`),
-        { status },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.put(`/api/auth/friend-request/${requestId}`, { status });
       fetchPendingRequests();
       fetchFriends();
 

@@ -24,7 +24,7 @@ import { useTranslation } from 'react-i18next';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
 import axios from 'axios';
-import getBackendUrl from '../utils/apiUtils';
+import { api, getCookie, setCookie, removeCookie } from '../utils/apiUtils';
 import { 
   OFFSHORE_COUNTRIES, 
   getTranslatedCountries 
@@ -33,7 +33,6 @@ import {
   OFFSHORE_ROLES, 
   getTranslatedRoles 
 } from '../utils/offshoreRoles';
-import { useCookies, Cookies } from 'react-cookie';
 
 // Enhanced input validation functions
 const validateUsername = (username) => {
@@ -78,8 +77,8 @@ const Register = () => {
   const [googleUserData, setGoogleUserData] = useState(null);
   const [isLocked, setIsLocked] = useState(false);
   const [lockExpiry, setLockExpiry] = useState(null);
-  const [cookies, setCookie, removeCookie] = useCookies(['registrationLockExpiry']);
-  
+  const [registrationAttempts, setRegistrationAttempts] = useState(0);
+
   // New state for password visibility
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -212,10 +211,7 @@ const Register = () => {
       }
 
       // Send registration request
-      const response = await axios.post(
-        `${getBackendUrl()}/api/auth/register`, 
-        submissionData
-      );
+      const response = await api.post('/api/auth/register', submissionData);
 
       // Show success message
       const successMessage = t('register.verificationMessage');
@@ -264,17 +260,16 @@ const Register = () => {
 
   // Registration lock status check
   const checkRegistrationLock = () => {
-    const lockExpiryTime = cookies.registrationLockExpiry ? 
-      parseInt(cookies.registrationLockExpiry, 10) : 0;
+    const lockExpiryTime = getCookie('registrationLockExpiry');
     const currentTime = Date.now();
 
-    if (lockExpiryTime > currentTime) {
+    if (lockExpiryTime && parseInt(lockExpiryTime, 10) > currentTime) {
       setIsLocked(true);
-      setLockExpiry(lockExpiryTime);
+      setLockExpiry(parseInt(lockExpiryTime, 10));
       return true;
     }
     
-    removeCookie('registrationLockExpiry', { path: '/' });
+    removeCookie('registrationLockExpiry');
     setIsLocked(false);
     setLockExpiry(null);
     return false;
@@ -285,7 +280,7 @@ const Register = () => {
     const intervalId = setInterval(checkRegistrationLock, 60000); // Check every minute
 
     return () => clearInterval(intervalId);
-  }, [cookies]);
+  }, []);
 
   const setRegistrationLockExpiry = (lockDuration) => {
     const lockExpiryTime = Date.now() + lockDuration;

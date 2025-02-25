@@ -35,27 +35,26 @@ import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
 
 // Import cookies
-import { useCookies } from 'react-cookie';
+import { getCookie, setCookie, removeCookie } from '../utils/apiUtils';
 
 function Navbar() {
-  const [cookies, setCookie, removeCookie] = useCookies(['token', 'user', 'language']);
-  const [language, setLanguage] = useState(cookies.language || 'en');
+  const [language, setLanguage] = useState(getCookie('language') || 'en');
   const navigate = useNavigate();
   const theme = useTheme();
   const { t } = useTranslation();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
   
   // Determine if user is logged in
-  const isLoggedIn = !!cookies.token;
+  const isLoggedIn = !!getCookie('token');
   
   // Logout method
   const handleLogout = () => {
     // Remove authentication cookies
-    removeCookie('token', { path: '/' });
-    removeCookie('user', { path: '/' });
-    
+    removeCookie('token');
+    removeCookie('user');
+
     // Optional: Clear other related cookies
-    removeCookie('language', { path: '/' });
+    removeCookie('language');
 
     // Redirect to login
     navigate('/login');
@@ -80,9 +79,10 @@ function Navbar() {
 
   // Handle profile picture update event
   const handleProfilePictureUpdate = () => {
-    if (cookies.user) {
+    const updatedUser = getCookie('user');
+    if (updatedUser) {
       // Update profile picture if needed
-      // Assuming cookies.user already contains the updated user object
+      // Assuming updatedUser already contains the updated user object
     }
   };
 
@@ -95,7 +95,7 @@ function Navbar() {
     return () => {
       window.removeEventListener('profilePictureUpdated', handleProfilePictureUpdate);
     };
-  }, [cookies]);
+  }, []);
 
   const handleNavigation = (path) => {
     navigate(path);
@@ -260,7 +260,7 @@ function Navbar() {
               </Menu>
 
               {/* Profile Picture or Menu Button */}
-              {cookies.user && cookies.user.profilePicture ? (
+              {getCookie('user') && getCookie('user').profilePicture ? (
                 <IconButton 
                   onClick={() => setDrawerOpen(true)}
                   sx={{ 
@@ -271,7 +271,7 @@ function Navbar() {
                   }}
                 >
                   <Avatar 
-                    src={cookies.user.profilePicture} 
+                    src={getCookie('user').profilePicture} 
                     alt="User Profile" 
                     sx={{ width: 40, height: 40 }} 
                   />
