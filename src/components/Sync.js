@@ -257,11 +257,11 @@ const Sync = () => {
         key="match-line"
         type="monotone"
         dataKey="Match"
-        stroke="#E91E63"  // Material Pink
+        stroke="#757575"  // Material Grey
         strokeWidth={3}
         activeDot={{ 
           r: 10, 
-          fill: '#E91E63',
+          fill: '#757575',
           stroke: 'white',
           strokeWidth: 2
         }}
@@ -725,14 +725,8 @@ const Sync = () => {
                 <YAxis 
                   domain={[0, 1]} 
                   ticks={[0, 1]} 
-                  width={isMobile ? 40 : 80}  
-                  label={{ 
-                    value: 'Off Board Status', 
-                    angle: -90, 
-                    position: 'insideLeft',
-                    offset: isMobile ? 5 : 10,
-                    fontSize: isMobile ? 10 : 12
-                  }}
+                  width={isMobile ? 30 : 40}  
+                  tickFormatter={(value) => value === 1 ? 'Off' : 'On'}  
                 />
                 <Tooltip 
                   contentStyle={{ 
@@ -763,8 +757,8 @@ const Sync = () => {
                 <Brush 
                   dataKey="date" 
                   height={isMobile ? 20 : 30} 
-                  stroke="#E91E63"  // Material Pink
-                  fill="rgba(233, 30, 99, 0.1)"  // Soft Material Pink background
+                  stroke="#757575"  // Material Grey
+                  fill="rgba(117, 117, 117, 0.1)"  // Soft Material Grey background
                   startIndex={0}
                   endIndex={Math.min(isMobile ? 15 : 30, graphData.length - 1)}
                   travellerWidth={15}
@@ -772,7 +766,7 @@ const Sync = () => {
                     '& .recharts-brush-traveller': {
                       borderRadius: '50%',
                       boxShadow: theme.shadows[2],
-                      border: `2px solid #E91E63`,
+                      border: `2px solid #757575`,
                       backgroundColor: theme.palette.background.paper,
                       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                       '&:hover': {
@@ -781,7 +775,7 @@ const Sync = () => {
                       }
                     },
                     '& .recharts-brush-slide': {
-                      fill: '#F48FB1',  // Material Pink Light
+                      fill: '#BDBDBD',  // Material Grey Light
                       fillOpacity: 0.2
                     },
                     '& .recharts-brush-text': {
