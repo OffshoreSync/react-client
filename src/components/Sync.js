@@ -178,7 +178,7 @@ const Sync = () => {
         const usersWithCurrentUser = [
           {
             ...currentUser,
-            id: currentUser._id, // Use MongoDB _id
+            id: currentUser.id || currentUser._id, // Handle both id formats
             fullName: `${currentUser.fullName} (You)`,
             isCurrentUser: true
           },
@@ -186,7 +186,7 @@ const Sync = () => {
         ];
 
         console.log('Final users list:', usersWithCurrentUser.map(u => ({
-          id: u.id,
+          id: u.id || u._id, // Handle both id formats
           fullName: u.fullName
         })));
 
