@@ -252,23 +252,12 @@ const Dashboard = () => {
         cookiesPresent: !!(getCookie('token') || getCookie('user'))
       });
 
-      // Handle token expiration
-      if (!getCookie('token')) {
-        console.debug('Token not found, redirecting to login');
-        removeCookie('token');
-        removeCookie('user');
-        navigate('/login');
-        return;
-      }
-
       const token = getCookie('token');
       
-      console.log('Dashboard Authentication Check:', {
+      console.debug('Dashboard Authentication Check:', {
         timestamp: new Date().toISOString(),
         tokenPresent: !!token,
-        tokenLength: token ? token.length : 'N/A',
-        tokenFirstChars: token ? token.substring(0, 10) : 'N/A',
-        userPresent: !!getCookie('user')
+        tokenLength: token ? token.length : 'N/A'
       });
 
       // If no token, immediately return null
@@ -279,9 +268,19 @@ const Dashboard = () => {
       }
 
       try {
-        const response = await api.get('/api/auth/profile');
-
-        console.log('Profile fetch successful:', response.data);
+        // Remove the /api prefix since apiUtils adds it
+        const response = await api.get('/auth/profile');
+        
+        // Debug profile response
+        console.debug('Profile Response:', {
+          status: response.status,
+          hasUser: !!response.data.user,
+          userData: {
+            id: response.data.user?._id,
+            email: response.data.user?.email,
+            isGoogleUser: response.data.user?.isGoogleUser
+          }
+        });
         
         // Ensure working regime is correctly stored
         const userWithFullData = {
@@ -295,115 +294,62 @@ const Dashboard = () => {
         // Explicitly set isGoogleUser based on the server response
         userWithFullData.isGoogleUser = !!userWithFullData.isGoogleUser;
 
-        // Check if work cycles need generation
-        if (!userWithFullData.workCycles || userWithFullData.workCycles.length === 0) {
-          try {
-            const cyclesResponse = await api.post(
-              '/api/auth/generate-work-cycles'
-            );
-
-            userWithFullData.workCycles = cyclesResponse.data.workCycles;
-          } catch (cyclesError) {
-            console.error('Error generating work cycles:', cyclesError);
-          }
-        }
-
-        // Determine if profile alert should be shown
-        const criticalFieldsMissing = 
-          userWithFullData.isGoogleUser && (
-            userWithFullData.company === null || 
-            userWithFullData.unitName === null
-          );
+        // Update user cookie
+        updateUserInCookies(userWithFullData);
 
         return {
           user: userWithFullData,
-          showProfileAlert: criticalFieldsMissing
+          showProfileAlert: !userWithFullData.workSchedule?.nextOnBoardDate
         };
-
-      } catch (authError) {
-        console.error('Authentication Error Details:', {
-          status: authError.response?.status,
-          data: authError.response?.data,
-          headers: authError.config?.headers
+      } catch (error) {
+        console.error('Profile fetch error:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status
         });
-
-        // Specific handling for token expiration
-        if (authError.response?.data?.requiresReAuthentication) {
-          // Clear existing tokens
-          removeCookie('token');
-          removeCookie('user');
-
-          // Redirect to login with a specific message
-          navigate('/login', { 
-            state: { 
-              message: 'Your session has expired. Please log in again.',
-              requireReAuthentication: true 
-            } 
-          });
-          return null;
-        }
-        
-        // For other authentication errors
-        navigate('/login');
-        return null;
+        throw error;
       }
     } catch (error) {
-      console.error('Unexpected error in checkAuth:', error);
-      navigate('/login');
-      return null;
+      console.error('Unexpected error in checkAuth:', {
+        message: error.message,
+        type: error.name,
+        stack: error.stack
+      });
+      throw error;
     }
-  }, [navigate]); // Explicitly depend on token
+  }, []); // No dependencies needed
 
-  // Use a separate effect for authentication
   useEffect(() => {
-    let isMounted = true;
-
-    const performAuth = async () => {
-      setLoading(true);
+    const initializeDashboard = async () => {
       try {
-        const result = await checkAuth();
+        setLoading(true);
+        const authResult = await checkAuth();
         
-        if (isMounted) {
-          if (result) {
-            // Use functional update to prevent unnecessary re-renders
-            setUser(prevUser => {
-              // Only update if the user is different
-              const isUserChanged = JSON.stringify(prevUser) !== JSON.stringify(result.user);
-              return isUserChanged ? result.user : prevUser;
-            });
-
-            // Use functional update for showProfileAlert
-            setShowProfileAlert(prevShowAlert => {
-              return prevShowAlert !== result.showProfileAlert 
-                ? result.showProfileAlert 
-                : prevShowAlert;
-            });
-            
-            // Automatically open On Board date dialog if no next On Board date is set
-            if (!result.user.workSchedule?.nextOnBoardDate) {
-              console.log('No next OnBoard date found, opening dialog');
-              setOpenOnBoardDialog(true);
-            }
-          } else {
-            // If no valid user, navigate to home
-            navigate('/');
-          }
-          setLoading(false);
+        if (authResult) {
+          setUser(authResult.user);
+          setShowProfileAlert(authResult.showProfileAlert);
+        } else {
+          // If checkAuth returns null, we're not authenticated
+          throw new Error('Not authenticated');
         }
       } catch (error) {
-        console.error('Authentication performance error:', error);
-        if (isMounted) {
-          setLoading(false);
-          navigate('/');
-        }
+        console.error('Dashboard initialization error:', error);
+        setError(error.message);
+        // Clear auth state
+        removeCookie('token');
+        removeCookie('refreshToken');
+        removeCookie('user');
+        navigate('/login', { 
+          state: { 
+            message: 'Please log in to access your dashboard.' 
+          }
+        });
+      } finally {
+        setLoading(false);
       }
     };
 
-    performAuth();
-
-    return () => {
-      isMounted = false;
-    };
+    initializeDashboard();
   }, [checkAuth, navigate]);
 
   // Update locales when language changes
@@ -444,12 +390,12 @@ const Dashboard = () => {
   const handleSetOnBoardDate = async () => {
     try {
       // Call backend API to set On Board date
-      const response = await api.put('/api/auth/set-onboard-date', { nextOnBoardDate: date });
+      const response = await api.put('/auth/set-onboard-date', { nextOnBoardDate: date });
 
       console.log('Set On Board Date Response:', response.data);
 
       // Generate work cycles
-      const cyclesResponse = await api.post('/api/auth/generate-work-cycles');
+      const cyclesResponse = await api.post('/auth/generate-work-cycles');
 
       console.log('Generate Work Cycles Response:', cyclesResponse.data);
 
@@ -493,7 +439,7 @@ const Dashboard = () => {
 
   const handleResetOnBoardDate = async () => {
     try {
-      const response = await api.put('/api/auth/reset-next-onboard-date');
+      const response = await api.put('/auth/reset-next-onboard-date');
 
       // Detailed logging for debugging
       console.log('Reset Onboard Date Response:', response.data);

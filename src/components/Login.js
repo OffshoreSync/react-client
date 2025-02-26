@@ -1,29 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import axios from 'axios';
 import { 
   Container, 
+  Box, 
   Typography, 
   TextField, 
   Button, 
-  Box, 
-  Paper, 
-  Link as MuiLink,
+  Paper,
   Alert,
   IconButton,
-  InputAdornment
+  InputAdornment,
+  Link as MuiLink
 } from '@mui/material';
 import { 
-  Login as LoginIcon, 
+  LoginOutlined as LoginIcon,
   Visibility, 
   VisibilityOff 
 } from '@mui/icons-material';
 import { GoogleLogin } from '@react-oauth/google';
+import { styled } from '@mui/material/styles';
 
 // Import translation hook
 import { useTranslation } from 'react-i18next';
-import { api, setCookie, getCookie, removeCookie } from '../utils/apiUtils';
-import { styled } from '@mui/material/styles';
+
+// Import API utilities
+import { api, setCookie, getCookie } from '../utils/apiUtils';
 
 // Styling for Google Sign-In button container
 const GoogleSignInContainer = styled(Box)(({ theme }) => ({
@@ -32,184 +33,122 @@ const GoogleSignInContainer = styled(Box)(({ theme }) => ({
   alignItems: 'center',
   width: '100%',
   marginTop: theme.spacing(2),
-  marginBottom: theme.spacing(3)
+  marginBottom: theme.spacing(2)
 }));
 
-// Styling for the entire form section with extra spacing
+// Styling for the entire form section
 const FormSection = styled(Box)(({ theme }) => ({
   marginTop: theme.spacing(2),
-  marginBottom: theme.spacing(3)
+  width: '100%'
 }));
 
-// Enhanced input validation functions
-const validateUsername = (username) => {
-  // Allow only alphanumeric characters and underscores
-  const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
-  return usernameRegex.test(username);
-};
-
-const validatePassword = (password) => {
-  // Require:
-  // - Minimum 8 characters
-  // - At least one uppercase letter
-  // - At least one lowercase letter
-  // - At least one number
-  // - At least one special character
-  const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-  return passwordRegex.test(password);
-};
-
 const Login = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
   const [formData, setFormData] = useState({
     username: '',
     password: ''
   });
   const [error, setError] = useState('');
-  const [loginAttempts, setLoginAttempts] = useState(0);
-  const [isLocked, setIsLocked] = useState(false);
-  const [lockExpiry, setLockExpiry] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
-  const [reAuthMessage, setReAuthMessage] = useState('');
-
-  const navigate = useNavigate();
-  const location = useLocation();
-
+  const [reAuthMessage] = useState(location.state?.reAuthRequired ? t('login.reAuthRequired') : '');
+  
   const { username, password } = formData;
 
-  // Add client-side rate limiting
-  useEffect(() => {
-    const checkLoginLock = () => {
-      const lockExpiryTime = getCookie('loginLockExpiry');
-      const currentTime = Date.now();
-
-      if (lockExpiryTime && parseInt(lockExpiryTime, 10) > currentTime) {
-        const remainingTime = Math.ceil((parseInt(lockExpiryTime, 10) - currentTime) / 1000);
-        if (!isLocked) { 
-          setIsLocked(true);
-          setLockExpiry(parseInt(lockExpiryTime, 10));
-        }
-        return true;
-      }
-      
-      if (isLocked) { 
-        removeCookie('loginLockExpiry');
-        setIsLocked(false);
-      }
-      return false;
-    };
-
-    checkLoginLock();
-  }, [isLocked]);
-
-  useEffect(() => {
-    if (location.state?.successMessage) {
-      setSuccessMessage(location.state.successMessage);
-      
-      // Clear the state to prevent message from persisting
-      navigate(location.pathname, { replace: true, state: {} });
-    }
-  }, [location, navigate]);
-
-  useEffect(() => {
-    // Check if navigation state contains re-authentication message
-    const locationState = location.state;
-    
-    if (locationState?.requireReAuthentication) {
-      setReAuthMessage(
-        locationState.message || 'Your session has expired. Please log in again.'
-      );
-
-      // Clear the location state to prevent repeated messages
-      window.history.replaceState({}, document.title);
-    }
-  }, [location]);
-
-  const onChange = e => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    setError(''); // Clear error when user starts typing
+  const onChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError(''); // Clear error when user types
   };
 
   const onSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    // Check if account is locked
-    if (isLocked) {
-      const remainingTime = Math.ceil((lockExpiry - Date.now()) / 60000);
-      setError(t('login.errors.accountLocked', { minutes: remainingTime }));
-      return;
-    }
-
-    // Validate inputs
-    if (!validateUsername(username)) {
-      setError(t('login.errors.invalidUsername'));
-      return;
-    }
-
-    if (!validatePassword(password)) {
-      setError(t('login.errors.invalidPassword'));
-      return;
-    }
-
     try {
-      const response = await api.post('/api/auth/login', {
-        username,
-        password
-      });
-
+      const response = await api.post('/auth/login', formData);
+      
       if (response.data.user) {
+        // Set cookies first
         setCookie('user', response.data.user);
+        setCookie('token', response.data.token);
         
-        // Reset login attempts
-        setLoginAttempts(0);
-        removeCookie('loginLockExpiry');
-        
-        // Redirect to the intended page or dashboard
-        const { from } = location.state || { from: { pathname: '/dashboard' } };
-        navigate(from);
+        // Use window.location for a full page reload to ensure cookies are set
+        window.location.href = '/dashboard';
       }
     } catch (error) {
-      console.error('Login error:', error);
-      
-      // Increment login attempts
-      const newAttempts = loginAttempts + 1;
-      setLoginAttempts(newAttempts);
-      
-      // Lock account after 5 failed attempts
-      if (newAttempts >= 5) {
-        const lockExpiryTime = Date.now() + (15 * 60 * 1000); // 15 minutes
-        setCookie('loginLockExpiry', lockExpiryTime);
-        setIsLocked(true);
-        setLockExpiry(lockExpiryTime);
-        setError(t('login.errors.accountLocked', { minutes: 15 }));
+      setError(error.response?.data?.message || t('login.errors.loginFailed'));
+    }
+  };
+
+  // Google login handler
+  const handleGoogleResponse = useCallback(async (response) => {
+    try {
+      // Debug Google response
+      console.debug('Google Login Response:', {
+        hasCredential: !!response.credential,
+        credentialLength: response.credential?.length
+      });
+
+      const loginResponse = await api.post('/auth/google-login', {
+        credential: response.credential
+      });
+
+      // Debug login response
+      console.debug('Backend Login Response:', {
+        status: loginResponse.status,
+        hasToken: !!loginResponse.data.token,
+        tokenLength: loginResponse.data.token?.length,
+        hasUser: !!loginResponse.data.user
+      });
+
+      // Set token in cookie if it exists
+      if (loginResponse.data.token) {
+        setCookie('token', loginResponse.data.token, {
+          path: '/',
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production'
+        });
       } else {
-        setError(t('login.errors.invalidCredentials'));
-      }
-    }
-  };
-
-  const handleGoogleLogin = async (credentialResponse) => {
-    try {
-      if (!credentialResponse.credential) {
-        throw new Error('Google credential is missing');
+        console.error('No token received from server');
+        throw new Error('No token received from server');
       }
 
-      const response = await api.post('/api/auth/google-login', {
-        googleToken: credentialResponse.credential
+      // Set user in cookie if it exists
+      if (loginResponse.data.user) {
+        setCookie('user', loginResponse.data.user, {
+          path: '/',
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production'
+        });
+      } else {
+        console.error('No user data received from server');
+        throw new Error('No user data received from server');
+      }
+
+      // Wait a bit for cookies to be set
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Debug cookie state after setting
+      console.debug('Cookie State After Login:', {
+        hasToken: !!getCookie('token'),
+        tokenLength: getCookie('token')?.length,
+        hasUser: !!getCookie('user')
       });
 
-      if (response.data.user) {
-        setCookie('user', response.data.user);
-        navigate('/dashboard');
-      }
+      // Navigate to dashboard
+      navigate('/dashboard');
     } catch (error) {
-      console.error('Google login error:', error);
-      setError(t('login.errors.googleLoginFailed'));
+      console.error('Google login error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      setError(error.response?.data?.message || 'Failed to login with Google');
     }
-  };
+  }, [navigate]);
 
   return (
     <Container maxWidth="xs">
@@ -224,6 +163,7 @@ const Login = () => {
         <Typography component="h1" variant="h5">
           {t('login.title')}
         </Typography>
+
         <Paper 
           elevation={3} 
           sx={{ 
@@ -245,7 +185,7 @@ const Login = () => {
               {reAuthMessage}
             </Alert>
           )}
-          <Box component="form" onSubmit={onSubmit} noValidate sx={{ mt: 1 }}>
+          <Box component="form" onSubmit={onSubmit} noValidate sx={{ mt: 1, width: '100%' }}>
             <TextField
               margin="normal"
               required
@@ -318,15 +258,16 @@ const Login = () => {
             
             <GoogleSignInContainer>
               <GoogleLogin
-                onSuccess={handleGoogleLogin}
+                onSuccess={handleGoogleResponse}
                 onError={() => {
-                  console.log('Login Failed');
+                  console.error('Login Failed');
                   setError(t('login.errors.googleLoginFailed'));
                 }}
-                theme="white"
+                theme="outline"
                 size="large"
                 text="signin_with"
                 shape="rectangular"
+                width="100%"
               />
             </GoogleSignInContainer>
 
@@ -342,21 +283,6 @@ const Login = () => {
                 </MuiLink>
               </Typography>
             </FormSection>
-            <Typography variant="body2" color="text.secondary" align="center" sx={{ mt: 2 }}>
-              <MuiLink 
-                component={Link} 
-                to="/" 
-                sx={{ 
-                  textDecoration: 'none', 
-                  color: 'text.secondary',
-                  '&:hover': {
-                    textDecoration: 'underline'
-                  }
-                }}
-              >
-                Continue to Home Page
-              </MuiLink>
-            </Typography>
           </Box>
         </Paper>
       </Box>

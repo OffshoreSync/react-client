@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   BrowserRouter as Router, 
   Routes, 
@@ -13,6 +13,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useTranslation } from 'react-i18next';
 import { CookiesProvider } from 'react-cookie';
+import CircularProgress from '@mui/material/CircularProgress';
 
 // Import i18n configuration
 import './i18n';
@@ -29,7 +30,7 @@ import Register from './components/Register';
 import EditProfile from './components/EditProfile';
 import FriendManagement from './components/FriendManagement';
 import VerifyEmail from './components/VerifyEmail';
-import { getCookie } from './utils/apiUtils';
+import { getCookie, setCookie, removeCookie, api } from './utils/apiUtils';
 
 // Explicitly declare colors to prevent no-undef
 const primaryColor = blue[500];
@@ -91,79 +92,146 @@ const theme = createTheme({
 function AppRoutes() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  // Authentication check
-  const isAuthenticated = () => {
-    const token = getCookie('token');
-    const user = getCookie('user');
+  // Check authentication status
+  const checkAuth = useCallback(async () => {
+    try {
+      // Debug token before request
+      const token = getCookie('token');
+      console.debug('Auth Check - Token State:', {
+        hasToken: !!token,
+        tokenLength: token?.length,
+        timestamp: new Date().toISOString()
+      });
 
-    // Check token and user existence
-    const isValidAuth = !!token && !!user;
+      // If no token, immediately redirect to login
+      if (!token) {
+        console.warn('No authentication token found');
+        throw new Error('No token found');
+      }
 
-    // If not authenticated and trying to access a protected route, redirect to login
-    if (!isValidAuth && location.pathname !== '/login' && !location.pathname.startsWith('/verify-email')) {
-      return false;
+      // Try to get user data from API
+      const response = await api.get('/auth/profile');
+      
+      // Debug API response
+      console.debug('Auth Check - API Response:', {
+        status: response.status,
+        hasUser: !!response.data.user,
+        hasToken: !!response.data.token
+      });
+      
+      if (response.data.user) {
+        setIsAuthenticated(true);
+        // Update user cookie in case it changed
+        setCookie('user', response.data.user, {
+          path: '/',
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production'
+        });
+        
+        // If we got a new token, update it
+        if (response.data.token) {
+          setCookie('token', response.data.token, {
+            path: '/',
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production'
+          });
+        }
+      } else {
+        throw new Error('No user data received');
+      }
+    } catch (error) {
+      console.error('Auth check error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      // Clear auth state
+      setIsAuthenticated(false);
+      removeCookie('token');
+      removeCookie('refreshToken');
+      removeCookie('user');
+      
+      // Redirect to login with return path
+      navigate('/login', { 
+        state: { 
+          returnTo: location.pathname,
+          message: 'Please log in to access this page.'
+        }
+      });
+    } finally {
+      setIsCheckingAuth(false);
     }
-
-    return isValidAuth;
-  };
+  }, [navigate, location.pathname]);
 
   // Protected route component
   const ProtectedRoute = ({ children }) => {
-    if (!isAuthenticated()) {
-      // Redirect to login with return path
+    if (isCheckingAuth) {
+      return <CircularProgress />;
+    }
+
+    if (!isAuthenticated) {
       return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
     return children;
   };
 
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  if (isCheckingAuth) {
+    return <CircularProgress />;
+  }
+
   return (
     <div className="App">
-      <Navbar />
+      <Navbar isAuthenticated={isAuthenticated} />
       <Routes>
         <Route path="/" element={
-          isAuthenticated() ? <Navigate to="/dashboard" /> : <Home />
+          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Home />
         } />
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={
+          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
+        } />
+        <Route path="/register" element={
+          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Register />
+        } />
+        <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/forgot-password" element={<PasswordReset />} />
         <Route path="/reset-password" element={<PasswordReset />} />
         <Route path="/reset-password/:token" element={<PasswordReset />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route 
-          path="/dashboard" 
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/settings" 
-          element={
-            <ProtectedRoute>
-              <Settings />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/edit-profile" 
-          element={
-            <ProtectedRoute>
-              <EditProfile />
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/friends" 
-          element={
-            <ProtectedRoute>
-              <FriendManagement />
-            </ProtectedRoute>
-          } 
-        />
-        <Route path="/sync" element={<ProtectedRoute><Sync /></ProtectedRoute>} />
+        
+        {/* Protected Routes */}
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/settings" element={
+          <ProtectedRoute>
+            <Settings />
+          </ProtectedRoute>
+        } />
+        <Route path="/edit-profile" element={
+          <ProtectedRoute>
+            <EditProfile />
+          </ProtectedRoute>
+        } />
+        <Route path="/friends" element={
+          <ProtectedRoute>
+            <FriendManagement />
+          </ProtectedRoute>
+        } />
+        <Route path="/sync" element={
+          <ProtectedRoute>
+            <Sync />
+          </ProtectedRoute>
+        } />
       </Routes>
     </div>
   );
