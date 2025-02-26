@@ -319,38 +319,37 @@ const Dashboard = () => {
     }
   }, []); // No dependencies needed
 
-  useEffect(() => {
-    const initializeDashboard = async () => {
-      try {
-        setLoading(true);
-        const authResult = await checkAuth();
-        
-        if (authResult) {
-          setUser(authResult.user);
-          setShowProfileAlert(authResult.showProfileAlert);
+useEffect(() => {
+  const initializeDashboard = async () => {
+    try {
+      setLoading(true);
+      const authResult = await checkAuth();
+      if (authResult) {
+        if (!authResult.user.workCycles?.length) {
+          const cyclesResponse = await api.post('/auth/generate-work-cycles');
+          const updatedUser = { ...authResult.user, workCycles: cyclesResponse.data.workCycles };
+          updateUserInCookies(updatedUser);
+          setUser(updatedUser);
         } else {
-          // If checkAuth returns null, we're not authenticated
-          throw new Error('Not authenticated');
+          setUser(authResult.user);
         }
-      } catch (error) {
-        console.error('Dashboard initialization error:', error);
-        setError(error.message);
-        // Clear auth state
-        removeCookie('token');
-        removeCookie('refreshToken');
-        removeCookie('user');
-        navigate('/login', { 
-          state: { 
-            message: 'Please log in to access your dashboard.' 
-          }
-        });
-      } finally {
-        setLoading(false);
+        setShowProfileAlert(authResult.showProfileAlert);
+      } else {
+        throw new Error('Not authenticated');
       }
-    };
-
-    initializeDashboard();
-  }, [checkAuth, navigate]);
+    } catch (error) {
+      console.error('Dashboard initialization error:', error);
+      setError(error.message);
+      removeCookie('token');
+      removeCookie('refreshToken');
+      removeCookie('user');
+      navigate('/login', { state: { message: 'Please log in to access your dashboard.' } });
+    } finally {
+      setLoading(false);
+    }
+  };
+  initializeDashboard();
+}, [checkAuth, navigate]);
 
   // Update locales when language changes
   useEffect(() => {

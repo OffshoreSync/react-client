@@ -30,9 +30,39 @@ const Settings = () => {
       try {
         const response = await api.get('/api/auth/profile');
         if (response.data.user) {
-          setUser(response.data.user);
-          // Update the user cookie with fresh data
-          setCookie('user', response.data.user);
+          // Get current user data from cookie
+          const currentUser = getCookie('user') || {};
+          
+          // Merge the new user data with existing data
+          const updatedUser = {
+            ...currentUser,
+            ...response.data.user,
+            // Ensure company and unit name are preserved
+            company: response.data.user.company || currentUser.company,
+            unitName: response.data.user.unitName || currentUser.unitName,
+            // Ensure nested objects are properly merged
+            workingRegime: {
+              ...(currentUser.workingRegime || {}),
+              ...(response.data.user.workingRegime || {})
+            },
+            workSchedule: {
+              ...(currentUser.workSchedule || {}),
+              ...(response.data.user.workSchedule || {})
+            },
+            workCycles: response.data.user.workCycles || currentUser.workCycles || []
+          };
+
+          // Debug user data
+          console.debug('Settings - User Data:', {
+            hasCompany: !!updatedUser.company,
+            company: updatedUser.company,
+            hasUnitName: !!updatedUser.unitName,
+            unitName: updatedUser.unitName,
+            hasWorkCycles: !!updatedUser.workCycles?.length
+          });
+
+          setUser(updatedUser);
+          setCookie('user', updatedUser);
         }
       } catch (error) {
         console.error('Error fetching user data:', error);

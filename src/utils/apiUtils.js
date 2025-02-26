@@ -5,72 +5,20 @@ const cookies = new Cookies();
 
 // Cookie management functions
 export const getCookie = (name) => {
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) {
-    const cookieValue = parts.pop().split(';').shift();
-    try {
-      // Try to parse as JSON, if it fails return as is
-      return JSON.parse(decodeURIComponent(cookieValue));
-    } catch {
-      return decodeURIComponent(cookieValue);
-    }
-  }
-  return null;
+  return cookies.get(name);
 };
 
 export const setCookie = (name, value, options = {}) => {
   try {
-    // Default options
     const defaultOptions = {
       path: '/',
       sameSite: 'lax',
       secure: process.env.NODE_ENV === 'production'
     };
-
-    // Merge with provided options
     const cookieOptions = { ...defaultOptions, ...options };
-
-    // Convert value to string if it's an object
-    const stringValue = typeof value === 'object' ? 
-      encodeURIComponent(JSON.stringify(value)) : 
-      encodeURIComponent(value);
-
-    // Build cookie string
-    let cookieString = `${name}=${stringValue}`;
-    
-    // Add options
-    if (cookieOptions.path) cookieString += `; path=${cookieOptions.path}`;
-    if (cookieOptions.sameSite) cookieString += `; samesite=${cookieOptions.sameSite}`;
-    if (cookieOptions.secure) cookieString += '; secure';
-    if (cookieOptions.maxAge) cookieString += `; max-age=${cookieOptions.maxAge}`;
-    if (cookieOptions.expires) cookieString += `; expires=${cookieOptions.expires.toUTCString()}`;
-    if (cookieOptions.domain) cookieString += `; domain=${cookieOptions.domain}`;
-
-    // Debug cookie setting
-    console.debug('Setting Cookie:', {
-      name,
-      valueLength: stringValue.length,
-      options: cookieOptions
-    });
-
-    // Set the cookie
-    document.cookie = cookieString;
-
-    // Verify cookie was set
-    const verifyValue = getCookie(name);
-    console.debug('Cookie Verification:', {
-      name,
-      wasSet: !!verifyValue,
-      valueLength: verifyValue ? 
-        (typeof verifyValue === 'string' ? verifyValue.length : JSON.stringify(verifyValue).length) 
-        : 0
-    });
+    cookies.set(name, value, cookieOptions);
   } catch (error) {
-    console.error('Error setting cookie:', {
-      name,
-      error: error.message
-    });
+    console.error('Error setting cookie:', { name, error: error.message });
     throw error;
   }
 };
@@ -88,7 +36,7 @@ export const getBackendUrl = (path = '') => {
 // Create axios instance
 export const api = axios.create({
   baseURL: getBackendUrl(),
-  withCredentials: true,
+  withCredentials: true, // Important for receiving cookies from server
   headers: {
     'Content-Type': 'application/json',
     'X-Requested-With': 'XMLHttpRequest'
@@ -137,27 +85,109 @@ api.interceptors.response.use(
       url: response.config.url,
       status: response.status,
       hasToken: !!response.data.token,
-      hasUser: !!response.data.user
+      hasUser: !!response.data.user,
+      userData: response.data.user ? {
+        id: response.data.user.id,
+        company: response.data.user.company,
+        unitName: response.data.user.unitName,
+        workCycles: response.data.user.workCycles?.length
+      } : null,
+      cookies: document.cookie
     });
 
-    // If we get a new token in the response, update it
-    if (response.data.token) {
-      setCookie('token', response.data.token, {
+    // For login endpoint
+    if (response.config.url.includes('/auth/login')) {
+      // Set token cookie
+      if (response.data.token) {
+        setCookie('token', response.data.token, {
+          path: '/',
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 2 * 60 * 60 // 2 hours in seconds
+        });
+      }
+
+      // Set user data cookie
+      if (response.data.user) {
+        // Ensure all required fields are present
+        const userData = {
+          ...response.data.user,
+          company: response.data.user.company || null,
+          unitName: response.data.user.unitName || null,
+          workingRegime: response.data.user.workingRegime || {
+            onDutyDays: 28,
+            offDutyDays: 28
+          },
+          workSchedule: response.data.user.workSchedule || {},
+          workCycles: response.data.user.workCycles || []
+        };
+
+        setCookie('user', userData, {
+          path: '/',
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 2 * 60 * 60 // 2 hours in seconds
+        });
+
+        // Debug user data
+        console.debug('User Data Set:', {
+          hasCompany: !!userData.company,
+          hasUnitName: !!userData.unitName,
+          company: userData.company,
+          unitName: userData.unitName,
+          workingRegime: userData.workingRegime,
+          workSchedule: userData.workSchedule
+        });
+      }
+    }
+
+    // For profile endpoint
+    if (response.config.url.includes('/auth/profile')) {
+      const currentUser = getCookie('user') || {};
+      const updatedUser = {
+        ...currentUser,
+        ...response.data.user,
+        // Preserve existing values if new ones are null
+        company: response.data.user.company || currentUser.company || null,
+        unitName: response.data.user.unitName || currentUser.unitName || null,
+        workingRegime: response.data.user.workingRegime || currentUser.workingRegime || {
+          onDutyDays: 28,
+          offDutyDays: 28
+        },
+        workSchedule: response.data.user.workSchedule || currentUser.workSchedule || {},
+        workCycles: response.data.user.workCycles || currentUser.workCycles || []
+      };
+
+      // Set new token if provided
+      if (response.data.token) {
+        setCookie('token', response.data.token, {
+          path: '/',
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production',
+          maxAge: 2 * 60 * 60 // 2 hours in seconds
+        });
+      }
+
+      // Set updated user data
+      setCookie('user', updatedUser, {
         path: '/',
         sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production'
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 2 * 60 * 60 // 2 hours in seconds
+      });
+
+      // Debug profile data
+      console.debug('Profile Data Updated:', {
+        hasCompany: !!updatedUser.company,
+        hasUnitName: !!updatedUser.unitName,
+        company: updatedUser.company,
+        unitName: updatedUser.unitName,
+        workingRegime: updatedUser.workingRegime,
+        workSchedule: updatedUser.workSchedule,
+        workCycles: updatedUser.workCycles?.length
       });
     }
-    
-    // If we get user data, update the user cookie
-    if (response.data.user) {
-      setCookie('user', response.data.user, {
-        path: '/',
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production'
-      });
-    }
-    
+
     return response;
   },
   async (error) => {
@@ -165,12 +195,10 @@ api.interceptors.response.use(
     console.error('API Error:', {
       url: error.config?.url,
       status: error.response?.status,
-      message: error.message,
-      data: error.response?.data
+      message: error.message
     });
 
     if (error.response?.status === 401) {
-      // Clear auth state on 401
       removeCookie('token');
       removeCookie('refreshToken');
       removeCookie('user');

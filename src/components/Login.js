@@ -69,15 +69,41 @@ const Login = () => {
     try {
       const response = await api.post('/auth/login', formData);
       
-      if (response.data.user) {
-        // Set cookies first
-        setCookie('user', response.data.user);
-        setCookie('token', response.data.token);
-        
-        // Use window.location for a full page reload to ensure cookies are set
-        window.location.href = '/dashboard';
+      // Debug login response
+      console.debug('Login Component - Response:', {
+        hasToken: !!response.data.token,
+        hasUser: !!response.data.user,
+        userData: response.data.user ? {
+          company: response.data.user.company,
+          unitName: response.data.user.unitName,
+          workCycles: response.data.user.workCycles?.length
+        } : null
+      });
+
+      // Verify that we got both token and user data
+      if (!response.data.token || !response.data.user) {
+        throw new Error('Invalid server response - missing token or user data');
       }
+
+      // Wait a bit for cookies to be set
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Verify cookies
+      const user = getCookie('user');
+      console.debug('Login Component - User Data:', {
+        hasUser: !!user,
+        company: user?.company,
+        unitName: user?.unitName,
+        workCycles: user?.workCycles?.length
+      });
+
+      if (!user) {
+        throw new Error('Failed to set user data');
+      }
+
+      navigate('/dashboard');
     } catch (error) {
+      console.error('Login error:', error);
       setError(error.response?.data?.message || t('login.errors.loginFailed'));
     }
   };
