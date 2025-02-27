@@ -21,13 +21,16 @@ import {
   CardContent,
   CardActions,
   Snackbar,
-  Alert
+  Alert,
+  Stack
 } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { 
   PersonAdd as PersonAddIcon, 
   Check as CheckIcon, 
   Close as CloseIcon,
-  Search as SearchIcon
+  Search as SearchIcon,
+  Sync as SyncIcon
 } from '@mui/icons-material';
 import { useTranslation } from 'react-i18next';
 import { api } from '../utils/apiUtils';
@@ -157,6 +160,57 @@ const FriendManagement = () => {
       setToast({
         open: true,
         message: t('friendManagement.requestResponseError'),
+        severity: 'error'
+      });
+    }
+  };
+
+  const toggleSyncStatus = async (friendId, currentStatus) => {
+    try {
+      // Ensure friendId is valid
+      if (!friendId || friendId === 'undefined') {
+        console.error('Invalid friend ID:', friendId);
+        setToast({
+          open: true,
+          message: t('friendManagement.invalidFriendId'),
+          severity: 'error'
+        });
+        return;
+      }
+
+      const response = await api.put(`/api/auth/friend-sync/${friendId}`, {
+        allowScheduleSync: !currentStatus
+      });
+
+      if (response.data.success) {
+        // Update friends list with new sync status
+        setFriends(prevFriends => 
+          prevFriends.map(friend => 
+            (friend._id === friendId || friend.id === friendId)
+              ? {
+                  ...friend,
+                  sharingPreferences: {
+                    ...friend.sharingPreferences,
+                    allowScheduleSync: !currentStatus
+                  }
+                }
+              : friend
+          )
+        );
+
+        setToast({
+          open: true,
+          message: !currentStatus 
+            ? t('friendManagement.syncEnabled') 
+            : t('friendManagement.syncDisabled'),
+          severity: 'success'
+        });
+      }
+    } catch (error) {
+      console.error('Error toggling sync status:', error);
+      setToast({
+        open: true,
+        message: t('friendManagement.syncToggleError'),
         severity: 'error'
       });
     }
@@ -323,7 +377,7 @@ const FriendManagement = () => {
             </Typography>
           ) : (
             friends.map((friend) => (
-              <React.Fragment key={friend.id}>
+              <React.Fragment key={friend._id || friend.id}>
                 <ListItem>
                   <ListItemAvatar>
                     <Avatar 
@@ -333,27 +387,30 @@ const FriendManagement = () => {
                   </ListItemAvatar>
                   <Box sx={{ flexGrow: 1 }}>
                     <ListItemText
-                      primary={
-                        <Typography variant="subtitle1" component="div">
-                          {friend.fullName}
-                        </Typography>
-                      }
+                      primary={friend.fullName}
                       secondary={
-                        <React.Fragment>
-                          <Typography variant="body2" color="textSecondary" component="div">
-                            {friend.email}
-                          </Typography>
+                        <Box component="div" sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                          <div>{friend.email}</div>
                           {friend.company && (
-                            <Typography variant="body2" color="textSecondary" component="div">
+                            <div>
                               {friend.company}
                               {friend.unitName && ` - ${friend.unitName}`}
-                            </Typography>
+                            </div>
                           )}
-                        </React.Fragment>
+                        </Box>
                       }
+                      primaryTypographyProps={{
+                        component: 'div',
+                        variant: 'subtitle1'
+                      }}
+                      secondaryTypographyProps={{
+                        component: 'div',
+                        sx: { color: 'text.secondary' }
+                      }}
                     />
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    {/* Mobile: Icon only */}
                     <Tooltip 
                       title={
                         friend.sharingPreferences.allowScheduleSync 
@@ -361,20 +418,42 @@ const FriendManagement = () => {
                           : t('friendManagement.syncDisabled')
                       }
                     >
-                      <Chip 
-                        label={
-                          friend.sharingPreferences.allowScheduleSync 
-                            ? t('friendManagement.syncOn') 
-                            : t('friendManagement.syncOff')
-                        }
-                        color={
-                          friend.sharingPreferences.allowScheduleSync 
-                            ? 'primary' 
-                            : 'default'
-                        }
+                      <IconButton
                         size="small"
-                      />
+                        onClick={() => toggleSyncStatus(friend._id || friend.id, friend.sharingPreferences.allowScheduleSync)}
+                        sx={{
+                          color: 'white',
+                          display: { xs: 'inline-flex', md: 'none' },
+                          bgcolor: friend.sharingPreferences.allowScheduleSync ? 'success.main' : 'error.main',
+                          '&:hover': {
+                            bgcolor: friend.sharingPreferences.allowScheduleSync ? 'success.dark' : 'error.dark'
+                          }
+                        }}
+                      >
+                        <SyncIcon sx={{ fontSize: 20 }} />
+                      </IconButton>
                     </Tooltip>
+                    
+                    {/* Desktop: Chip with text */}
+                    <Chip 
+                      icon={<SyncIcon />}
+                      label={
+                        friend.sharingPreferences.allowScheduleSync 
+                          ? t('friendManagement.syncOn') 
+                          : t('friendManagement.syncOff')
+                      }
+                      color={
+                        friend.sharingPreferences.allowScheduleSync 
+                          ? 'success' 
+                          : 'error'
+                      }
+                      size="small"
+                      onClick={() => toggleSyncStatus(friend._id || friend.id, friend.sharingPreferences.allowScheduleSync)}
+                      sx={{ 
+                        display: { xs: 'none', md: 'inline-flex' },
+                        cursor: 'pointer'
+                      }}
+                    />
                   </Box>
                 </ListItem>
                 <Divider variant="inset" component="li" />

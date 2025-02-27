@@ -236,7 +236,7 @@
   },
   "sync": {
     "title": "Sincronización de Períodos Offshore",
-    "subtitle": "Visualice y compare períodos Offshore entre miembros del equipo. Seleccione múltiples usuarios para ver cuándo todos están simultáneamente fuera de servicio.",
+    "subtitle": "Visualice y compare período offshore entre tus amigos. Seleccione múltiples usuarios (incluyendo você) para ver cuándo todos están simultáneamente fuera de servicio. Puede habilitar o deshabilitar la sincronización para cada amigo en la página Amigos.",
     "createCommonEvent": "Crear Evento Común ({{count}})",
     "syncSuccessMessage": "Sincronización completada con éxito",
     "defaultSyncError": "Ocurrió un error durante la sincronización",
@@ -254,6 +254,8 @@
     "loginWithGoogleToCreateEvent": "Iniciar sesión con Google para crear evento",
     "noCommonOffBoardDatesFound": "No se encontraron fechas comunes offshore.",
     "close": "Cerrar",
+    "you": "Tu",
+    "syncDisabled": "Sincronización desactivada para este amigo",
     "completeYourProfile": "Complete su perfil",
     "updateProfile": "Actualizar Perfil"
   },

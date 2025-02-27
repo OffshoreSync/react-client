@@ -1,7 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { 
   Container, 
-  Typography, 
   Box, 
   Select, 
   MenuItem, 
@@ -17,7 +16,10 @@ import {
   CardContent,
   Modal,
   TextField,
-  CircularProgress
+  CircularProgress,
+  Avatar,
+  ListItemText,
+  Typography
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -161,39 +163,45 @@ const Sync = () => {
   const fetchAvailableUsers = async () => {
     try {
       const friendsResponse = await api.get('/api/auth/friends');
-      const syncableFriends = friendsResponse.data.friends
-        .filter(friend => friend.sharingPreferences?.allowScheduleSync)
-        .map(friend => ({
-          ...friend,
-          id: friend._id || friend.id // Handle both _id and id fields
-        }));
+      
+      // Get all friends, including those with sync disabled
+      const allFriends = friendsResponse.data.friends.map(friend => ({
+        ...friend,
+        id: friend._id || friend.id,
+        // Add sync status for display
+        syncStatus: friend.sharingPreferences?.iCanSeeTheirSchedule && 
+                   friend.sharingPreferences?.theyCanSeeMySchedule
+                   ? 'enabled'
+                   : 'disabled'
+      }));
 
       const usersWithCurrentUser = [
         {
           ...user,
-          id: user.id || user._id, // Handle both id formats
-          fullName: `${user.fullName} (You)`,
-          isCurrentUser: true
+          id: user.id || user._id,
+          fullName: `${user.fullName} (${t('sync.you')})`,
+          isCurrentUser: true,
+          syncStatus: 'enabled'
         },
-        ...syncableFriends
+        ...allFriends
       ];
 
       setAvailableUsers(usersWithCurrentUser);
     } catch (error) {
       console.error('Error in fetchAvailableUsers:', error);
-      let errorMessage = 'Failed to fetch syncable friends';
+      let errorMessage = t('sync.fetchError');
       
       if (error.response) {
         if (error.response.status === 401) {
-          errorMessage = 'Unauthorized. Please log in again.';
+          errorMessage = t('sync.unauthorizedError');
           navigate('/login');
         } else if (error.response.status === 403) {
-          errorMessage = 'Access forbidden. You may not have permission.';
+          errorMessage = t('sync.forbiddenError');
         } else if (error.response.status >= 500) {
-          errorMessage = 'Server error. Please try again later.';
+          errorMessage = t('sync.serverError');
         }
       } else if (error.request) {
-        errorMessage = 'No response from server. Please check your connection.';
+        errorMessage = t('sync.connectionError');
       }
 
       setSnackbarMessage(errorMessage);
@@ -206,7 +214,7 @@ const Sync = () => {
   useEffect(() => {
     // Validate current selection against new available users
     const validSelectedUsers = selectedUsers.filter(id => 
-      availableUsers.some(user => user.id === id)
+      availableUsers.some(user => user.id === id && user.syncStatus === 'enabled')
     );
     
     if (validSelectedUsers.length !== selectedUsers.length) {
@@ -367,6 +375,7 @@ const Sync = () => {
       
       // Detailed error handling
       let errorMessage = 'Failed to create event';
+      
       if (error.response) {
         if (error.response.status === 401) {
           errorMessage = 'Unauthorized. Please re-authenticate with Google.';
@@ -398,7 +407,7 @@ const Sync = () => {
         return false;
       }
       
-      const userExists = availableUsers.some(user => user.id === id);
+      const userExists = availableUsers.some(user => user.id === id && user.syncStatus === 'enabled');
       if (!userExists) {
         console.error('Selected user ID not found in availableUsers:', id);
         console.log('Available Users:', availableUsers.map(u => ({ id: u.id, fullName: u.fullName })));
@@ -594,49 +603,53 @@ const Sync = () => {
               PaperProps: {
                 sx: {
                   backgroundColor: 'background.paper',
-                  borderRadius: 2,
-                  maxHeight: 300,
-                  width: 250,
-                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                  maxHeight: 300
                 }
-              },
-              anchorOrigin: {
-                vertical: 'bottom',
-                horizontal: 'center'
-              },
-              transformOrigin: {
-                vertical: 'top',
-                horizontal: 'center'
               }
             }}
           >
             {availableUsers.map((user) => (
-              <MenuItem 
-                key={user.id} 
+              <MenuItem
+                key={user.id}
                 value={user.id}
-                sx={{ 
+                disabled={user.syncStatus === 'disabled'}
+                sx={{
                   display: 'flex',
-                  alignItems: 'center',
-                  gap: 2,
-                  fontSize: { xs: '0.875rem', md: '1rem' },
-                  '&:hover': {
-                    backgroundColor: 'action.hover'
-                  },
-                  '&.Mui-selected': {
-                    backgroundColor: 'transparent',
-                    color: 'inherit',
-                    '&:hover': {
-                      backgroundColor: 'action.hover'
-                    }
+                  alignItems: 'flex-start',
+                  gap: 1,
+                  py: 1,
+                  opacity: user.syncStatus === 'disabled' ? 0.5 : 1,
+                  color: user.syncStatus === 'disabled' ? 'text.disabled' : 'text.primary',
+                  '&.Mui-disabled': {
+                    opacity: 0.5
                   }
                 }}
               >
-                {user.isCurrentUser ? (
-                  <PersonIcon sx={{ color: 'primary.main', mr: 1 }} />
+                {user.profilePicture ? (
+                  <Avatar 
+                    src={user.profilePicture} 
+                    alt={user.fullName}
+                    sx={{ width: 32, height: 32 }}
+                  />
                 ) : (
-                  <AccountCircleIcon sx={{ color: 'text.secondary', mr: 1 }} />
+                  <AccountCircleIcon sx={{ width: 32, height: 32 }} />
                 )}
-                {user.fullName}
+                <ListItemText
+                  primary={user.fullName}
+                  secondary={user.syncStatus === 'disabled' ? t('sync.syncDisabled') : null}
+                  primaryTypographyProps={{
+                    component: 'div',
+                    variant: 'body1'
+                  }}
+                  secondaryTypographyProps={{
+                    component: 'div',
+                    variant: 'caption',
+                    sx: { 
+                      fontSize: '0.75rem',
+                      color: 'text.secondary'
+                    }
+                  }}
+                />
               </MenuItem>
             ))}
           </Select>

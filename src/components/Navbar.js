@@ -12,6 +12,7 @@ import {
   ListItem,
   ListItemIcon,
   ListItemText,
+  ListItemButton,
   Box,
   useMediaQuery,
   useTheme,
@@ -248,15 +249,27 @@ function Navbar() {
                       fontWeight: language === lang ? 'bold' : 'normal'
                     }}
                   >
-                    <ReactCountryFlag 
-                      countryCode={
-                        lang === 'en' ? 'US' : 
-                        lang === 'es' ? 'ES' : 
-                        lang === 'pt' ? 'BR' : ''
-                      } 
-                      svg 
-                      style={{ width: '1.5em', height: '1em' }} 
-                    />
+                    <Box 
+                      component="span"
+                      sx={{ 
+                        display: 'inline-flex',
+                        mr: 1,
+                        '& .flag-icon': {
+                          width: '1.5em',
+                          height: '1em'
+                        }
+                      }}
+                    >
+                      <ReactCountryFlag 
+                        countryCode={
+                          lang === 'en' ? 'US' : 
+                          lang === 'es' ? 'ES' : 
+                          lang === 'pt' ? 'BR' : ''
+                        } 
+                        svg
+                        className="flag-icon"
+                      />
+                    </Box>
                     {t(`navbar.languages.${lang}`)}
                   </MenuItem>
                 ))}
@@ -321,21 +334,17 @@ function Navbar() {
         }}
       >
         <List>
-          {menuItems.map((item, index) => (
+          {menuItems.map((item) => (
             <ListItem 
-              button 
-              key={item.text} 
-              onClick={item.onClick}
-              sx={{
-                '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.04)'
-                }
-              }}
+              key={item.text}
+              disablePadding
             >
-              <ListItemIcon>
-                {item.icon}
-              </ListItemIcon>
-              <ListItemText primary={item.text} />
+              <ListItemButton onClick={item.onClick}>
+                <ListItemIcon>
+                  {item.icon}
+                </ListItemIcon>
+                <ListItemText primary={item.text} />
+              </ListItemButton>
             </ListItem>
           ))}
         </List>

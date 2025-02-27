@@ -241,7 +241,7 @@
   },
   "sync": {
     "title": "Off Board Periods Sync",
-    "subtitle": "Visualize and compare Off Board periods across team members. Select multiple users to see when everyone is simultaneously off board.",
+    "subtitle": "Visualize and compare Off Board periods across your friends. Select multiple users (including yourself) to see when everyone is simultaneously off board. You can enable or disable syncing for each friend on the Friends page.",
     "createCommonEvent": "Create Common Event ({{count}})",
     "syncSuccessMessage": "Sync completed successfully",
     "defaultSyncError": "An error occurred during sync",
@@ -259,6 +259,8 @@
     "loginWithGoogleToCreateEvent": "Login with Google to Create Event",
     "noCommonOffBoardDatesFound": "No common off-board dates found.",
     "close": "Close",
+    "you": "You",
+    "syncDisabled": "Sync is disabled for this friend",
     "completeYourProfile": "Complete your profile",
     "updateProfile": "Update Profile"
   },
