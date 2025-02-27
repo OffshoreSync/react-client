@@ -7,11 +7,18 @@ const cookies = new Cookies();
 export const setCookie = (name, value, options = {}) => {
   const defaultOptions = {
     path: '/',
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production'
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'strict',
+    maxAge: name === 'refreshToken' ? 30 * 24 * 60 * 60 : 2 * 60 * 60 // 30 days for refresh token, 2 hours for others
   };
-  const cookieOptions = { ...defaultOptions, ...options };
-  cookies.set(name, value, cookieOptions);
+  
+  const finalOptions = {
+    ...defaultOptions,
+    ...options,
+    httpOnly: false // Ensure PWA can access cookies
+  };
+
+  cookies.set(name, value, finalOptions);
 };
 
 export const getCookie = (name) => {
@@ -27,32 +34,17 @@ export const getBackendUrl = () => {
   return process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 };
 
-// Create axios instance
+// Create axios instance with enhanced retry logic
 export const api = axios.create({
   baseURL: getBackendUrl(),
   withCredentials: true,
+  timeout: 10000, // 10 seconds
   headers: {
     'Content-Type': 'application/json'
   }
 });
 
-// Flag to track if we're currently refreshing the token
-let isRefreshing = false;
-// Store of callbacks to be called after token refresh
-let refreshSubscribers = [];
-
-// Subscribe callback to be called after token refresh
-const subscribeTokenRefresh = (callback) => {
-  refreshSubscribers.push(callback);
-};
-
-// Call all stored callbacks after token refresh
-const onTokenRefreshed = (token) => {
-  refreshSubscribers.forEach((callback) => callback(token));
-  refreshSubscribers = [];
-};
-
-// Request interceptor
+// Request interceptor with enhanced error handling
 api.interceptors.request.use(
   (config) => {
     const token = getCookie('token');
@@ -60,7 +52,7 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`;
     }
 
-    // Add CSRF token
+    // Add CSRF token if available
     const csrfToken = getCookie('XSRF-TOKEN');
     if (csrfToken) {
       config.headers['X-CSRF-Token'] = csrfToken;
@@ -78,7 +70,10 @@ api.interceptors.request.use(
   }
 );
 
-// Response interceptor
+// Response interceptor with enhanced token refresh
+let isRefreshing = false;
+let refreshSubscribers = [];
+
 api.interceptors.response.use(
   (response) => {
     // Debug response
@@ -146,77 +141,60 @@ api.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    // If we're already refreshing, wait for the token and retry
-    if (isRefreshing) {
-      try {
-        const token = await new Promise(resolve => {
-          subscribeTokenRefresh(token => {
-            resolve(token);
-          });
-        });
-        originalRequest.headers.Authorization = `Bearer ${token}`;
-        return api(originalRequest);
-      } catch (err) {
-        return Promise.reject(err);
-      }
-    }
-
-    // Start refreshing process
-    originalRequest._retry = true;
-    isRefreshing = true;
-
-    try {
+    if (!isRefreshing) {
+      isRefreshing = true;
       const refreshToken = getCookie('refreshToken');
-      if (!refreshToken) {
-        throw new Error('No refresh token available');
+
+      try {
+        const response = await axios.post(`${getBackendUrl()}/api/auth/refresh-token`, 
+          { refreshToken },
+          { 
+            withCredentials: true,
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          }
+        );
+
+        const { token, refreshToken: newRefreshToken } = response.data;
+
+        // Update cookies with new tokens
+        setCookie('token', token);
+        if (newRefreshToken) {
+          setCookie('refreshToken', newRefreshToken);
+        }
+
+        // Update authorization header
+        originalRequest.headers.Authorization = `Bearer ${token}`;
+        
+        // Notify subscribers and reset state
+        refreshSubscribers.forEach(callback => callback(token));
+        refreshSubscribers = [];
+        isRefreshing = false;
+
+        // Retry original request
+        return api(originalRequest);
+      } catch (error) {
+        isRefreshing = false;
+        refreshSubscribers = [];
+        removeCookie('token');
+        removeCookie('refreshToken');
+        removeCookie('user');
+        
+        // Only redirect if not already on login page
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+        return Promise.reject(error);
       }
-
-      const response = await api.post('/api/auth/refresh-token', {
-        refreshToken
-      });
-
-      const { token, refreshToken: newRefreshToken } = response.data;
-
-      // Store new tokens with same options as login
-      setCookie('token', token, {
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax'
-      });
-
-      if (newRefreshToken) {
-        setCookie('refreshToken', newRefreshToken, {
-          path: '/',
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax'
-        });
-      }
-
-      // Update authorization header
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      originalRequest.headers.Authorization = `Bearer ${token}`;
-
-      // Notify subscribers and reset refresh state
-      onTokenRefreshed(token);
-      isRefreshing = false;
-
-      // Retry original request
-      return api(originalRequest);
-    } catch (refreshError) {
-      // Clear tokens and notify subscribers of failure
-      removeCookie('token');
-      removeCookie('refreshToken');
-      removeCookie('user');
-      
-      isRefreshing = false;
-      refreshSubscribers = [];
-
-      // Redirect to login if available
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
-      }
-
-      return Promise.reject(refreshError);
     }
+
+    // If we're already refreshing, wait for the token
+    return new Promise(resolve => {
+      refreshSubscribers.push(token => {
+        originalRequest.headers.Authorization = `Bearer ${token}`;
+        resolve(api(originalRequest));
+      });
+    });
   }
 );
