@@ -258,13 +258,26 @@ function Navbar() {
                   onClick={handleMenu}
                   sx={{ 
                     padding: 0,
-                    marginLeft: 2
+                    marginLeft: 2,
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                    }
                   }}
                 >
                   <Avatar 
                     src={user.profilePicture} 
                     alt={user.name || 'User'} 
-                    sx={{ width: 40, height: 40 }}
+                    sx={{ 
+                      width: 40, 
+                      height: 40,
+                      border: '2px solid rgba(255, 255, 255, 0.8)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                      transition: 'transform 0.2s ease-in-out',
+                      '&:hover': {
+                        transform: 'scale(1.05)'
+                      }
+                    }}
                   />
                 </IconButton>
               ) : (
@@ -272,7 +285,10 @@ function Navbar() {
                   onClick={handleMenu}
                   sx={{ 
                     marginLeft: 2,
-                    color: 'white' // Set icon color to white
+                    color: 'white',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                    }
                   }}
                 >
                   <MenuIcon />
