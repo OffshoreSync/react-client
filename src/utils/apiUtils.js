@@ -67,8 +67,8 @@ api.interceptors.request.use(
     }
 
     // Add /api prefix if not present and not an absolute URL
-    if (!config.url.startsWith('/api') && !config.url.startsWith('http')) {
-      config.url = `/api${config.url}`;
+    if (!config.url.startsWith('/api/') && !config.url.startsWith('http')) {
+      config.url = `/api/${config.url.startsWith('/') ? config.url.slice(1) : config.url}`;
     }
 
     return config;
@@ -97,107 +97,31 @@ api.interceptors.response.use(
     });
 
     // For login endpoint
-    if (response.config.url.includes('/auth/login')) {
-      // Set token cookie
+    if (response.config.url.includes('/auth/login') || response.config.url.includes('/auth/google-login')) {
       if (response.data.token) {
+        // Set token cookie
         setCookie('token', response.data.token, {
           path: '/',
-          sameSite: 'lax',
           secure: process.env.NODE_ENV === 'production',
-          maxAge: 2 * 60 * 60 // 2 hours in seconds
+          sameSite: 'lax'
         });
       }
-
-      // Set refresh token if present
       if (response.data.refreshToken) {
+        // Set refresh token cookie
         setCookie('refreshToken', response.data.refreshToken, {
           path: '/',
-          sameSite: 'lax',
           secure: process.env.NODE_ENV === 'production',
-          httpOnly: true,
-          maxAge: 7 * 24 * 60 * 60 // 7 days in seconds
+          sameSite: 'lax'
         });
       }
-
-      // Set user data cookie
       if (response.data.user) {
-        // Ensure all required fields are present
-        const userData = {
-          ...response.data.user,
-          company: response.data.user.company || null,
-          unitName: response.data.user.unitName || null,
-          workingRegime: response.data.user.workingRegime || {
-            onDutyDays: 28,
-            offDutyDays: 28
-          },
-          workSchedule: response.data.user.workSchedule || {},
-          workCycles: response.data.user.workCycles || []
-        };
-
-        setCookie('user', userData, {
+        // Set user data cookie
+        setCookie('user', JSON.stringify(response.data.user), {
           path: '/',
-          sameSite: 'lax',
           secure: process.env.NODE_ENV === 'production',
-          maxAge: 2 * 60 * 60 // 2 hours in seconds
-        });
-
-        // Debug user data
-        console.debug('User Data Set:', {
-          hasCompany: !!userData.company,
-          hasUnitName: !!userData.unitName,
-          company: userData.company,
-          unitName: userData.unitName,
-          workingRegime: userData.workingRegime,
-          workSchedule: userData.workSchedule
+          sameSite: 'lax'
         });
       }
-    }
-
-    // For profile endpoint
-    if (response.config.url.includes('/auth/profile')) {
-      const currentUser = getCookie('user') || {};
-      const updatedUser = {
-        ...currentUser,
-        ...response.data.user,
-        // Preserve existing values if new ones are null
-        company: response.data.user.company || currentUser.company || null,
-        unitName: response.data.user.unitName || currentUser.unitName || null,
-        workingRegime: response.data.user.workingRegime || currentUser.workingRegime || {
-          onDutyDays: 28,
-          offDutyDays: 28
-        },
-        workSchedule: response.data.user.workSchedule || currentUser.workSchedule || {},
-        workCycles: response.data.user.workCycles || currentUser.workCycles || []
-      };
-
-      // Set new token if provided
-      if (response.data.token) {
-        setCookie('token', response.data.token, {
-          path: '/',
-          sameSite: 'lax',
-          secure: process.env.NODE_ENV === 'production',
-          maxAge: 2 * 60 * 60 // 2 hours in seconds
-        });
-      }
-
-      // Set updated user data
-      setCookie('user', updatedUser, {
-        path: '/',
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 2 * 60 * 60 // 2 hours in seconds
-      });
-
-      // Debug profile data
-      console.debug('Profile Data Updated:', {
-        hasCompany: !!updatedUser.company,
-        hasUnitName: !!updatedUser.unitName,
-        company: updatedUser.company,
-        unitName: updatedUser.unitName,
-        workingRegime: updatedUser.workingRegime,
-        workSchedule: updatedUser.workSchedule,
-        workCycles: updatedUser.workCycles?.length
-      });
     }
 
     return response;
@@ -256,18 +180,15 @@ api.interceptors.response.use(
       // Store new tokens with same options as login
       setCookie('token', token, {
         path: '/',
-        sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 2 * 60 * 60 // 2 hours in seconds
+        sameSite: 'lax'
       });
 
       if (newRefreshToken) {
         setCookie('refreshToken', newRefreshToken, {
           path: '/',
-          sameSite: 'lax',
           secure: process.env.NODE_ENV === 'production',
-          httpOnly: true,
-          maxAge: 7 * 24 * 60 * 60 // 7 days in seconds
+          sameSite: 'lax'
         });
       }
 

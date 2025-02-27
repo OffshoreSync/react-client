@@ -115,7 +115,8 @@
     "cancel": "Cancelar",
     "setOnBoardDate": "Establecer Fecha de Embarque",
     "snackbarMessages": {
-      "onBoardDateSet": "¡Fecha de Embarque establecida con éxito!",
+      "onBoardDateSet": "Fecha de embarque establecida con éxito",
+      "onBoardDateSetNeedsProfile": "Fecha de embarque establecida con éxito. Por favor complete su perfil agregando su empresa y nombre de unidad.",
       "onBoardDateSetError": "Error al establecer fecha de Embarque",
       "resetOnBoardDateError": "Error al restablecer próxima fecha de Embarque. Por favor, intenta de nuevo.",
       "onBoardDateResetSuccess": "La fecha de embarque se ha restablecido correctamente."
@@ -313,19 +314,22 @@
     }
   },
   "verifyEmail": {
-    "title": "Verifique Su Correo Electrónico",
+    "title": "Verificar Tu Correo Electrónico",
     "success": {
       "title": "Correo Electrónico Verificado Exitosamente",
-      "message": "Su correo electrónico ha sido verificado. Ahora puede iniciar sesión en su cuenta."
+      "message": "Tu correo electrónico ha sido verificado. Ahora puedes iniciar sesión en tu cuenta."
     },
     "error": {
-      "title": "Error en Verificación de Correo Electrónico",
-      "invalidToken": "El enlace de verificación no es válido o ha expirado.",
-      "serverError": "Hubo un problema al verificar su correo electrónico. Intente nuevamente más tarde."
+      "title": "Verificación Fallida"
     },
+    "errors": {
+      "missingToken": "Falta el token de verificación",
+      "verificationFailed": "La verificación del correo electrónico falló. El token puede ser inválido o haber expirado."
+    },
+    "verifying": "Verificando tu correo electrónico...",
     "buttons": {
       "goToLogin": "Ir a Iniciar Sesión",
-      "resendVerification": "Reenviar Correo de Verificación"
+      "goToHome": "Volver al Inicio"
     }
   }
 }

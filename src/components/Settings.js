@@ -18,12 +18,14 @@ import {
 import { getCountryCode } from '../utils/countries';
 import { useTranslation } from 'react-i18next';
 import { api, getCookie, removeCookie, setCookie } from '../utils/apiUtils';
+import { useAuth } from '../context/AuthContext';
 
 const Settings = () => {
   const [user, setUser] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { logout } = useAuth();
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -52,15 +54,6 @@ const Settings = () => {
             workCycles: response.data.user.workCycles || currentUser.workCycles || []
           };
 
-          // Debug user data
-          console.debug('Settings - User Data:', {
-            hasCompany: !!updatedUser.company,
-            company: updatedUser.company,
-            hasUnitName: !!updatedUser.unitName,
-            unitName: updatedUser.unitName,
-            hasWorkCycles: !!updatedUser.workCycles?.length
-          });
-
           setUser(updatedUser);
           setCookie('user', updatedUser);
         }
@@ -76,8 +69,16 @@ const Settings = () => {
   }, [navigate]);
 
   const handleLogout = () => {
+    // Clear cookies
     removeCookie('token');
+    removeCookie('refreshToken');
     removeCookie('user');
+    removeCookie('XSRF-TOKEN');
+
+    // Update auth context
+    logout();
+
+    // Navigate to login
     navigate('/login');
   };
 
@@ -85,18 +86,26 @@ const Settings = () => {
     try {
       await api.delete('/api/auth/delete-account');
 
-      // Clear cookies
+      // Clear all auth-related cookies
       removeCookie('token');
+      removeCookie('refreshToken');
       removeCookie('user');
+      removeCookie('XSRF-TOKEN');
 
-      // Dispatch event to update profile picture
-      window.dispatchEvent(new Event('profilePictureUpdated'));
+      // Clear any other app-specific cookies that might exist
+      document.cookie.split(';').forEach(cookie => {
+        const name = cookie.split('=')[0].trim();
+        removeCookie(name);
+      });
 
-      // Reload the page to clear all state
-      window.location.href = '/';
+      // Update auth context
+      logout();
+
+      // Navigate to home page
+      navigate('/', { replace: true });
     } catch (error) {
       console.error('Account deletion error:', error);
-      alert('Failed to delete account. Please try again.');
+      alert(t('settings.errors.deleteFailed'));
     }
   };
 

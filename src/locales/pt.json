@@ -114,7 +114,8 @@
     "cancel": "Cancelar",
     "setOnBoardDate": "Definir Data de Embarque",
     "snackbarMessages": {
-      "onBoardDateSet": "Data de Embarque definida com sucesso!",
+      "onBoardDateSet": "Data de embarque definida com sucesso",
+      "onBoardDateSetNeedsProfile": "Data de embarque definida com sucesso. Por favor, complete seu perfil adicionando sua empresa e nome da unidade.",
       "onBoardDateSetError": "Falha ao definir data de embarque",
       "resetOnBoardDateError": "Falha ao redefinir data de embarque. Tente novamente.",
       "onBoardDateResetSuccess": "Data de embarque redefinida com sucesso."
@@ -314,19 +315,22 @@
     }
   },
   "verifyEmail": {
-    "title": "Verifique Seu Email",
+    "title": "Verificar Seu E-mail",
     "success": {
-      "title": "Email Verificado com Sucesso",
-      "message": "Seu email foi verificado. Agora você pode fazer login em sua conta."
+      "title": "E-mail Verificado com Sucesso",
+      "message": "Seu e-mail foi verificado. Agora você pode fazer login em sua conta."
     },
     "error": {
-      "title": "Falha na Verificação de Email",
-      "invalidToken": "O link de verificação é inválido ou expirou.",
-      "serverError": "Houve um problema ao verificar seu email. Tente novamente mais tarde."
+      "title": "Falha na Verificação"
     },
+    "errors": {
+      "missingToken": "Token de verificação ausente",
+      "verificationFailed": "A verificação do e-mail falhou. O token pode ser inválido ou ter expirado."
+    },
+    "verifying": "Verificando seu e-mail...",
     "buttons": {
       "goToLogin": "Ir para Login",
-      "resendVerification": "Reenviar Email de Verificação"
+      "goToHome": "Voltar ao Início"
     }
   }
 }

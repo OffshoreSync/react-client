@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation, useParams } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { 
   Container, 
   Typography, 
   Button, 
-  Box, 
-  Paper, 
+  Box,
+  Card,
+  CardContent,
+  CardActions,
   Alert,
   CircularProgress
 } from '@mui/material';
@@ -13,7 +15,6 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../utils/apiUtils';
 
 const VerifyEmail = () => {
-  const { token } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
@@ -23,83 +24,119 @@ const VerifyEmail = () => {
 
   useEffect(() => {
     const verifyEmail = async () => {
+      // Get token from URL search params
+      const searchParams = new URLSearchParams(location.search);
+      const token = searchParams.get('token');
+
       if (!token) {
+        setError(t('verifyEmail.errors.missingToken'));
         setVerifying(false);
         return;
       }
 
       try {
-        await api.post('/api/auth/verify-email', { token });
-        setSuccess(t('verifyEmail.success'));
-        setTimeout(() => navigate('/login'), 3000);
+        await api.post('/auth/verify-email', { token });
+        setSuccess(t('verifyEmail.success.message'));
+        // Redirect to login with success message
+        setTimeout(() => {
+          navigate('/login', {
+            state: {
+              successMessage: t('verifyEmail.success.message'),
+              showVerificationAlert: true
+            }
+          });
+        }, 3000);
       } catch (error) {
         console.error('Email verification error:', error);
-        setError(t('verifyEmail.errors.verificationFailed'));
+        setError(
+          error.response?.data?.message || 
+          t('verifyEmail.errors.verificationFailed')
+        );
       } finally {
         setVerifying(false);
       }
     };
 
     verifyEmail();
-  }, [token, navigate, t]);
+  }, [location.search, navigate, t]);
 
   return (
-    <Container maxWidth="xs">
-      <Box 
-        sx={{ 
-          marginTop: 8, 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center',
-          textAlign: 'center'
-        }}
-      >
-        {verifying ? (
-          <>
-            <Typography variant="h5" sx={{ mb: 2 }}>
+    <Container maxWidth="sm">
+      <Box sx={{ 
+        minHeight: '80vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        py: 4,
+        mt: -8
+      }}>
+        <Card sx={{ width: '100%', textAlign: 'center' }}>
+          <CardContent>
+            <Typography variant="h5" component="h1" gutterBottom>
               {t('verifyEmail.title')}
             </Typography>
-            <CircularProgress />
-            <Typography variant="body1" sx={{ mt: 2 }}>
-              {t('verifyEmail.verifying')}
-            </Typography>
-          </>
-        ) : (
-          <>
-            {error && (
-              <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
-                {error}
-              </Alert>
-            )}
 
-            <Typography 
-              component="h1" 
-              variant="h5"
-              color={success ? 'primary' : 'error'}
-              sx={{ mb: 2 }}
-            >
-              {success ? t('verifyEmail.success.title') : t('verifyEmail.error.title')}
-            </Typography>
-            
-            <Typography 
-              variant="body1" 
-              sx={{ mb: 3 }}
-            >
-              {success ? success : error}
-            </Typography>
-            
-            {!success && (
+            {verifying ? (
+              <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', my: 4 }}>
+                <CircularProgress size={40} sx={{ mb: 2 }} />
+                <Typography variant="body1">
+                  {t('verifyEmail.verifying')}
+                </Typography>
+              </Box>
+            ) : (
+              <Box sx={{ my: 2 }}>
+                {error ? (
+                  <Alert 
+                    severity="error" 
+                    sx={{ 
+                      mb: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {error}
+                  </Alert>
+                ) : (
+                  <Alert 
+                    severity="success"
+                    sx={{ 
+                      mb: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {success}
+                  </Alert>
+                )}
+              </Box>
+            )}
+          </CardContent>
+
+          {!verifying && !success && (
+            <CardActions sx={{ 
+              justifyContent: 'center', 
+              pb: 3,
+              gap: 2 
+            }}>
+              <Button
+                variant="outlined"
+                color="error"
+                onClick={() => navigate('/')}
+              >
+                {t('verifyEmail.buttons.goToHome')}
+              </Button>
               <Button
                 variant="contained"
                 color="primary"
                 onClick={() => navigate('/login')}
-                sx={{ mt: 2 }}
               >
                 {t('verifyEmail.buttons.goToLogin')}
               </Button>
-            )}
-          </>
-        )}
+            </CardActions>
+          )}
+        </Card>
       </Box>
     </Container>
   );

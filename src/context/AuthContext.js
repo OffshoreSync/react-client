@@ -28,6 +28,11 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const logout = () => {
+    setUser(null);
+    setError(null);
+  };
+
   useEffect(() => {
     const token = getCookie('token');
     if (token) {
@@ -43,7 +48,8 @@ export const AuthProvider = ({ children }) => {
     setUser,
     loading,
     error,
-    fetchUserData
+    fetchUserData,
+    logout
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -52,7 +52,8 @@ const Login = () => {
   });
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [successMessage, setSuccessMessage] = useState(location.state?.successMessage || '');
+  const [showVerificationAlert] = useState(location.state?.showVerificationAlert || false);
   const [reAuthMessage] = useState(location.state?.reAuthRequired ? t('login.reAuthRequired') : '');
   
   const { username, password } = formData;
@@ -95,7 +96,15 @@ const Login = () => {
         httpOnly: true
       });
 
+      // Set user data in context
       setUser(response.data.user);
+
+      // Store user data in cookie for persistence
+      setCookie('user', JSON.stringify(response.data.user), {
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax'
+      });
 
       navigate('/dashboard');
     } catch (error) {
@@ -140,6 +149,13 @@ const Login = () => {
 
       if (profileResponse.data.user) {
         setUser(profileResponse.data.user);
+
+        // Store user data in cookie for persistence
+        setCookie('user', JSON.stringify(profileResponse.data.user), {
+          path: '/',
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax'
+        });
       }
 
       navigate('/dashboard');
@@ -183,15 +199,15 @@ const Login = () => {
             {t('login.title')}
           </Typography>
 
-          {reAuthMessage && (
-            <Alert severity="info" sx={{ width: '100%', mb: 2 }}>
-              {reAuthMessage}
+          {successMessage && showVerificationAlert && (
+            <Alert severity="success" sx={{ width: '100%', mb: 2 }}>
+              {successMessage}
             </Alert>
           )}
 
-          {successMessage && (
-            <Alert severity="success" sx={{ width: '100%', mb: 2 }}>
-              {successMessage}
+          {reAuthMessage && (
+            <Alert severity="info" sx={{ width: '100%', mb: 2 }}>
+              {reAuthMessage}
             </Alert>
           )}
 

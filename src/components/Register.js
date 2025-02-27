@@ -13,7 +13,8 @@ import {
   Paper, 
   Alert,
   IconButton,
-  InputAdornment
+  InputAdornment,
+  Snackbar
 } from '@mui/material';
 import { 
   Visibility, 
@@ -78,6 +79,8 @@ const Register = () => {
   const [isLocked, setIsLocked] = useState(false);
   const [lockExpiry, setLockExpiry] = useState(null);
   const [registrationAttempts, setRegistrationAttempts] = useState(0);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
 
   // New state for password visibility
   const [showPassword, setShowPassword] = useState(false);
@@ -216,12 +219,19 @@ const Register = () => {
       // Show success message
       const successMessage = t('register.verificationMessage');
       
-      // Redirect to login page
-      navigate('/login', { 
-        state: { 
-          successMessage: successMessage 
-        } 
-      });
+      // Show snackbar with verification message
+      setSnackbarMessage(successMessage);
+      setSnackbarOpen(true);
+      
+      // After a short delay, redirect to login page
+      setTimeout(() => {
+        navigate('/login', { 
+          state: { 
+            successMessage: successMessage,
+            showVerificationAlert: true
+          } 
+        });
+      }, 2000);
     } catch (error) {
       // Handle registration errors
       console.error('Registration error:', error);
@@ -309,7 +319,14 @@ const Register = () => {
   };
 
   return (
-    <Container maxWidth="sm">
+    <Container component="main" maxWidth="sm">
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={2000}
+        onClose={() => setSnackbarOpen(false)}
+        message={snackbarMessage}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      />
       <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
         <Typography variant="h4" align="center" gutterBottom>
           {isGoogleLogin ? t('register.completeProfile') : t('register.title')}

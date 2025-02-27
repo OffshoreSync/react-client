@@ -245,63 +245,52 @@ const Dashboard = () => {
   // Memoize the checkAuth function to prevent unnecessary re-renders
   const checkAuth = useCallback(async () => {
     try {
-      // Debug logging for cookie state
-      console.debug('Cookie Debug:', {
-        tokenExists: !!getCookie('token'),
-        userExists: !!getCookie('user'),
-        cookiesPresent: !!(getCookie('token') || getCookie('user'))
-      });
-
+      // Get token from cookie
       const token = getCookie('token');
-      
-      console.debug('Dashboard Authentication Check:', {
-        timestamp: new Date().toISOString(),
-        tokenPresent: !!token,
-        tokenLength: token ? token.length : 'N/A'
-      });
-
-      // If no token, immediately return null
       if (!token) {
-        console.warn('No authentication token found');
-        navigate('/login');
-        return null;
+        throw new Error('No authentication token found');
       }
 
+      // Get stored user data
+      const storedUser = getCookie('user');
+      let userWithFullData;
+
       try {
-        // Remove the /api prefix since apiUtils adds it
-        const response = await api.get('/auth/profile');
-        
-        // Debug profile response
-        console.debug('Profile Response:', {
-          status: response.status,
-          hasUser: !!response.data.user,
-          userData: {
-            id: response.data.user?._id,
-            email: response.data.user?.email,
-            isGoogleUser: response.data.user?.isGoogleUser
-          }
+        // Get fresh user data from API
+        const response = await api.get('/api/auth/profile');
+        userWithFullData = response.data.user;
+
+        // Update stored user data
+        setCookie('user', JSON.stringify(userWithFullData), {
+          path: '/',
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax'
         });
-        
-        // Ensure working regime is correctly stored
-        const userWithFullData = {
-          ...response.data.user,
-          workingRegime: response.data.user.workingRegime || {
-            onDutyDays: 28,
-            offDutyDays: 28
-          }
-        };
 
-        // Explicitly set isGoogleUser based on the server response
-        userWithFullData.isGoogleUser = !!userWithFullData.isGoogleUser;
-
-        // Update user cookie
-        updateUserInCookies(userWithFullData);
+        // Check both onboard dates and company/unit info
+        const needsOnboardDate = !userWithFullData.workSchedule?.nextOnBoardDate && 
+                               !userWithFullData.workingRegime?.nextOnBoardDate;
+        const needsCompanyInfo = !userWithFullData.company || !userWithFullData.unitName;
 
         return {
           user: userWithFullData,
-          showProfileAlert: !userWithFullData.workSchedule?.nextOnBoardDate
+          showProfileAlert: needsCompanyInfo,
+          needsOnboardDate: needsOnboardDate
         };
       } catch (error) {
+        // If API call fails but we have stored user data, use that temporarily
+        if (storedUser) {
+          userWithFullData = JSON.parse(storedUser);
+          // Check both onboard dates and company/unit info
+          const needsOnboardDate = !userWithFullData.workSchedule?.nextOnBoardDate && 
+                                 !userWithFullData.workingRegime?.nextOnBoardDate;
+          const needsCompanyInfo = !userWithFullData.company || !userWithFullData.unitName;
+          return {
+            user: userWithFullData,
+            showProfileAlert: needsCompanyInfo,
+            needsOnboardDate: needsOnboardDate
+          };
+        }
         console.error('Profile fetch error:', {
           message: error.message,
           response: error.response?.data,
@@ -310,7 +299,7 @@ const Dashboard = () => {
         throw error;
       }
     } catch (error) {
-      console.error('Unexpected error in checkAuth:', {
+      console.error('Authentication check failed:', {
         message: error.message,
         type: error.name,
         stack: error.stack
@@ -334,6 +323,11 @@ useEffect(() => {
           setUser(authResult.user);
         }
         setShowProfileAlert(authResult.showProfileAlert);
+        
+        // Only show onboard dialog if we need onboard date AND it's not already set
+        if (authResult.needsOnboardDate && !authResult.user.workSchedule?.nextOnBoardDate) {
+          setOpenOnBoardDialog(true);
+        }
       } else {
         throw new Error('Not authenticated');
       }
@@ -398,10 +392,18 @@ useEffect(() => {
 
       console.log('Generate Work Cycles Response:', cyclesResponse.data);
 
-      // Ensure the user object is complete
+      // Ensure the user object is complete and update both workSchedule and workingRegime
       const updatedUser = {
         ...response.data.user,
-        workCycles: cyclesResponse.data.workCycles
+        workCycles: cyclesResponse.data.workCycles,
+        workSchedule: {
+          ...response.data.user.workSchedule,
+          nextOnBoardDate: date
+        },
+        workingRegime: {
+          ...response.data.user.workingRegime,
+          nextOnBoardDate: date
+        }
       };
 
       // Update local storage with new user data including work cycles
@@ -410,8 +412,11 @@ useEffect(() => {
       // Update the user state to trigger re-render
       setUser(updatedUser);
       
-      // Close dialog and show success message
+      // Close dialog and check if we still need to show profile alert
       setOpenOnBoardDialog(false);
+      const needsCompanyInfo = !updatedUser.company || !updatedUser.unitName;
+      setShowProfileAlert(needsCompanyInfo);
+      
       setSnackbarMessage(t('dashboard.snackbarMessages.onBoardDateSet'));
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
