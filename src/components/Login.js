@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useContext } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { 
   Container, 
@@ -19,12 +19,11 @@ import {
 } from '@mui/icons-material';
 import { GoogleLogin } from '@react-oauth/google';
 import { styled } from '@mui/material/styles';
+import { api, setCookie, getCookie } from '../utils/apiUtils';
+import { useAuth } from '../context/AuthContext';
 
 // Import translation hook
 import { useTranslation } from 'react-i18next';
-
-// Import API utilities
-import { api, setCookie, getCookie } from '../utils/apiUtils';
 
 // Styling for Google Sign-In button container
 const GoogleSignInContainer = styled(Box)(({ theme }) => ({
@@ -46,6 +45,7 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
+  const { setUser } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -72,34 +72,30 @@ const Login = () => {
       // Debug login response
       console.debug('Login Component - Response:', {
         hasToken: !!response.data.token,
-        hasUser: !!response.data.user,
-        userData: response.data.user ? {
-          company: response.data.user.company,
-          unitName: response.data.user.unitName,
-          workCycles: response.data.user.workCycles?.length
-        } : null
+        hasRefreshToken: !!response.data.refreshToken,
+        hasUser: !!response.data.user
       });
 
-      // Verify that we got both token and user data
-      if (!response.data.token || !response.data.user) {
-        throw new Error('Invalid server response - missing token or user data');
+      // Verify that we got both tokens and user data
+      if (!response.data.token || !response.data.refreshToken || !response.data.user) {
+        throw new Error('Invalid server response - missing token, refresh token or user data');
       }
 
-      // Wait a bit for cookies to be set
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Verify cookies
-      const user = getCookie('user');
-      console.debug('Login Component - User Data:', {
-        hasUser: !!user,
-        company: user?.company,
-        unitName: user?.unitName,
-        workCycles: user?.workCycles?.length
+      // Store both tokens in cookies
+      setCookie('token', response.data.token, {
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax'
       });
 
-      if (!user) {
-        throw new Error('Failed to set user data');
-      }
+      setCookie('refreshToken', response.data.refreshToken, {
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        httpOnly: true
+      });
+
+      setUser(response.data.user);
 
       navigate('/dashboard');
     } catch (error) {
@@ -109,72 +105,49 @@ const Login = () => {
   };
 
   // Google login handler
-  const handleGoogleResponse = useCallback(async (response) => {
+  const handleGoogleLogin = async (response) => {
     try {
-      // Debug Google response
-      console.debug('Google Login Response:', {
-        hasCredential: !!response.credential,
-        credentialLength: response.credential?.length
-      });
-
-      const loginResponse = await api.post('/auth/google-login', {
+      console.debug('Google response:', response);
+      
+      // Send the credential token to server
+      const loginResponse = await api.post('/api/auth/google-login', { 
         credential: response.credential
       });
 
-      // Debug login response
-      console.debug('Backend Login Response:', {
-        status: loginResponse.status,
-        hasToken: !!loginResponse.data.token,
-        tokenLength: loginResponse.data.token?.length,
-        hasUser: !!loginResponse.data.user
-      });
+      console.debug('Login response:', loginResponse.data);
 
-      // Set token in cookie if it exists
-      if (loginResponse.data.token) {
-        setCookie('token', loginResponse.data.token, {
-          path: '/',
-          sameSite: 'lax',
-          secure: process.env.NODE_ENV === 'production'
-        });
-      } else {
-        console.error('No token received from server');
-        throw new Error('No token received from server');
+      if (!loginResponse.data.token || !loginResponse.data.refreshToken) {
+        throw new Error('Invalid server response - missing tokens');
       }
 
-      // Set user in cookie if it exists
-      if (loginResponse.data.user) {
-        setCookie('user', loginResponse.data.user, {
-          path: '/',
-          sameSite: 'lax',
-          secure: process.env.NODE_ENV === 'production'
-        });
-      } else {
-        console.error('No user data received from server');
-        throw new Error('No user data received from server');
-      }
-
-      // Wait a bit for cookies to be set
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Debug cookie state after setting
-      console.debug('Cookie State After Login:', {
-        hasToken: !!getCookie('token'),
-        tokenLength: getCookie('token')?.length,
-        hasUser: !!getCookie('user')
+      // Store both tokens in cookies
+      setCookie('token', loginResponse.data.token, {
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax'
       });
 
-      // Navigate to dashboard
+      setCookie('refreshToken', loginResponse.data.refreshToken, {
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        httpOnly: true
+      });
+
+      // Fetch user profile
+      const profileResponse = await api.get('/api/auth/profile');
+      console.debug('Profile loaded:', profileResponse.data);
+
+      if (profileResponse.data.user) {
+        setUser(profileResponse.data.user);
+      }
+
       navigate('/dashboard');
     } catch (error) {
-      console.error('Google login error:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
-      });
-      
-      setError(error.response?.data?.message || 'Failed to login with Google');
+      console.error('Google login failed:', error);
+      setError('Failed to authenticate with Google');
     }
-  }, [navigate]);
+  };
 
   return (
     <Container maxWidth="xs">
@@ -284,7 +257,7 @@ const Login = () => {
             
             <GoogleSignInContainer>
               <GoogleLogin
-                onSuccess={handleGoogleResponse}
+                onSuccess={handleGoogleLogin}
                 onError={() => {
                   console.error('Login Failed');
                   setError(t('login.errors.googleLoginFailed'));

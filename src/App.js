@@ -31,6 +31,7 @@ import EditProfile from './components/EditProfile';
 import FriendManagement from './components/FriendManagement';
 import VerifyEmail from './components/VerifyEmail';
 import { getCookie, setCookie, removeCookie, api } from './utils/apiUtils';
+import { AuthProvider } from './context/AuthContext';
 
 // Explicitly declare colors to prevent no-undef
 const primaryColor = blue[500];
@@ -244,9 +245,11 @@ function App() {
       <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
         <ThemeProvider theme={theme}>
           <CssBaseline />
-          <Router>
-            <AppRoutes />
-          </Router>
+          <AuthProvider>
+            <Router>
+              <AppRoutes />
+            </Router>
+          </AuthProvider>
         </ThemeProvider>
       </GoogleOAuthProvider>
     </CookiesProvider>

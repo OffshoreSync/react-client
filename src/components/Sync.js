@@ -16,7 +16,8 @@ import {
   Card,
   CardContent,
   Modal,
-  TextField
+  TextField,
+  CircularProgress
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -36,7 +37,8 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useTranslation } from 'react-i18next';
-import { api, getCookie } from '../utils/apiUtils';
+import { api } from '../utils/apiUtils';
+import { useAuth } from '../context/AuthContext';
 
 // Utility function to format dates consistently
 const formatDate = (date) => {
@@ -128,6 +130,7 @@ const Sync = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { user, loading } = useAuth();
   
   const [availableUsers, setAvailableUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
@@ -144,78 +147,60 @@ const Sync = () => {
     description: ''
   });
 
-  // Fetch available users on component mount
   useEffect(() => {
-    const fetchAvailableUsers = async () => {
-      try {
-        const token = getCookie('token');
-        const currentUser = getCookie('user');
-        
-        if (!token || !currentUser) {
+    if (!loading && !user) {
+      navigate('/login', { state: { reAuthRequired: true } });
+      return;
+    }
+
+    if (user) {
+      fetchAvailableUsers();
+    }
+  }, [user, loading, navigate]);
+
+  const fetchAvailableUsers = async () => {
+    try {
+      const friendsResponse = await api.get('/api/auth/friends');
+      const syncableFriends = friendsResponse.data.friends
+        .filter(friend => friend.sharingPreferences?.allowScheduleSync)
+        .map(friend => ({
+          ...friend,
+          id: friend._id || friend.id // Handle both _id and id fields
+        }));
+
+      const usersWithCurrentUser = [
+        {
+          ...user,
+          id: user.id || user._id, // Handle both id formats
+          fullName: `${user.fullName} (You)`,
+          isCurrentUser: true
+        },
+        ...syncableFriends
+      ];
+
+      setAvailableUsers(usersWithCurrentUser);
+    } catch (error) {
+      console.error('Error in fetchAvailableUsers:', error);
+      let errorMessage = 'Failed to fetch syncable friends';
+      
+      if (error.response) {
+        if (error.response.status === 401) {
+          errorMessage = 'Unauthorized. Please log in again.';
           navigate('/login');
-          return;
+        } else if (error.response.status === 403) {
+          errorMessage = 'Access forbidden. You may not have permission.';
+        } else if (error.response.status >= 500) {
+          errorMessage = 'Server error. Please try again later.';
         }
-
-        console.log('Current User Data:', {
-          id: currentUser._id,
-          fullName: currentUser.fullName
-        });
-
-        // Fetch friends with sync permissions
-        const friendsResponse = await api.get('/api/auth/friends');
-        console.log('Raw friends response:', friendsResponse.data);
-        
-        const syncableFriends = friendsResponse.data.friends
-          .filter(friend => friend.sharingPreferences?.allowScheduleSync)
-          .map(friend => ({
-            ...friend,
-            id: friend._id || friend.id // Handle both _id and id fields
-          }));
-
-        console.log('Processed syncable friends:', syncableFriends);
-
-        // Add current user with a special "You" label
-        const usersWithCurrentUser = [
-          {
-            ...currentUser,
-            id: currentUser.id || currentUser._id, // Handle both id formats
-            fullName: `${currentUser.fullName} (You)`,
-            isCurrentUser: true
-          },
-          ...syncableFriends
-        ];
-
-        console.log('Final users list:', usersWithCurrentUser.map(u => ({
-          id: u.id || u._id, // Handle both id formats
-          fullName: u.fullName
-        })));
-
-        setAvailableUsers(usersWithCurrentUser);
-      } catch (error) {
-        console.error('Error in fetchAvailableUsers:', error);
-        let errorMessage = 'Failed to fetch syncable friends';
-        
-        if (error.response) {
-          if (error.response.status === 401) {
-            errorMessage = 'Unauthorized. Please log in again.';
-            navigate('/login');
-          } else if (error.response.status === 403) {
-            errorMessage = 'Access forbidden. You may not have permission.';
-          } else if (error.response.status >= 500) {
-            errorMessage = 'Server error. Please try again later.';
-          }
-        } else if (error.request) {
-          errorMessage = 'No response from server. Please check your connection.';
-        }
-
-        setSnackbarMessage(errorMessage);
-        setSnackbarSeverity('error');
-        setSnackbarOpen(true);
+      } else if (error.request) {
+        errorMessage = 'No response from server. Please check your connection.';
       }
-    };
 
-    fetchAvailableUsers();
-  }, [navigate]);
+      setSnackbarMessage(errorMessage);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    }
+  };
 
   // Reset selected users when available users change
   useEffect(() => {
@@ -487,6 +472,18 @@ const Sync = () => {
       setSnackbarOpen(true);
     }
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <Container maxWidth="lg">
