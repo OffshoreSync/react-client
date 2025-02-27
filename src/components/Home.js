@@ -20,6 +20,7 @@ import WorkIcon from '@mui/icons-material/Work';
 import SecurityIcon from '@mui/icons-material/Security';
 import PublicIcon from '@mui/icons-material/Public';
 import GoogleIcon from '@mui/icons-material/Google';
+import { getCookie, removeCookie } from '../utils/apiUtils';
 
 function Home() {
   const { t } = useTranslation();
@@ -27,12 +28,18 @@ function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    // Check if user is logged in
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
+    const token = getCookie('token');
+    const user = getCookie('user');
     
     setIsLoggedIn(!!token && !!user);
   }, []);
+
+  useEffect(() => {
+    const token = getCookie('token');
+    if (token) {
+      navigate('/dashboard');
+    }
+  }, [navigate]);
 
   const handleLogin = () => {
     navigate('/login');
@@ -43,14 +50,11 @@ function Home() {
   };
 
   const handleLogout = () => {
-    // Clear localStorage
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    removeCookie('token');
+    removeCookie('user');
     
-    // Redirect to home page
     navigate('/');
     
-    // Update login state
     setIsLoggedIn(false);
   };
 

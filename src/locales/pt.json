@@ -17,7 +17,7 @@
     "close": "Fechar"
   },
   "login": {
-    "title": "Login de Trabalhador Offshore",
+    "title": "Início de Sessão",
     "username": "Nome de Usuário",
     "usernamePlaceholder": "Digite seu nome de usuário",
     "password": "Senha",
@@ -25,6 +25,7 @@
     "googleLogin": "Entrar com Google",
     "forgotPassword": "Esqueceu sua Senha?",
     "noAccount": "Não tem uma conta?",
+    "or": "ou use sua conta Google",
     "errors": {
       "loginFailed": "Falha no login. Por favor, tente novamente.",
       "googleLoginFailed": "Falha no login com Google. Por favor, tente novamente.",
@@ -51,7 +52,7 @@
     "country": "País",
     "password": "Senha",
     "confirmPassword": "Confirmar Senha",
-    "registerButton": "Registrar",
+    "registerButton": "Cadastrar",
     "profileUpdateSuccess": "Perfil actualizado con éxito",
     "completeProfileButton": "Completar Perfil",
     "alreadyHaveAccount": "Já tem uma conta?",
@@ -113,7 +114,8 @@
     "cancel": "Cancelar",
     "setOnBoardDate": "Definir Data de Embarque",
     "snackbarMessages": {
-      "onBoardDateSet": "Data de Embarque definida com sucesso!",
+      "onBoardDateSet": "Data de embarque definida com sucesso",
+      "onBoardDateSetNeedsProfile": "Data de embarque definida com sucesso. Por favor, complete seu perfil adicionando sua empresa e nome da unidade.",
       "onBoardDateSetError": "Falha ao definir data de embarque",
       "resetOnBoardDateError": "Falha ao redefinir data de embarque. Tente novamente.",
       "onBoardDateResetSuccess": "Data de embarque redefinida com sucesso."
@@ -191,6 +193,8 @@
     "home": "Início",
     "settings": "Configurações",
     "sync": "Sincronizar",
+    "login": "Entrar",
+    "register": "Cadastrar",
     "logout": "Sair",
     "language": "Idioma",
     "friends": "Amigos",
@@ -230,7 +234,7 @@
     "management": "Gestão",
     "operations": "Operações",
     "safety": "Segurança",
-    "bridge": "Ponte"
+    "bridge": "Passadiço"
   },
   "sync": {
     "title": "Sincronização de Períodos Offshore",
@@ -311,19 +315,22 @@
     }
   },
   "verifyEmail": {
-    "title": "Verifique Seu Email",
+    "title": "Verificar Seu E-mail",
     "success": {
-      "title": "Email Verificado com Sucesso",
-      "message": "Seu email foi verificado. Agora você pode fazer login em sua conta."
+      "title": "E-mail Verificado com Sucesso",
+      "message": "Seu e-mail foi verificado. Agora você pode fazer login em sua conta."
     },
     "error": {
-      "title": "Falha na Verificação de Email",
-      "invalidToken": "O link de verificação é inválido ou expirou.",
-      "serverError": "Houve um problema ao verificar seu email. Tente novamente mais tarde."
+      "title": "Falha na Verificação"
     },
+    "errors": {
+      "missingToken": "Token de verificação ausente",
+      "verificationFailed": "A verificação do e-mail falhou. O token pode ser inválido ou ter expirado."
+    },
+    "verifying": "Verificando seu e-mail...",
     "buttons": {
       "goToLogin": "Ir para Login",
-      "resendVerification": "Reenviar Email de Verificação"
+      "goToHome": "Voltar ao Início"
     }
   }
 }

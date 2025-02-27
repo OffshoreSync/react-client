@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import ReactCountryFlag from "react-country-flag";
 import { 
   Typography, 
@@ -18,97 +17,95 @@ import {
 } from '@mui/material';
 import { getCountryCode } from '../utils/countries';
 import { useTranslation } from 'react-i18next';
-import getBackendUrl from '../utils/apiUtils';
+import { api, getCookie, removeCookie, setCookie } from '../utils/apiUtils';
+import { useAuth } from '../context/AuthContext';
 
 const Settings = () => {
   const [user, setUser] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { logout } = useAuth();
 
   useEffect(() => {
-    // Check if user is logged in
-    const storedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
+    const fetchUserData = async () => {
+      try {
+        const response = await api.get('/api/auth/profile');
+        if (response.data.user) {
+          // Get current user data from cookie
+          const currentUser = getCookie('user') || {};
+          
+          // Merge the new user data with existing data
+          const updatedUser = {
+            ...currentUser,
+            ...response.data.user,
+            // Ensure company and unit name are preserved
+            company: response.data.user.company || currentUser.company,
+            unitName: response.data.user.unitName || currentUser.unitName,
+            // Ensure nested objects are properly merged
+            workingRegime: {
+              ...(currentUser.workingRegime || {}),
+              ...(response.data.user.workingRegime || {})
+            },
+            workSchedule: {
+              ...(currentUser.workSchedule || {}),
+              ...(response.data.user.workSchedule || {})
+            },
+            workCycles: response.data.user.workCycles || currentUser.workCycles || []
+          };
 
-    if (!storedUser || !token) {
-      // Redirect to login if no user or token
-      navigate('/login');
-      return;
-    }
+          setUser(updatedUser);
+          setCookie('user', updatedUser);
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        if (error.response?.status === 401) {
+          navigate('/login');
+        }
+      }
+    };
 
-    // Parse and set user
-    try {
-      // Detailed logging of stored user data
-      console.log('Raw Stored User JSON:', storedUser);
-      
-      const parsedUser = JSON.parse(storedUser);
-      
-      // Add comprehensive logging to verify user data
-      console.log('Parsed User Data:', JSON.stringify(parsedUser, null, 2));
-      
-      // Explicitly check and log specific fields
-      console.log('Specific Field Check:', {
-        hasUnitName: 'unitName' in parsedUser,
-        hasCountry: 'country' in parsedUser,
-        unitNameValue: parsedUser.unitName,
-        countryValue: parsedUser.country,
-        unitNameType: typeof parsedUser.unitName,
-        countryType: typeof parsedUser.country
-      });
-
-      // Defensive parsing to ensure fields are present
-      const safeUser = {
-        ...parsedUser,
-        unitName: parsedUser.unitName || null,
-        country: parsedUser.country || null
-      };
-      
-      setUser(safeUser);
-    } catch (error) {
-      console.error('Error parsing user data', error);
-      
-      // Log the raw stored user data for investigation
-      console.error('Stored User Data:', storedUser);
-      
-      // Clear invalid localStorage and redirect
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
-      navigate('/login');
-    }
+    fetchUserData();
   }, [navigate]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    // Clear cookies
+    removeCookie('token');
+    removeCookie('refreshToken');
+    removeCookie('user');
+    removeCookie('XSRF-TOKEN');
+
+    // Update auth context
+    logout();
+
+    // Navigate to login
     navigate('/login');
   };
 
   const handleDeleteAccount = async () => {
     try {
-      const token = localStorage.getItem('token');
-      
-      await axios.delete(
-        getBackendUrl('/api/auth/delete-account'), 
-        { 
-          headers: { 
-            Authorization: `Bearer ${token}` 
-          } 
-        }
-      );
+      await api.delete('/api/auth/delete-account');
 
-      // Clear local storage
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+      // Clear all auth-related cookies
+      removeCookie('token');
+      removeCookie('refreshToken');
+      removeCookie('user');
+      removeCookie('XSRF-TOKEN');
 
-      // Dispatch event to update profile picture
-      window.dispatchEvent(new Event('profilePictureUpdated'));
+      // Clear any other app-specific cookies that might exist
+      document.cookie.split(';').forEach(cookie => {
+        const name = cookie.split('=')[0].trim();
+        removeCookie(name);
+      });
 
-      // Reload the page to clear all state
-      window.location.href = '/';
+      // Update auth context
+      logout();
+
+      // Navigate to home page
+      navigate('/', { replace: true });
     } catch (error) {
       console.error('Account deletion error:', error);
-      alert('Failed to delete account. Please try again.');
+      alert(t('settings.errors.deleteFailed'));
     }
   };
 
@@ -132,7 +129,7 @@ const Settings = () => {
     );
 
     if (matchedPredefined) {
-      return `${matchedPredefined[0]} (Predefined)`;
+      return `${matchedPredefined[0]}`;
     }
 
     // Validate custom regime
@@ -209,7 +206,7 @@ const Settings = () => {
                   <Typography variant="body1">
                     <strong>{t('settings.workingRegime')}:</strong> {
                       user.workingRegime 
-                        ? `${user.workingRegime.onDutyDays}/${user.workingRegime.offDutyDays}` 
+                        ? formatWorkingRegime(user.workingRegime) 
                         : t('settings.notSet')
                     }
                   </Typography>

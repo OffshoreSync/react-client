@@ -16,7 +16,8 @@ import {
   Card,
   CardContent,
   Modal,
-  TextField
+  TextField,
+  CircularProgress
 } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
@@ -36,7 +37,8 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useTranslation } from 'react-i18next';
-import getBackendUrl from '../utils/apiUtils';
+import { api } from '../utils/apiUtils';
+import { useAuth } from '../context/AuthContext';
 
 // Utility function to format dates consistently
 const formatDate = (date) => {
@@ -125,85 +127,96 @@ const generateColorPalette = (numUsers) => {
 
 const Sync = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const { user, loading } = useAuth();
+  
   const [availableUsers, setAvailableUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [graphData, setGraphData] = useState([]);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState('info');
+  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
   const [openProfileToast, setOpenProfileToast] = useState(false);
-  
-  // Add media query for responsive design
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const navigate = useNavigate();
+  const [isDateModalOpen, setIsDateModalOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [googleAccessToken, setGoogleAccessToken] = useState(null);
+  const [eventDetails, setEventDetails] = useState({
+    summary: '',
+    description: ''
+  });
 
-  const handleGoToSettings = () => {
-    setOpenProfileToast(false);
-    navigate('/settings');
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/login', { state: { reAuthRequired: true } });
+      return;
+    }
+
+    if (user) {
+      fetchAvailableUsers();
+    }
+  }, [user, loading, navigate]);
+
+  const fetchAvailableUsers = async () => {
+    try {
+      const friendsResponse = await api.get('/api/auth/friends');
+      const syncableFriends = friendsResponse.data.friends
+        .filter(friend => friend.sharingPreferences?.allowScheduleSync)
+        .map(friend => ({
+          ...friend,
+          id: friend._id || friend.id // Handle both _id and id fields
+        }));
+
+      const usersWithCurrentUser = [
+        {
+          ...user,
+          id: user.id || user._id, // Handle both id formats
+          fullName: `${user.fullName} (You)`,
+          isCurrentUser: true
+        },
+        ...syncableFriends
+      ];
+
+      setAvailableUsers(usersWithCurrentUser);
+    } catch (error) {
+      console.error('Error in fetchAvailableUsers:', error);
+      let errorMessage = 'Failed to fetch syncable friends';
+      
+      if (error.response) {
+        if (error.response.status === 401) {
+          errorMessage = 'Unauthorized. Please log in again.';
+          navigate('/login');
+        } else if (error.response.status === 403) {
+          errorMessage = 'Access forbidden. You may not have permission.';
+        } else if (error.response.status >= 500) {
+          errorMessage = 'Server error. Please try again later.';
+        }
+      } else if (error.request) {
+        errorMessage = 'No response from server. Please check your connection.';
+      }
+
+      setSnackbarMessage(errorMessage);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
+    }
   };
 
-  // Fetch available users on component mount
+  // Reset selected users when available users change
   useEffect(() => {
-    const fetchAvailableUsers = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const currentUser = JSON.parse(localStorage.getItem('user'));
-        
-        if (!token || !currentUser) {
-          navigate('/login');
-          return;
-        }
-
-        // Fetch friends with sync permissions
-        const friendsResponse = await axios.get(getBackendUrl('/api/auth/friends'), {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        // Filter friends who have allowed schedule sync
-        const syncableFriends = friendsResponse.data.friends.filter(
-          friend => friend.sharingPreferences.allowScheduleSync
-        );
-
-        // Add current user with a special "You" label
-        const usersWithCurrentUser = [
-          {
-            ...currentUser,
-            fullName: `${currentUser.fullName} (You)`,
-            isCurrentUser: true
-          },
-          ...syncableFriends
-        ];
-
-        setAvailableUsers(usersWithCurrentUser);
-      } catch (error) {
-        console.error('Error fetching syncable friends:', error);
-        
-        let errorMessage = 'Failed to fetch syncable friends';
-        
-        if (error.response) {
-          if (error.response.status === 401) {
-            errorMessage = 'Unauthorized. Please log in again.';
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            navigate('/login');
-          } else if (error.response.status === 403) {
-            errorMessage = 'Access forbidden. You may not have permission.';
-          } else if (error.response.status >= 500) {
-            errorMessage = 'Server error. Please try again later.';
-          }
-        } else if (error.request) {
-          errorMessage = 'No response from server. Please check your connection.';
-        }
-
-        setSnackbarMessage(errorMessage);
-        setSnackbarSeverity('error');
-        setSnackbarOpen(true);
-      }
-    };
-
-    fetchAvailableUsers();
-  }, [navigate]);
+    // Validate current selection against new available users
+    const validSelectedUsers = selectedUsers.filter(id => 
+      availableUsers.some(user => user.id === id)
+    );
+    
+    if (validSelectedUsers.length !== selectedUsers.length) {
+      console.log('Resetting invalid selections:', {
+        old: selectedUsers,
+        new: validSelectedUsers
+      });
+      setSelectedUsers(validSelectedUsers);
+    }
+  }, [availableUsers]);
 
   // Adjust line rendering for mobile
   const renderLines = useMemo(() => {
@@ -226,13 +239,14 @@ const Sync = () => {
         );
       }),
       <Line
+        key="match-line"
         type="monotone"
         dataKey="Match"
-        stroke="#E91E63"  // Material Pink
+        stroke="#757575"  // Material Grey
         strokeWidth={3}
         activeDot={{ 
           r: 10, 
-          fill: '#E91E63',
+          fill: '#757575',
           stroke: 'white',
           strokeWidth: 2
         }}
@@ -252,9 +266,6 @@ const Sync = () => {
     return commonOffBoardDates;
   }, [graphData]);
 
-  // State for dates modal
-  const [isDateModalOpen, setIsDateModalOpen] = useState(false);
-
   // Function to close dates modal
   const handleCloseDateModal = () => {
     setIsDateModalOpen(false);
@@ -273,28 +284,7 @@ const Sync = () => {
     borderRadius: 2,
   };
 
-  // State for selected date in modal
-  const [selectedDate, setSelectedDate] = useState(null);
-
   // Google Calendar event creation
-  const [googleAccessToken, setGoogleAccessToken] = useState(null);
-
-  // Add state for custom event details
-  const [eventDetails, setEventDetails] = useState({
-    summary: '',
-    description: ''
-  });
-
-  // Update event details handler
-  const handleEventDetailsChange = (e) => {
-    const { name, value } = e.target;
-    setEventDetails(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  // Google OAuth login handler
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (codeResponse) => {
       try {
@@ -355,7 +345,7 @@ const Sync = () => {
         }
       };
 
-      const response = await axios.post(
+      const response = await api.post(
         'https://www.googleapis.com/calendar/v3/calendars/primary/events',
         event,
         {
@@ -395,7 +385,29 @@ const Sync = () => {
 
   // Handle user selection
   const handleUserChange = (event) => {
-    setSelectedUsers(event.target.value);
+    const selectedIds = event.target.value;
+    console.log('Selected IDs before validation:', selectedIds);
+    
+    // Ensure selectedIds is always an array
+    const idsArray = Array.isArray(selectedIds) ? selectedIds : [];
+    
+    // Validate that all selected IDs exist in availableUsers
+    const validIds = idsArray.filter(id => {
+      if (!id) {
+        console.error('Null or undefined ID found in selection');
+        return false;
+      }
+      
+      const userExists = availableUsers.some(user => user.id === id);
+      if (!userExists) {
+        console.error('Selected user ID not found in availableUsers:', id);
+        console.log('Available Users:', availableUsers.map(u => ({ id: u.id, fullName: u.fullName })));
+      }
+      return userExists;
+    });
+
+    console.log('Valid IDs after validation:', validIds);
+    setSelectedUsers(validIds);
   };
 
   // Find matching periods when users are selected
@@ -408,18 +420,30 @@ const Sync = () => {
     }
 
     try {
-      const token = localStorage.getItem('token');
-      
+      console.log('Finding matches for users:', selectedUsers);
+      console.log('Available users:', availableUsers.map(u => ({ id: u.id, fullName: u.fullName })));
+
       // Fetch work cycles for selected users
       const cyclesPromises = selectedUsers.map(async (userId) => {
-        const response = await axios.get(getBackendUrl(`/api/auth/user-work-cycles/${userId}`), {
-          headers: { Authorization: `Bearer ${token}` }
+        // Log the userId for debugging
+        console.log('Fetching cycles for user:', {
+          userId,
+          userDetails: availableUsers.find(u => u.id === userId)
         });
+        
+        // Ensure userId is valid
+        if (!userId) {
+          console.error('Invalid userId:', userId);
+          throw new Error('Invalid user ID');
+        }
+
+        const response = await api.get(`/api/auth/user-work-cycles/${userId}`);
         return response.data.workCycles;
       });
 
       // Wait for all cycles to be fetched
       const selectedCycles = await Promise.all(cyclesPromises);
+      console.log('Fetched cycles:', selectedCycles);
 
       // Use the mathematical graph approach to find matches
       const mergedMapping = findMatchingOffBoardPeriods(selectedCycles);
@@ -433,8 +457,6 @@ const Sync = () => {
       if (error.response) {
         if (error.response.status === 401) {
           errorMessage = 'Unauthorized. Please log in again.';
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
           navigate('/login');
         } else if (error.response.status === 403) {
           errorMessage = 'Access forbidden. You may not have permission.';
@@ -450,6 +472,18 @@ const Sync = () => {
       setSnackbarOpen(true);
     }
   };
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <Container maxWidth="lg">
@@ -521,7 +555,7 @@ const Sync = () => {
         >
           <Select
             multiple
-            value={selectedUsers}
+            value={selectedUsers || []}
             onChange={handleUserChange}
             renderValue={(selected) => (
               <Box sx={{ 
@@ -531,7 +565,7 @@ const Sync = () => {
                 maxHeight: 100,
                 overflowY: 'auto'
               }}>
-                {selected.map((id) => {
+                {(selected || []).map((id) => {
                   const user = availableUsers.find(user => user.id === id);
                   return user ? (
                     <Chip
@@ -547,7 +581,9 @@ const Sync = () => {
                         }
                       }}
                       onDelete={() => {
-                        setSelectedUsers(selectedUsers.filter(userId => userId !== id));
+                        const newSelected = selectedUsers.filter(userId => userId !== id);
+                        console.log('Deleting user, new selection:', newSelected);
+                        setSelectedUsers(newSelected);
                       }}
                     />
                   ) : null;
@@ -686,14 +722,8 @@ const Sync = () => {
                 <YAxis 
                   domain={[0, 1]} 
                   ticks={[0, 1]} 
-                  width={isMobile ? 40 : 80}  
-                  label={{ 
-                    value: 'Off Board Status', 
-                    angle: -90, 
-                    position: 'insideLeft',
-                    offset: isMobile ? 5 : 10,
-                    fontSize: isMobile ? 10 : 12
-                  }}
+                  width={isMobile ? 30 : 40}  
+                  tickFormatter={(value) => value === 1 ? 'Off' : 'On'}  
                 />
                 <Tooltip 
                   contentStyle={{ 
@@ -724,8 +754,8 @@ const Sync = () => {
                 <Brush 
                   dataKey="date" 
                   height={isMobile ? 20 : 30} 
-                  stroke="#E91E63"  // Material Pink
-                  fill="rgba(233, 30, 99, 0.1)"  // Soft Material Pink background
+                  stroke="#757575"  // Material Grey
+                  fill="rgba(117, 117, 117, 0.1)"  // Soft Material Grey background
                   startIndex={0}
                   endIndex={Math.min(isMobile ? 15 : 30, graphData.length - 1)}
                   travellerWidth={15}
@@ -733,7 +763,7 @@ const Sync = () => {
                     '& .recharts-brush-traveller': {
                       borderRadius: '50%',
                       boxShadow: theme.shadows[2],
-                      border: `2px solid #E91E63`,
+                      border: `2px solid #757575`,
                       backgroundColor: theme.palette.background.paper,
                       transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                       '&:hover': {
@@ -742,7 +772,7 @@ const Sync = () => {
                       }
                     },
                     '& .recharts-brush-slide': {
-                      fill: '#F48FB1',  // Material Pink Light
+                      fill: '#BDBDBD',  // Material Grey Light
                       fillOpacity: 0.2
                     },
                     '& .recharts-brush-text': {
@@ -806,7 +836,13 @@ const Sync = () => {
                         label={t('sync.eventSummary')}
                         name="summary"
                         value={eventDetails.summary}
-                        onChange={handleEventDetailsChange}
+                        onChange={(e) => {
+                          const { name, value } = e.target;
+                          setEventDetails(prev => ({
+                            ...prev,
+                            [name]: value
+                          }));
+                        }}
                         required
                         placeholder={t('sync.enterEventSummary')}
                       />
@@ -815,7 +851,13 @@ const Sync = () => {
                         label={t('sync.eventDescription')}
                         name="description"
                         value={eventDetails.description}
-                        onChange={handleEventDetailsChange}
+                        onChange={(e) => {
+                          const { name, value } = e.target;
+                          setEventDetails(prev => ({
+                            ...prev,
+                            [name]: value
+                          }));
+                        }}
                         multiline
                         rows={3}
                         placeholder={t('sync.enterEventDescription')}
@@ -879,7 +921,10 @@ const Sync = () => {
           <Button 
             color="secondary" 
             size="small" 
-            onClick={handleGoToSettings}
+            onClick={() => {
+              setOpenProfileToast(false);
+              navigate('/settings');
+            }}
           >
             {t('sync.updateProfile')}
           </Button>

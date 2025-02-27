@@ -13,7 +13,8 @@ import {
   Paper, 
   Alert,
   IconButton,
-  InputAdornment
+  InputAdornment,
+  Snackbar
 } from '@mui/material';
 import { 
   Visibility, 
@@ -24,7 +25,7 @@ import { useTranslation } from 'react-i18next';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
 import axios from 'axios';
-import getBackendUrl from '../utils/apiUtils';
+import { api, getCookie, setCookie, removeCookie } from '../utils/apiUtils';
 import { 
   OFFSHORE_COUNTRIES, 
   getTranslatedCountries 
@@ -77,7 +78,10 @@ const Register = () => {
   const [googleUserData, setGoogleUserData] = useState(null);
   const [isLocked, setIsLocked] = useState(false);
   const [lockExpiry, setLockExpiry] = useState(null);
-  
+  const [registrationAttempts, setRegistrationAttempts] = useState(0);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState('');
+
   // New state for password visibility
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -210,20 +214,24 @@ const Register = () => {
       }
 
       // Send registration request
-      const response = await axios.post(
-        `${getBackendUrl()}/api/auth/register`, 
-        submissionData
-      );
+      const response = await api.post('/api/auth/register', submissionData);
 
       // Show success message
       const successMessage = t('register.verificationMessage');
       
-      // Redirect to login page
-      navigate('/login', { 
-        state: { 
-          successMessage: successMessage 
-        } 
-      });
+      // Show snackbar with verification message
+      setSnackbarMessage(successMessage);
+      setSnackbarOpen(true);
+      
+      // After a short delay, redirect to login page
+      setTimeout(() => {
+        navigate('/login', { 
+          state: { 
+            successMessage: successMessage,
+            showVerificationAlert: true
+          } 
+        });
+      }, 2000);
     } catch (error) {
       // Handle registration errors
       console.error('Registration error:', error);
@@ -261,27 +269,36 @@ const Register = () => {
   }, [location.state]);
 
   // Registration lock status check
-  useEffect(() => {
-    const checkLockStatus = () => {
-      const storedLockExpiry = localStorage.getItem('registrationLockExpiry');
-      if (storedLockExpiry) {
-        const expiryTime = parseInt(storedLockExpiry, 10);
-        if (Date.now() < expiryTime) {
-          setIsLocked(true);
-          setLockExpiry(expiryTime);
-        } else {
-          localStorage.removeItem('registrationLockExpiry');
-          setIsLocked(false);
-          setLockExpiry(null);
-        }
-      }
-    };
+  const checkRegistrationLock = () => {
+    const lockExpiryTime = getCookie('registrationLockExpiry');
+    const currentTime = Date.now();
 
-    checkLockStatus();
-    const intervalId = setInterval(checkLockStatus, 60000); // Check every minute
+    if (lockExpiryTime && parseInt(lockExpiryTime, 10) > currentTime) {
+      setIsLocked(true);
+      setLockExpiry(parseInt(lockExpiryTime, 10));
+      return true;
+    }
+    
+    removeCookie('registrationLockExpiry');
+    setIsLocked(false);
+    setLockExpiry(null);
+    return false;
+  };
+
+  useEffect(() => {
+    checkRegistrationLock();
+    const intervalId = setInterval(checkRegistrationLock, 60000); // Check every minute
 
     return () => clearInterval(intervalId);
   }, []);
+
+  const setRegistrationLockExpiry = (lockDuration) => {
+    const lockExpiryTime = Date.now() + lockDuration;
+    setCookie('registrationLockExpiry', lockExpiryTime.toString(), { 
+      path: '/', 
+      maxAge: Math.floor(lockDuration / 1000) 
+    });
+  };
 
   // Language-based country name update
   const updateCountryName = (currentCountry) => {
@@ -302,7 +319,14 @@ const Register = () => {
   };
 
   return (
-    <Container maxWidth="sm">
+    <Container component="main" maxWidth="sm">
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={2000}
+        onClose={() => setSnackbarOpen(false)}
+        message={snackbarMessage}
+        anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
+      />
       <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
         <Typography variant="h4" align="center" gutterBottom>
           {isGoogleLogin ? t('register.completeProfile') : t('register.title')}

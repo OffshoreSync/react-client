@@ -1,140 +1,157 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  AppBar, 
-  Toolbar, 
-  Typography, 
-  IconButton, 
-  Drawer, 
-  List, 
-  ListItem, 
-  ListItemIcon, 
+
+// Material UI components
+import {
+  AppBar,
+  Toolbar,
+  IconButton,
+  Typography,
+  Drawer,
+  List,
+  ListItem,
+  ListItemIcon,
   ListItemText,
   Box,
-  Container,
-  Button,
-  Avatar,
   useMediaQuery,
   useTheme,
   Select,
   MenuItem,
-  Menu
+  Menu,
+  Divider,
+  Avatar,
+  Container,
+  Button
 } from '@mui/material';
+
+// Material UI icons
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
-import PersonIcon from '@mui/icons-material/Person';
-import LogoutIcon from '@mui/icons-material/Logout';
-import WavesIcon from '@mui/icons-material/Waves';
-import SettingsIcon from '@mui/icons-material/Settings';
-import LanguageIcon from '@mui/icons-material/Language';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
+import SettingsIcon from '@mui/icons-material/Settings';
+import WavesIcon from '@mui/icons-material/Waves';
+import LogoutIcon from '@mui/icons-material/Logout';
+import LoginIcon from '@mui/icons-material/Login';
+import AccountCircle from '@mui/icons-material/AccountCircle';
+import LanguageIcon from '@mui/icons-material/Language';
+import PersonIcon from '@mui/icons-material/Person';
+
+// Import country flag component
 import ReactCountryFlag from 'react-country-flag';
 
 // Import i18n
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
 
+// Import cookies and API
+import { getCookie, setCookie, removeCookie, api } from '../utils/apiUtils';
+import { useAuth } from '../context/AuthContext';
+
 function Navbar() {
-  const [drawerOpen, setDrawerOpen] = useState(false);
   const navigate = useNavigate();
+  const [language, setLanguage] = useState(getCookie('language') || 'en');
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [languageMenuAnchor, setLanguageMenuAnchor] = useState(null);
   const theme = useTheme();
   const { t } = useTranslation();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
-  const isLoggedIn = !!localStorage.getItem('token');
-  const [language, setLanguage] = useState(localStorage.getItem('language') || 'en');
-  const [languageMenuAnchor, setLanguageMenuAnchor] = useState(null);
-  const [user, setUser] = useState(null);
+  const { user, loading, setUser } = useAuth();
 
-  // Handle profile picture update event
-  const handleProfilePictureUpdate = () => {
-    const storedUser = JSON.parse(localStorage.getItem('user'));
-    setUser(storedUser);
-  };
-
-  // Fetch user from localStorage on component mount and add event listener
-  useEffect(() => {
-    // Initial user fetch
-    const storedUser = JSON.parse(localStorage.getItem('user'));
-    setUser(storedUser);
-
-    // Add custom event listener for profile picture updates
-    window.addEventListener('profilePictureUpdated', handleProfilePictureUpdate);
-
-    // Cleanup event listener
-    return () => {
-      window.removeEventListener('profilePictureUpdated', handleProfilePictureUpdate);
-    };
-  }, []);
-
-  const handleLanguageChange = (event) => {
-    const newLanguage = event.target.value;
-    setLanguage(newLanguage);
-    i18n.changeLanguage(newLanguage);
-    localStorage.setItem('language', newLanguage);
-  };
-
+  // Logout method
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    // Remove authentication cookies
+    removeCookie('token');
+    removeCookie('refreshToken');
     
-    // Dispatch event to update profile picture
-    window.dispatchEvent(new Event('profilePictureUpdated'));
+    // Clear user state
+    setUser(null);
     
+    // Close any open menus
+    handleClose();
+    
+    // Navigate to login
     navigate('/login');
+  };
+
+  // Language change method
+  const changeLanguage = (newLanguage) => {
+    setLanguage(newLanguage);
+    
+    // Store language preference in cookie
+    setCookie('language', newLanguage, { 
+      path: '/', 
+      maxAge: 30 * 24 * 60 * 60  // 30 days
+    });
+    
+    // Change app language
+    i18n.changeLanguage(newLanguage);
   };
 
   const handleNavigation = (path) => {
     navigate(path);
-    setDrawerOpen(false);
+    handleClose();
   };
 
-  // Modify menu items to remove Settings, Sync, and Logout buttons
-  const menuItems = isLoggedIn ? [
+  const handleMenu = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => {
+    setAnchorEl(null);
+  };
+
+  const handleLanguageMenu = (event) => {
+    setLanguageMenuAnchor(event.currentTarget);
+  };
+
+  const handleLanguageClose = () => {
+    setLanguageMenuAnchor(null);
+  };
+
+  // Menu items for drawer
+  const menuItems = user ? [
     {
       text: t('navbar.home'),
       icon: <HomeIcon />,
-      onClick: () => {
-        navigate('/dashboard');
-        setDrawerOpen(false);
-      }
-    }
-  ] : [
-    { text: t('common.home'), icon: <HomeIcon />, onClick: () => handleNavigation('/') },
-    { text: t('common.login'), icon: <PersonIcon />, onClick: () => handleNavigation('/login') }
-  ];
-
-  // Additional drawer-only menu items
-  const drawerMenuItems = isLoggedIn ? [
+      onClick: () => handleNavigation('/dashboard')
+    },
     {
       text: t('navbar.friends'),
       icon: <PersonAddIcon />,
-      onClick: () => {
-        navigate('/friends');
-        setDrawerOpen(false);
-      }
+      onClick: () => handleNavigation('/friends')
     },
     {
       text: t('navbar.settings'),
       icon: <SettingsIcon />,
-      onClick: () => {
-        navigate('/settings');
-        setDrawerOpen(false);
-      }
+      onClick: () => handleNavigation('/settings')
     },
     {
       text: t('navbar.sync'),
       icon: <WavesIcon />,
-      onClick: () => {
-        navigate('/sync');
-        setDrawerOpen(false);
-      }
+      onClick: () => handleNavigation('/sync')
     },
     {
       text: t('navbar.logout'),
       icon: <LogoutIcon />,
       onClick: handleLogout
     }
-  ] : [];
+  ] : [
+    {
+      text: t('navbar.home'),
+      icon: <HomeIcon />,
+      onClick: () => handleNavigation('/')
+    },
+    {
+      text: t('navbar.register'),
+      icon: <PersonAddIcon />,
+      onClick: () => handleNavigation('/register')
+    },
+    {
+      text: t('navbar.login'),
+      icon: <LoginIcon />,
+      onClick: () => handleNavigation('/login')
+    }
+  ];
 
   return (
     <>
@@ -175,8 +192,8 @@ function Navbar() {
                 <IconButton 
                   id="language-select"
                   onClick={(e) => {
-                    setDrawerOpen(false);
-                    setLanguageMenuAnchor(e.currentTarget);
+                    handleClose();
+                    handleLanguageMenu(e);
                   }}
                   sx={{ 
                     color: 'white',
@@ -191,7 +208,7 @@ function Navbar() {
                 <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
                   <IconButton 
                     id="language-select"
-                    onClick={(e) => setLanguageMenuAnchor(e.currentTarget)}
+                    onClick={handleLanguageMenu}
                     sx={{ 
                       color: 'white',
                       '&:hover': { 
@@ -207,7 +224,7 @@ function Navbar() {
               <Menu
                 anchorEl={languageMenuAnchor}
                 open={Boolean(languageMenuAnchor)}
-                onClose={() => setLanguageMenuAnchor(null)}
+                onClose={handleLanguageClose}
                 anchorOrigin={{
                   vertical: 'bottom',
                   horizontal: 'right',
@@ -221,8 +238,8 @@ function Navbar() {
                   <MenuItem 
                     key={lang} 
                     onClick={() => {
-                      handleLanguageChange({ target: { value: lang } });
-                      setLanguageMenuAnchor(null);
+                      changeLanguage(lang);
+                      handleLanguageClose();
                     }}
                     sx={{ 
                       display: 'flex', 
@@ -246,29 +263,43 @@ function Navbar() {
               </Menu>
 
               {/* Profile Picture or Menu Button */}
-              {user && user.profilePicture ? (
+              {user?.profilePicture ? (
                 <IconButton 
-                  onClick={() => setDrawerOpen(true)}
+                  onClick={handleMenu}
                   sx={{ 
-                    ml: 1,
-                    p: 0,
-                    border: '2px solid white',
-                    borderRadius: '50%'
+                    padding: 0,
+                    marginLeft: 2,
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                    }
                   }}
                 >
                   <Avatar 
                     src={user.profilePicture} 
-                    alt="User Profile" 
-                    sx={{ width: 40, height: 40 }} 
+                    alt={user.name || 'User'} 
+                    sx={{ 
+                      width: 40, 
+                      height: 40,
+                      border: '2px solid rgba(255, 255, 255, 0.8)',
+                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                      transition: 'transform 0.2s ease-in-out',
+                      '&:hover': {
+                        transform: 'scale(1.05)'
+                      }
+                    }}
                   />
                 </IconButton>
               ) : (
                 <IconButton
-                  size="large"
-                  edge="end"
-                  color="inherit"
-                  aria-label="menu"
-                  onClick={() => setDrawerOpen(true)}
+                  onClick={handleMenu}
+                  sx={{ 
+                    marginLeft: 2,
+                    color: 'white',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                    }
+                  }}
                 >
                   <MenuIcon />
                 </IconButton>
@@ -281,51 +312,29 @@ function Navbar() {
       {/* Drawer for mobile view */}
       <Drawer
         anchor="right"
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
+        open={Boolean(anchorEl)}
+        onClose={handleClose}
         sx={{
           '& .MuiDrawer-paper': {
             width: 250
           }
         }}
       >
-        <List sx={{ pt: 2 }}>
-          {/* Regular menu items */}
+        <List>
           {menuItems.map((item, index) => (
             <ListItem 
               button 
-              key={index} 
+              key={item.text} 
               onClick={item.onClick}
               sx={{
-                borderRadius: 2,
-                mx: 1,
-                my: 0.5,
                 '&:hover': {
-                  backgroundColor: theme.palette.action.hover
+                  backgroundColor: 'rgba(0, 0, 0, 0.04)'
                 }
               }}
             >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
-            </ListItem>
-          ))}
-
-          {/* Drawer-only menu items */}
-          {drawerMenuItems.map((item, index) => (
-            <ListItem 
-              button 
-              key={`drawer-${index}`} 
-              onClick={item.onClick}
-              sx={{
-                borderRadius: 2,
-                mx: 1,
-                my: 0.5,
-                '&:hover': {
-                  backgroundColor: theme.palette.action.hover
-                }
-              }}
-            >
-              <ListItemIcon>{item.icon}</ListItemIcon>
+              <ListItemIcon>
+                {item.icon}
+              </ListItemIcon>
               <ListItemText primary={item.text} />
             </ListItem>
           ))}

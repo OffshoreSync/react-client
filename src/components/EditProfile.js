@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import axios from 'axios';
+import { api, getCookie, setCookie } from '../utils/apiUtils';
 import { useNavigate } from 'react-router-dom';
 import { 
   TextField, 
@@ -12,12 +12,13 @@ import {
   Grid, 
   Typography, 
   Container, 
-  Alert 
+  Alert,
+  Box,
+  Paper
 } from '@mui/material';
 
 import { OFFSHORE_COUNTRIES, getTranslatedCountries } from '../utils/countries';
 import { OFFSHORE_ROLES, getTranslatedRoles } from '../utils/offshoreRoles';
-import getBackendUrl from '../utils/apiUtils';
 
 const EditProfile = () => {
   const { t, i18n } = useTranslation();
@@ -41,10 +42,8 @@ const EditProfile = () => {
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        const response = await axios.get(getBackendUrl('/api/auth/profile'), {
-          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-        });
-        
+        const response = await api.get('/api/auth/profile');
+
         const { user } = response.data;
         
         // Find the country name for the fetched country code
@@ -93,7 +92,8 @@ const EditProfile = () => {
           unitName: user.unitName || ''
         });
       } catch (error) {
-        console.error('Error fetching profile:', error);
+        console.error('Profile fetch error:', error);
+        navigate('/login');
       }
     };
 
@@ -244,9 +244,11 @@ const EditProfile = () => {
       delete submitData.customOnDutyDays;
       delete submitData.customOffDutyDays;
 
-      const response = await axios.put(getBackendUrl('/api/auth/update-profile'), submitData, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      const response = await api.put('/api/auth/update-profile', submitData);
+
+      // Update user cookie with new data
+      const { user } = response.data;
+      setCookie('user', user);
 
       setSuccessMessage(t('register.profileUpdateSuccess'));
       setTimeout(() => {
@@ -262,191 +264,220 @@ const EditProfile = () => {
   const translatedRoles = getTranslatedRoles();
 
   return (
-    <Container maxWidth="sm">
-      <Typography variant="h4" gutterBottom>
-        {t('settings.editProfile')}
-      </Typography>
-      
-      {successMessage && (
-        <Alert severity="success" sx={{ mb: 2 }}>
-          {successMessage}
-        </Alert>
-      )}
+    <Container maxWidth="md">
+      <Box
+        sx={{
+          marginTop: 4,
+          marginBottom: 4,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+        }}
+      >
+        <Paper
+          elevation={3}
+          sx={{
+            p: 4,
+            width: '100%',
+            borderRadius: 2,
+            bgcolor: 'background.paper'
+          }}
+        >
+          <Typography 
+            component="h1" 
+            variant="h5" 
+            sx={{ 
+              mb: 4,
+              fontWeight: 600,
+              color: 'primary.main',
+              textAlign: 'center'
+            }}
+          >
+            {t('settings.editProfile')}
+          </Typography>
 
-      <form onSubmit={handleSubmit}>
-        <Grid container spacing={2}>
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label={t('register.fullName')}
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              error={!!errors.fullName}
-              helperText={errors.fullName}
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label={t('register.username')}
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              error={!!errors.username}
-              helperText={errors.username}
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label={t('register.emailAddress')}
-              name="email"
-              type="email"
-              value={formData.email}
-              onChange={handleChange}
-              error={!!errors.email}
-              helperText={errors.email}
-            />
-          </Grid>
-
-          <Grid item xs={12}>
-            <FormControl fullWidth>
-              <InputLabel>{t('register.offshoreRole')}</InputLabel>
-              <Select
-                name="offshoreRole"
-                value={formData.offshoreRole}
-                label={t('register.offshoreRole')}
-                onChange={handleChange}
-                error={!!errors.offshoreRole}
-              >
-                {OFFSHORE_ROLES.map((role, index) => (
-                  <MenuItem key={role} value={role}>
-                    {translatedRoles[index]}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
-
-          <Grid item xs={12}>
-            <FormControl fullWidth>
-              <InputLabel>{t('register.workingRegime')}</InputLabel>
-              <Select
-                name="workingRegime"
-                value={formData.workingRegime}
-                label={t('register.workingRegime')}
-                onChange={handleChange}
-              >
-                <MenuItem value="7/7">7/7</MenuItem>
-                <MenuItem value="14/14">14/14</MenuItem>
-                <MenuItem value="28/28">28/28</MenuItem>
-                <MenuItem value="custom">{t('register.customRegime')}</MenuItem>
-              </Select>
-            </FormControl>
-          </Grid>
-
-          {formData.workingRegime === 'custom' && (
-            <>
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label={t('register.customOnDutyDays')}
-                  name="customOnDutyDays"
-                  type="number"
-                  value={formData.customOnDutyDays}
-                  onChange={handleChange}
-                  error={!!errors.customWorkingRegime}
-                  helperText={errors.customWorkingRegime}
-                />
-              </Grid>
-              <Grid item xs={6}>
-                <TextField
-                  fullWidth
-                  label={t('register.customOffDutyDays')}
-                  name="customOffDutyDays"
-                  type="number"
-                  value={formData.customOffDutyDays}
-                  onChange={handleChange}
-                  error={!!errors.customWorkingRegime}
-                  helperText={errors.customWorkingRegime}
-                />
-              </Grid>
-            </>
+          {successMessage && (
+            <Alert severity="success" sx={{ mb: 3 }}>
+              {successMessage}
+            </Alert>
           )}
 
-          <Grid item xs={12}>
-            <FormControl fullWidth>
-              <InputLabel>{t('register.country')}</InputLabel>
-              <Select
-                name="country"
-                value={formData.country[1]} // Use country name for display
-                label={t('register.country')}
-                onChange={(e) => {
-                  // Find the corresponding country object
-                  const selectedCountry = translatedCountries.find(c => 
-                    t(`countries.${c.code}`) === e.target.value
-                  );
-                  
-                  if (selectedCountry) {
-                    setFormData(prev => ({
-                      ...prev,
-                      country: [selectedCountry.code, t(`countries.${selectedCountry.code}`)]
-                    }));
-                  }
-                }}
-                error={!!errors.country}
-              >
-                <MenuItem value="">Select Country</MenuItem>
-                {translatedCountries.map(country => (
-                  <MenuItem key={country.code} value={t(`countries.${country.code}`)}>
-                    {t(`countries.${country.code}`)}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-          </Grid>
+          <form onSubmit={handleSubmit}>
+            <Grid container spacing={3}>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label={t('register.fullName')}
+                  name="fullName"
+                  value={formData.fullName}
+                  onChange={handleChange}
+                  error={!!errors.fullName}
+                  helperText={errors.fullName}
+                />
+              </Grid>
 
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label={t('register.company')}
-              name="company"
-              value={formData.company}
-              onChange={handleChange}
-            />
-          </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label={t('register.username')}
+                  name="username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  error={!!errors.username}
+                  helperText={errors.username}
+                />
+              </Grid>
 
-          <Grid item xs={12}>
-            <TextField
-              fullWidth
-              label={t('register.unitName')}
-              name="unitName"
-              value={formData.unitName}
-              onChange={handleChange}
-            />
-          </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label={t('register.emailAddress')}
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  error={!!errors.email}
+                  helperText={errors.email}
+                />
+              </Grid>
 
-          {errors.submit && (
-            <Grid item xs={12}>
-              <Alert severity="error">{errors.submit}</Alert>
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>{t('register.offshoreRole')}</InputLabel>
+                  <Select
+                    name="offshoreRole"
+                    value={formData.offshoreRole}
+                    label={t('register.offshoreRole')}
+                    onChange={handleChange}
+                    error={!!errors.offshoreRole}
+                  >
+                    {OFFSHORE_ROLES.map((role, index) => (
+                      <MenuItem key={role} value={role}>
+                        {translatedRoles[index]}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>{t('register.workingRegime')}</InputLabel>
+                  <Select
+                    name="workingRegime"
+                    value={formData.workingRegime}
+                    label={t('register.workingRegime')}
+                    onChange={handleChange}
+                  >
+                    <MenuItem value="7/7">7/7</MenuItem>
+                    <MenuItem value="14/14">14/14</MenuItem>
+                    <MenuItem value="28/28">28/28</MenuItem>
+                    <MenuItem value="custom">{t('register.customRegime')}</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              {formData.workingRegime === 'custom' && (
+                <>
+                  <Grid item xs={6}>
+                    <TextField
+                      fullWidth
+                      label={t('register.customOnDutyDays')}
+                      name="customOnDutyDays"
+                      type="number"
+                      value={formData.customOnDutyDays}
+                      onChange={handleChange}
+                      error={!!errors.customWorkingRegime}
+                      helperText={errors.customWorkingRegime}
+                    />
+                  </Grid>
+                  <Grid item xs={6}>
+                    <TextField
+                      fullWidth
+                      label={t('register.customOffDutyDays')}
+                      name="customOffDutyDays"
+                      type="number"
+                      value={formData.customOffDutyDays}
+                      onChange={handleChange}
+                      error={!!errors.customWorkingRegime}
+                      helperText={errors.customWorkingRegime}
+                    />
+                  </Grid>
+                </>
+              )}
+
+              <Grid item xs={12}>
+                <FormControl fullWidth>
+                  <InputLabel>{t('register.country')}</InputLabel>
+                  <Select
+                    name="country"
+                    value={formData.country[1]} // Use country name for display
+                    label={t('register.country')}
+                    onChange={(e) => {
+                      // Find the corresponding country object
+                      const selectedCountry = translatedCountries.find(c => 
+                        t(`countries.${c.code}`) === e.target.value
+                      );
+                      
+                      if (selectedCountry) {
+                        setFormData(prev => ({
+                          ...prev,
+                          country: [selectedCountry.code, t(`countries.${selectedCountry.code}`)]
+                        }));
+                      }
+                    }}
+                    error={!!errors.country}
+                  >
+                    <MenuItem value="">Select Country</MenuItem>
+                    {translatedCountries.map(country => (
+                      <MenuItem key={country.code} value={t(`countries.${country.code}`)}>
+                        {t(`countries.${country.code}`)}
+                      </MenuItem>
+                    ))}
+                  </Select>
+                </FormControl>
+              </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label={t('register.company')}
+                  name="company"
+                  value={formData.company}
+                  onChange={handleChange}
+                />
+              </Grid>
+
+              <Grid item xs={12}>
+                <TextField
+                  fullWidth
+                  label={t('register.unitName')}
+                  name="unitName"
+                  value={formData.unitName}
+                  onChange={handleChange}
+                />
+              </Grid>
+
+              {errors.submit && (
+                <Grid item xs={12}>
+                  <Alert severity="error">{errors.submit}</Alert>
+                </Grid>
+              )}
+
+              <Grid item xs={12}>
+                <Button 
+                  type="submit" 
+                  variant="contained" 
+                  color="primary" 
+                  fullWidth
+                >
+                  {t('common.save')}
+                </Button>
+              </Grid>
             </Grid>
-          )}
-
-          <Grid item xs={12}>
-            <Button 
-              type="submit" 
-              variant="contained" 
-              color="primary" 
-              fullWidth
-            >
-              {t('common.save')}
-            </Button>
-          </Grid>
-        </Grid>
-      </form>
+          </form>
+        </Paper>
+      </Box>
     </Container>
   );
 };

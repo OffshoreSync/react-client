@@ -17,7 +17,7 @@
     "close": "Close"
   },
   "login": {
-    "title": "Offshore Worker Login",
+    "title": "Login",
     "username": "Username",
     "usernamePlaceholder": "Enter your username",
     "password": "Password",
@@ -25,6 +25,7 @@
     "googleLogin": "Login with Google",
     "forgotPassword": "Forgot Password?",
     "noAccount": "Don't have an account?",
+    "or": "or use your Google account",
     "errors": {
       "loginFailed": "Login failed. Please try again.",
       "googleLoginFailed": "Google login failed. Please try again.",
@@ -114,7 +115,8 @@
     "cancel": "Cancel",
     "setOnBoardDate": "Set On Board Date",
     "snackbarMessages": {
-      "onBoardDateSet": "On Board date set successfully!",
+      "onBoardDateSet": "Onboard date set successfully",
+      "onBoardDateSetNeedsProfile": "Onboard date set successfully. Please complete your profile by adding your company and unit name.",
       "onBoardDateSetError": "Failed to set On Board date",
       "resetOnBoardDateError": "Failed to reset next On Board date. Please try again.",
       "onBoardDateResetSuccess": "Onboard date has been successfully reset."
@@ -194,6 +196,8 @@
     "home": "Home",
     "settings": "Settings",
     "sync": "Sync",
+    "login": "Login",
+    "register": "Register",
     "logout": "Logout",
     "language": "Language",
     "friends": "Friends",
@@ -321,13 +325,16 @@
       "message": "Your email has been verified. You can now log in to your account."
     },
     "error": {
-      "title": "Email Verification Failed",
-      "invalidToken": "The verification link is invalid or has expired.",
-      "serverError": "There was a problem verifying your email. Please try again later."
+      "title": "Verification Failed"
     },
+    "errors": {
+      "missingToken": "Verification token is missing",
+      "verificationFailed": "Email verification failed. The token may be invalid or expired."
+    },
+    "verifying": "Verifying your email...",
     "buttons": {
       "goToLogin": "Go to Login",
-      "resendVerification": "Resend Verification Email"
+      "goToHome": "Back to Home"
     }
   }
 }

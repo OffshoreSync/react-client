@@ -1,10 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { 
+  BrowserRouter as Router, 
+  Routes, 
+  Route, 
+  Navigate, 
+  useLocation,
+  useNavigate 
+} from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import { blue, green } from '@mui/material/colors';
 import CssBaseline from '@mui/material/CssBaseline';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useTranslation } from 'react-i18next';
+import { CookiesProvider } from 'react-cookie';
+import CircularProgress from '@mui/material/CircularProgress';
 
 // Import i18n configuration
 import './i18n';
@@ -21,6 +30,8 @@ import Register from './components/Register';
 import EditProfile from './components/EditProfile';
 import FriendManagement from './components/FriendManagement';
 import VerifyEmail from './components/VerifyEmail';
+import { getCookie, setCookie, removeCookie, api } from './utils/apiUtils';
+import { AuthProvider } from './context/AuthContext';
 
 // Explicitly declare colors to prevent no-undef
 const primaryColor = blue[500];
@@ -78,68 +89,172 @@ const theme = createTheme({
   },
 });
 
-// Authentication check component
-const PrivateRoute = ({ children }) => {
-  const isAuthenticated = !!localStorage.getItem('token');
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
-};
+// Wrapper component to handle routing-specific hooks
+function AppRoutes() {
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  // Check authentication status
+  const checkAuth = useCallback(async () => {
+    try {
+      // Skip auth check for public routes
+      const publicRoutes = ['/', '/home', '/login', '/register', '/verify-email', '/reset-password'];
+      if (publicRoutes.includes(location.pathname)) {
+        setIsCheckingAuth(false);
+        return;
+      }
+
+      // Debug token before request
+      const token = getCookie('token');
+      console.debug('Auth Check - Token State:', {
+        hasToken: !!token,
+        tokenLength: token?.length,
+        timestamp: new Date().toISOString()
+      });
+
+      // If no token, immediately set as not authenticated
+      if (!token) {
+        console.warn('No authentication token found');
+        setIsAuthenticated(false);
+        setIsCheckingAuth(false);
+        return;
+      }
+
+      // Try to get user data from API
+      const response = await api.get('/auth/profile');
+      
+      // Debug API response
+      console.debug('Auth Check - API Response:', {
+        status: response.status,
+        hasUser: !!response.data.user,
+        hasToken: !!response.data.token
+      });
+      
+      if (response.data.user) {
+        setIsAuthenticated(true);
+        // Update user cookie in case it changed
+        setCookie('user', response.data.user, {
+          path: '/',
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production'
+        });
+        
+        // If we got a new token, update it
+        if (response.data.token) {
+          setCookie('token', response.data.token, {
+            path: '/',
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production'
+          });
+        }
+      } else {
+        setIsAuthenticated(false);
+      }
+    } catch (error) {
+      console.error('Auth check error:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
+      
+      // Clear auth state
+      setIsAuthenticated(false);
+      removeCookie('token');
+      removeCookie('refreshToken');
+      removeCookie('user');
+    } finally {
+      setIsCheckingAuth(false);
+    }
+  }, [location.pathname]);
+
+  // Protected route component
+  const ProtectedRoute = ({ children }) => {
+    if (isCheckingAuth) {
+      return <CircularProgress />;
+    }
+
+    if (!isAuthenticated) {
+      return <Navigate to="/login" state={{ 
+        returnTo: location.pathname,
+        message: 'Please log in to access this page.'
+      }} replace />;
+    }
+
+    return children;
+  };
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  if (isCheckingAuth) {
+    return <CircularProgress />;
+  }
+
+  return (
+    <div className="App">
+      <Navbar isAuthenticated={isAuthenticated} />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/login" element={
+          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
+        } />
+        <Route path="/register" element={
+          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Register />
+        } />
+        <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/forgot-password" element={<PasswordReset />} />
+        <Route path="/reset-password" element={<PasswordReset />} />
+        <Route path="/reset-password/:token" element={<PasswordReset />} />
+        
+        {/* Protected Routes */}
+        <Route path="/settings" element={
+          <ProtectedRoute>
+            <Settings />
+          </ProtectedRoute>
+        } />
+        <Route path="/edit-profile" element={
+          <ProtectedRoute>
+            <EditProfile />
+          </ProtectedRoute>
+        } />
+        <Route path="/friends" element={
+          <ProtectedRoute>
+            <FriendManagement />
+          </ProtectedRoute>
+        } />
+        <Route path="/sync" element={
+          <ProtectedRoute>
+            <Sync />
+          </ProtectedRoute>
+        } />
+      </Routes>
+    </div>
+  );
+}
+
+// Main App component
 function App() {
   return (
-    <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
-      <ThemeProvider theme={theme}>
-        <CssBaseline />
-        <Router>
-          <div className="App">
-            <Navbar />
-            <Routes>
-              <Route path="/" element={
-                localStorage.getItem('token') ? <Navigate to="/dashboard" /> : <Home />
-              } />
-              <Route path="/login" element={<Login />} />
-              <Route path="/forgot-password" element={<PasswordReset />} />
-              <Route path="/reset-password" element={<PasswordReset />} />
-              <Route path="/reset-password/:token" element={<PasswordReset />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/verify-email" element={<VerifyEmail />} />
-              <Route 
-                path="/dashboard" 
-                element={
-                  <PrivateRoute>
-                    <Dashboard />
-                  </PrivateRoute>
-                } 
-              />
-              <Route 
-                path="/settings" 
-                element={
-                  <PrivateRoute>
-                    <Settings />
-                  </PrivateRoute>
-                } 
-              />
-              <Route 
-                path="/edit-profile" 
-                element={
-                  <PrivateRoute>
-                    <EditProfile />
-                  </PrivateRoute>
-                } 
-              />
-              <Route 
-                path="/friends" 
-                element={
-                  <PrivateRoute>
-                    <FriendManagement />
-                  </PrivateRoute>
-                } 
-              />
-              <Route path="/sync" element={<PrivateRoute><Sync /></PrivateRoute>} />
-            </Routes>
-          </div>
-        </Router>
-      </ThemeProvider>
-    </GoogleOAuthProvider>
+    <CookiesProvider>
+      <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
+        <ThemeProvider theme={theme}>
+          <CssBaseline />
+          <AuthProvider>
+            <Router>
+              <AppRoutes />
+            </Router>
+          </AuthProvider>
+        </ThemeProvider>
+      </GoogleOAuthProvider>
+    </CookiesProvider>
   );
 }
 

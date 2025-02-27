@@ -17,7 +17,7 @@
     "close": "Cerrar"
   },
   "login": {
-    "title": "Inicio de Sesión para Trabajadores Offshore",
+    "title": "Inicio de Sesión",
     "username": "Nombre de Usuario",
     "usernamePlaceholder": "Ingrese su nombre de usuario",
     "password": "Contraseña",
@@ -25,6 +25,7 @@
     "googleLogin": "Iniciar Sesión con Google",
     "forgotPassword": "¿Olvidaste tu Contraseña?",
     "noAccount": "¿No tienes una cuenta?",
+    "or": "o inicie sesión con su cuenta de Google",
     "errors": {
       "loginFailed": "Inicio de sesión fallido. Por favor, intenta de nuevo.",
       "googleLoginFailed": "Inicio de sesión con Google fallido. Por favor, intenta de nuevo.",
@@ -114,7 +115,8 @@
     "cancel": "Cancelar",
     "setOnBoardDate": "Establecer Fecha de Embarque",
     "snackbarMessages": {
-      "onBoardDateSet": "¡Fecha de Embarque establecida con éxito!",
+      "onBoardDateSet": "Fecha de embarque establecida con éxito",
+      "onBoardDateSetNeedsProfile": "Fecha de embarque establecida con éxito. Por favor complete su perfil agregando su empresa y nombre de unidad.",
       "onBoardDateSetError": "Error al establecer fecha de Embarque",
       "resetOnBoardDateError": "Error al restablecer próxima fecha de Embarque. Por favor, intenta de nuevo.",
       "onBoardDateResetSuccess": "La fecha de embarque se ha restablecido correctamente."
@@ -189,6 +191,8 @@
     "home": "Inicio",
     "settings": "Configuraciones",
     "sync": "Sincronizar",
+    "login": "Iniciar Sesión",
+    "register": "Registrarse",
     "logout": "Cerrar Sesión",
     "language": "Idioma",
     "languages": {
@@ -310,19 +314,22 @@
     }
   },
   "verifyEmail": {
-    "title": "Verifique Su Correo Electrónico",
+    "title": "Verificar Tu Correo Electrónico",
     "success": {
       "title": "Correo Electrónico Verificado Exitosamente",
-      "message": "Su correo electrónico ha sido verificado. Ahora puede iniciar sesión en su cuenta."
+      "message": "Tu correo electrónico ha sido verificado. Ahora puedes iniciar sesión en tu cuenta."
     },
     "error": {
-      "title": "Error en Verificación de Correo Electrónico",
-      "invalidToken": "El enlace de verificación no es válido o ha expirado.",
-      "serverError": "Hubo un problema al verificar su correo electrónico. Intente nuevamente más tarde."
+      "title": "Verificación Fallida"
     },
+    "errors": {
+      "missingToken": "Falta el token de verificación",
+      "verificationFailed": "La verificación del correo electrónico falló. El token puede ser inválido o haber expirado."
+    },
+    "verifying": "Verificando tu correo electrónico...",
     "buttons": {
       "goToLogin": "Ir a Iniciar Sesión",
-      "resendVerification": "Reenviar Correo de Verificación"
+      "goToHome": "Volver al Inicio"
     }
   }
 }

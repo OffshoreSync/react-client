@@ -39,7 +39,7 @@ import { styled } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 
 // Import getBackendUrl
-import getBackendUrl from '../utils/apiUtils';
+import { api, getCookie, setCookie, removeCookie } from '../utils/apiUtils';
 
 // Import FullCalendar locales
 import ptLocale from '@fullcalendar/core/locales/pt-br';
@@ -221,7 +221,8 @@ const Dashboard = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [date, setDate] = useState(new Date());
   const [openOnBoardDialog, setOpenOnBoardDialog] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -237,132 +238,112 @@ const Dashboard = () => {
     getDateFnsLocale(i18n.language)
   );
 
+  const updateUserInCookies = (updatedUser) => {
+    setCookie('user', updatedUser);
+  };
+
   // Memoize the checkAuth function to prevent unnecessary re-renders
   const checkAuth = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token');
-      
-      // If no token, immediately return null
+      // Get token from cookie
+      const token = getCookie('token');
       if (!token) {
-        return null;
+        throw new Error('No authentication token found');
       }
 
-      const response = await axios.get(getBackendUrl('/api/auth/profile'), {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      // Get stored user data
+      const storedUser = getCookie('user');
+      let userWithFullData;
 
-      // Ensure working regime is correctly stored
-      const userWithFullData = {
-        ...response.data.user,
-        workingRegime: response.data.user.workingRegime || {
-          onDutyDays: 28,
-          offDutyDays: 28
-        }
-      };
+      try {
+        // Get fresh user data from API
+        const response = await api.get('/api/auth/profile');
+        userWithFullData = response.data.user;
 
-      // Explicitly set isGoogleUser based on the server response
-      userWithFullData.isGoogleUser = !!userWithFullData.isGoogleUser;
+        // Update stored user data
+        setCookie('user', JSON.stringify(userWithFullData), {
+          path: '/',
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax'
+        });
 
-      // Check if work cycles need generation
-      if (!userWithFullData.workCycles || userWithFullData.workCycles.length === 0) {
-        try {
-          const cyclesResponse = await axios.post(
-            getBackendUrl('/api/auth/generate-work-cycles'),
-            {},
-            {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              }
-            }
-          );
+        // Check both onboard dates and company/unit info
+        const needsOnboardDate = !userWithFullData.workSchedule?.nextOnBoardDate && 
+                               !userWithFullData.workingRegime?.nextOnBoardDate;
+        const needsCompanyInfo = !userWithFullData.company || !userWithFullData.unitName;
 
-          userWithFullData.workCycles = cyclesResponse.data.workCycles;
-        } catch (cyclesError) {
-          console.error('Error generating work cycles:', cyclesError);
-        }
-      }
-
-      // Determine if profile alert should be shown
-      const criticalFieldsMissing = 
-        userWithFullData.isGoogleUser && (
-          userWithFullData.company === null || 
-          userWithFullData.unitName === null
-        );
-
-      return {
-        user: userWithFullData,
-        showProfileAlert: criticalFieldsMissing
-      };
-
-    } catch (error) {
-      console.error('Authentication check failed:', error);
-      
-      // Only remove token and user if the error is related to authentication
-      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-        // Token is invalid or expired
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        navigate('/');
-        return null;
-      }
-
-      // For other errors, still attempt to return stored user data
-      const storedUser = localStorage.getItem('user');
-      if (storedUser) {
-        try {
-          const parsedUser = JSON.parse(storedUser);
+        return {
+          user: userWithFullData,
+          showProfileAlert: needsCompanyInfo,
+          needsOnboardDate: needsOnboardDate
+        };
+      } catch (error) {
+        // If API call fails but we have stored user data, use that temporarily
+        if (storedUser) {
+          userWithFullData = JSON.parse(storedUser);
+          // Check both onboard dates and company/unit info
+          const needsOnboardDate = !userWithFullData.workSchedule?.nextOnBoardDate && 
+                                 !userWithFullData.workingRegime?.nextOnBoardDate;
+          const needsCompanyInfo = !userWithFullData.company || !userWithFullData.unitName;
           return {
-            user: parsedUser,
-            showProfileAlert: false  // Default to false if authentication fails
+            user: userWithFullData,
+            showProfileAlert: needsCompanyInfo,
+            needsOnboardDate: needsOnboardDate
           };
-        } catch (parseError) {
-          console.error('Failed to parse stored user data:', parseError);
         }
+        console.error('Profile fetch error:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status
+        });
+        throw error;
       }
-
-      // If no stored user or parsing fails, navigate to home
-      navigate('/');
-      return null;
+    } catch (error) {
+      console.error('Authentication check failed:', {
+        message: error.message,
+        type: error.name,
+        stack: error.stack
+      });
+      throw error;
     }
-  }, []);
+  }, []); // No dependencies needed
 
-  // Use a separate effect for authentication
-  useEffect(() => {
-    let isMounted = true;
-
-    const performAuth = async () => {
-      setIsLoading(true);
-      const result = await checkAuth();
-      
-      if (isMounted) {
-        if (result) {
-          setUser(result.user);
-          setShowProfileAlert(result.showProfileAlert);
-          
-          // Update localStorage
-          localStorage.setItem('user', JSON.stringify(result.user));
-
-          // Automatically open On Board date dialog if no next On Board date is set
-          // This covers both first-time login and registration scenarios
-          if (!result.user.workSchedule?.nextOnBoardDate) {
-            console.log('No next OnBoard date found, opening dialog');
-            setOpenOnBoardDialog(true);
-          }
+useEffect(() => {
+  const initializeDashboard = async () => {
+    try {
+      setLoading(true);
+      const authResult = await checkAuth();
+      if (authResult) {
+        if (!authResult.user.workCycles?.length) {
+          const cyclesResponse = await api.post('/auth/generate-work-cycles');
+          const updatedUser = { ...authResult.user, workCycles: cyclesResponse.data.workCycles };
+          updateUserInCookies(updatedUser);
+          setUser(updatedUser);
         } else {
-          // If no valid user, navigate to home
-          navigate('/');
+          setUser(authResult.user);
         }
-        setIsLoading(false);
+        setShowProfileAlert(authResult.showProfileAlert);
+        
+        // Only show onboard dialog if we need onboard date AND it's not already set
+        if (authResult.needsOnboardDate && !authResult.user.workSchedule?.nextOnBoardDate) {
+          setOpenOnBoardDialog(true);
+        }
+      } else {
+        throw new Error('Not authenticated');
       }
-    };
-
-    performAuth();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [checkAuth, navigate]);
+    } catch (error) {
+      console.error('Dashboard initialization error:', error);
+      setError(error.message);
+      removeCookie('token');
+      removeCookie('refreshToken');
+      removeCookie('user');
+      navigate('/login', { state: { message: 'Please log in to access your dashboard.' } });
+    } finally {
+      setLoading(false);
+    }
+  };
+  initializeDashboard();
+}, [checkAuth, navigate]);
 
   // Update locales when language changes
   useEffect(() => {
@@ -379,7 +360,7 @@ const Dashboard = () => {
   const calendarEvents = useMemo(() => generateCalendarEvents(user, t), [user, t]);
 
   // If loading, show a loading indicator
-  if (isLoading) {
+  if (loading) {
     return (
       <Box 
         display="flex" 
@@ -401,50 +382,41 @@ const Dashboard = () => {
 
   const handleSetOnBoardDate = async () => {
     try {
-      const token = localStorage.getItem('token');
-      
       // Call backend API to set On Board date
-      const response = await axios.put(
-        getBackendUrl('/api/auth/set-onboard-date'), 
-        { nextOnBoardDate: date },
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const response = await api.put('/auth/set-onboard-date', { nextOnBoardDate: date });
 
       console.log('Set On Board Date Response:', response.data);
 
       // Generate work cycles
-      const cyclesResponse = await axios.post(
-        getBackendUrl('/api/auth/generate-work-cycles'),
-        {},
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const cyclesResponse = await api.post('/auth/generate-work-cycles');
 
       console.log('Generate Work Cycles Response:', cyclesResponse.data);
 
-      // Ensure the user object is complete
+      // Ensure the user object is complete and update both workSchedule and workingRegime
       const updatedUser = {
         ...response.data.user,
-        workCycles: cyclesResponse.data.workCycles
+        workCycles: cyclesResponse.data.workCycles,
+        workSchedule: {
+          ...response.data.user.workSchedule,
+          nextOnBoardDate: date
+        },
+        workingRegime: {
+          ...response.data.user.workingRegime,
+          nextOnBoardDate: date
+        }
       };
 
       // Update local storage with new user data including work cycles
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      updateUserInCookies(updatedUser);
       
-      // Update local state
+      // Update the user state to trigger re-render
       setUser(updatedUser);
       
-      // Close dialog and show success message
+      // Close dialog and check if we still need to show profile alert
       setOpenOnBoardDialog(false);
+      const needsCompanyInfo = !updatedUser.company || !updatedUser.unitName;
+      setShowProfileAlert(needsCompanyInfo);
+      
       setSnackbarMessage(t('dashboard.snackbarMessages.onBoardDateSet'));
       setSnackbarSeverity('success');
       setSnackbarOpen(true);
@@ -471,30 +443,13 @@ const Dashboard = () => {
 
   const handleResetOnBoardDate = async () => {
     try {
-      const token = localStorage.getItem('token');
-      
-      if (!token) {
-        setSnackbarMessage(t('dashboard.errors.noToken'));
-        setSnackbarSeverity('error');
-        setSnackbarOpen(true);
-        return;
-      }
-
-      const response = await axios.put(
-        getBackendUrl('/api/auth/reset-next-onboard-date'), 
-        {}, 
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
+      const response = await api.put('/auth/reset-next-onboard-date');
 
       // Detailed logging for debugging
       console.log('Reset Onboard Date Response:', response.data);
 
       // Update user in localStorage with reset workSchedule
-      const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const currentUser = user;
       
       // Safely update user object
       const updatedUser = {
@@ -505,9 +460,8 @@ const Dashboard = () => {
         }
       };
 
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-
-      // Update local state
+      // Update cookies and state
+      updateUserInCookies(updatedUser);
       setUser(updatedUser);
 
       // Open the onboard date dialog
