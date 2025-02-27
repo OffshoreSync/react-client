@@ -195,6 +195,7 @@
     "settings": "Settings",
     "sync": "Sync",
     "login": "Login",
+    "register": "Register",
     "logout": "Logout",
     "language": "Language",
     "friends": "Friends",

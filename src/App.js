@@ -99,6 +99,13 @@ function AppRoutes() {
   // Check authentication status
   const checkAuth = useCallback(async () => {
     try {
+      // Skip auth check for public routes
+      const publicRoutes = ['/', '/home', '/login', '/register', '/verify-email', '/reset-password'];
+      if (publicRoutes.includes(location.pathname)) {
+        setIsCheckingAuth(false);
+        return;
+      }
+
       // Debug token before request
       const token = getCookie('token');
       console.debug('Auth Check - Token State:', {
@@ -107,10 +114,12 @@ function AppRoutes() {
         timestamp: new Date().toISOString()
       });
 
-      // If no token, immediately redirect to login
+      // If no token, immediately set as not authenticated
       if (!token) {
         console.warn('No authentication token found');
-        throw new Error('No token found');
+        setIsAuthenticated(false);
+        setIsCheckingAuth(false);
+        return;
       }
 
       // Try to get user data from API
@@ -141,7 +150,7 @@ function AppRoutes() {
           });
         }
       } else {
-        throw new Error('No user data received');
+        setIsAuthenticated(false);
       }
     } catch (error) {
       console.error('Auth check error:', {
@@ -155,18 +164,10 @@ function AppRoutes() {
       removeCookie('token');
       removeCookie('refreshToken');
       removeCookie('user');
-      
-      // Redirect to login with return path
-      navigate('/login', { 
-        state: { 
-          returnTo: location.pathname,
-          message: 'Please log in to access this page.'
-        }
-      });
     } finally {
       setIsCheckingAuth(false);
     }
-  }, [navigate, location.pathname]);
+  }, [location.pathname]);
 
   // Protected route component
   const ProtectedRoute = ({ children }) => {
@@ -175,7 +176,10 @@ function AppRoutes() {
     }
 
     if (!isAuthenticated) {
-      return <Navigate to="/login" state={{ from: location }} replace />;
+      return <Navigate to="/login" state={{ 
+        returnTo: location.pathname,
+        message: 'Please log in to access this page.'
+      }} replace />;
     }
 
     return children;
@@ -193,8 +197,11 @@ function AppRoutes() {
     <div className="App">
       <Navbar isAuthenticated={isAuthenticated} />
       <Routes>
-        <Route path="/" element={
-          isAuthenticated ? <Navigate to="/dashboard" replace /> : <Home />
+        <Route path="/" element={<Home />} />
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
         } />
         <Route path="/login" element={
           isAuthenticated ? <Navigate to="/dashboard" replace /> : <Login />
@@ -208,11 +215,6 @@ function AppRoutes() {
         <Route path="/reset-password/:token" element={<PasswordReset />} />
         
         {/* Protected Routes */}
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        } />
         <Route path="/settings" element={
           <ProtectedRoute>
             <Settings />

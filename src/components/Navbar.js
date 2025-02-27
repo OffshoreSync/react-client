@@ -137,6 +137,16 @@ function Navbar() {
     }
   ] : [
     {
+      text: t('navbar.home'),
+      icon: <HomeIcon />,
+      onClick: () => handleNavigation('/')
+    },
+    {
+      text: t('navbar.register'),
+      icon: <PersonAddIcon />,
+      onClick: () => handleNavigation('/register')
+    },
+    {
       text: t('navbar.login'),
       icon: <LoginIcon />,
       onClick: () => handleNavigation('/login')
