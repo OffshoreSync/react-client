@@ -150,7 +150,7 @@ const Login = () => {
   };
 
   return (
-    <Container maxWidth="xs">
+    <Container component="main" maxWidth="xs">
       <Box
         sx={{
           marginTop: 8,
@@ -159,32 +159,49 @@ const Login = () => {
           alignItems: 'center',
         }}
       >
-        <Typography component="h1" variant="h5">
-          {t('login.title')}
-        </Typography>
-
-        <Paper 
-          elevation={3} 
-          sx={{ 
-            width: '100%', 
-            padding: 3, 
-            marginTop: 2,
+        <Paper
+          elevation={3}
+          sx={{
+            p: 4,
+            width: '100%',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
+            borderRadius: 2,
+            bgcolor: 'background.paper'
           }}
         >
-          {successMessage && (
-            <Alert severity="success" sx={{ width: '100%', mt: 2 }}>
-              {successMessage}
-            </Alert>
-          )}
+          <Typography 
+            component="h1" 
+            variant="h5" 
+            sx={{ 
+              mb: 3,
+              fontWeight: 600,
+              color: 'primary.main'
+            }}
+          >
+            {t('login.title')}
+          </Typography>
+
           {reAuthMessage && (
-            <Alert severity="error" sx={{ width: '100%', mt: 2 }}>
+            <Alert severity="info" sx={{ width: '100%', mb: 2 }}>
               {reAuthMessage}
             </Alert>
           )}
-          <Box component="form" onSubmit={onSubmit} noValidate sx={{ mt: 1, width: '100%' }}>
+
+          {successMessage && (
+            <Alert severity="success" sx={{ width: '100%', mb: 2 }}>
+              {successMessage}
+            </Alert>
+          )}
+
+          {error && (
+            <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          <form onSubmit={onSubmit} style={{ width: '100%' }}>
             <TextField
               margin="normal"
               required
@@ -239,12 +256,6 @@ const Login = () => {
               </MuiLink>
             </Typography>
             
-            {error && (
-              <Alert severity="error" sx={{ width: '100%', mt: 2 }}>
-                {error}
-              </Alert>
-            )}
-            
             <Button
               type="submit"
               fullWidth
@@ -254,21 +265,25 @@ const Login = () => {
             >
               {t('common.login')}
             </Button>
-            
+
+            <Typography variant="body2" align="center" color="text.secondary" sx={{ my: 2 }}>
+            {t('login.or')}
+            </Typography>
+
             <GoogleSignInContainer>
-              <GoogleLogin
-                onSuccess={handleGoogleLogin}
-                onError={() => {
-                  console.error('Login Failed');
-                  setError(t('login.errors.googleLoginFailed'));
-                }}
-                theme="outline"
-                size="large"
-                text="signin_with"
-                shape="rectangular"
-                width="100%"
-              />
-            </GoogleSignInContainer>
+            <GoogleLogin
+              onSuccess={handleGoogleLogin}
+              onError={() => {
+                console.error('Login Failed');
+                setError(t('login.errors.googleLoginFailed'));
+              }}
+              size="large"
+              width="100%"
+              text="signin_with"
+              shape="rectangular"
+              logo_alignment="center"
+            />
+          </GoogleSignInContainer>
 
             <FormSection>
               <Typography variant="body2" color="text.secondary" align="center">
@@ -282,7 +297,7 @@ const Login = () => {
                 </MuiLink>
               </Typography>
             </FormSection>
-          </Box>
+          </form>
         </Paper>
       </Box>
     </Container>

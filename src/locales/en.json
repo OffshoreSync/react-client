@@ -17,7 +17,7 @@
     "close": "Close"
   },
   "login": {
-    "title": "Offshore Worker Login",
+    "title": "Login",
     "username": "Username",
     "usernamePlaceholder": "Enter your username",
     "password": "Password",
@@ -25,6 +25,7 @@
     "googleLogin": "Login with Google",
     "forgotPassword": "Forgot Password?",
     "noAccount": "Don't have an account?",
+    "or": "or use your Google account",
     "errors": {
       "loginFailed": "Login failed. Please try again.",
       "googleLoginFailed": "Google login failed. Please try again.",

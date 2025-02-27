@@ -4,7 +4,7 @@
     "home": "Início",
     "login": "Entrar",
     "logout": "Sair",
-    "register": "Cadastrar",
+    "register": "Registrar",
     "dashboard": "Painel",
     "profile": "Perfil",
     "settings": "Configurações",
@@ -17,7 +17,7 @@
     "close": "Fechar"
   },
   "login": {
-    "title": "Login de Trabalhador Offshore",
+    "title": "Início de Sessão",
     "username": "Nome de Usuário",
     "usernamePlaceholder": "Digite seu nome de usuário",
     "password": "Senha",
@@ -25,6 +25,7 @@
     "googleLogin": "Entrar com Google",
     "forgotPassword": "Esqueceu sua Senha?",
     "noAccount": "Não tem uma conta?",
+    "or": "ou use sua conta Google",
     "errors": {
       "loginFailed": "Falha no login. Por favor, tente novamente.",
       "googleLoginFailed": "Falha no login com Google. Por favor, tente novamente.",
@@ -232,7 +233,7 @@
     "management": "Gestão",
     "operations": "Operações",
     "safety": "Segurança",
-    "bridge": "Ponte"
+    "bridge": "Passadiço"
   },
   "sync": {
     "title": "Sincronização de Períodos Offshore",

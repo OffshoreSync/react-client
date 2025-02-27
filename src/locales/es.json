@@ -17,7 +17,7 @@
     "close": "Cerrar"
   },
   "login": {
-    "title": "Inicio de Sesión para Trabajadores Offshore",
+    "title": "Inicio de Sesión",
     "username": "Nombre de Usuario",
     "usernamePlaceholder": "Ingrese su nombre de usuario",
     "password": "Contraseña",
@@ -25,6 +25,7 @@
     "googleLogin": "Iniciar Sesión con Google",
     "forgotPassword": "¿Olvidaste tu Contraseña?",
     "noAccount": "¿No tienes una cuenta?",
+    "or": "o inicie sesión con su cuenta de Google",
     "errors": {
       "loginFailed": "Inicio de sesión fallido. Por favor, intenta de nuevo.",
       "googleLoginFailed": "Inicio de sesión con Google fallido. Por favor, intenta de nuevo.",
