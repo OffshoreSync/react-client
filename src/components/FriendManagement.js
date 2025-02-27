@@ -223,8 +223,14 @@ const FriendManagement = () => {
                       <Box>
                         <Typography variant="h6">{user.fullName}</Typography>
                         <Typography variant="body2" color="textSecondary">
-                          {user.offshoreRole}
+                          {user.email}
                         </Typography>
+                        {user.company && (
+                          <Typography variant="body2" color="textSecondary">
+                            {user.company}
+                            {user.unitName && ` - ${user.unitName}`}
+                          </Typography>
+                        )}
                       </Box>
                     </Box>
                   </CardContent>
@@ -325,30 +331,51 @@ const FriendManagement = () => {
                       alt={friend.fullName}
                     />
                   </ListItemAvatar>
-                  <ListItemText
-                    primary={friend.fullName}
-                    secondary={friend.email}
-                  />
-                  <Tooltip 
-                    title={
-                      friend.sharingPreferences.allowScheduleSync 
-                        ? t('friendManagement.syncEnabled') 
-                        : t('friendManagement.syncDisabled')
-                    }
-                  >
-                    <Chip 
-                      label={
-                        friend.sharingPreferences.allowScheduleSync 
-                          ? t('friendManagement.syncOn') 
-                          : t('friendManagement.syncOff')
+                  <Box sx={{ flexGrow: 1 }}>
+                    <ListItemText
+                      primary={
+                        <Typography variant="subtitle1" component="div">
+                          {friend.fullName}
+                        </Typography>
                       }
-                      color={
-                        friend.sharingPreferences.allowScheduleSync 
-                          ? 'primary' 
-                          : 'default'
+                      secondary={
+                        <React.Fragment>
+                          <Typography variant="body2" color="textSecondary" component="div">
+                            {friend.email}
+                          </Typography>
+                          {friend.company && (
+                            <Typography variant="body2" color="textSecondary" component="div">
+                              {friend.company}
+                              {friend.unitName && ` - ${friend.unitName}`}
+                            </Typography>
+                          )}
+                        </React.Fragment>
                       }
                     />
-                  </Tooltip>
+                  </Box>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Tooltip 
+                      title={
+                        friend.sharingPreferences.allowScheduleSync 
+                          ? t('friendManagement.syncEnabled') 
+                          : t('friendManagement.syncDisabled')
+                      }
+                    >
+                      <Chip 
+                        label={
+                          friend.sharingPreferences.allowScheduleSync 
+                            ? t('friendManagement.syncOn') 
+                            : t('friendManagement.syncOff')
+                        }
+                        color={
+                          friend.sharingPreferences.allowScheduleSync 
+                            ? 'primary' 
+                            : 'default'
+                        }
+                        size="small"
+                      />
+                    </Tooltip>
+                  </Box>
                 </ListItem>
                 <Divider variant="inset" component="li" />
               </React.Fragment>
