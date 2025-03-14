@@ -8,7 +8,7 @@ export const setCookie = (name, value, options = {}) => {
   const defaultOptions = {
     path: '/',
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: name === 'refreshToken' ? 'lax' : 'strict',
     maxAge: name === 'refreshToken' ? 30 * 24 * 60 * 60 : 2 * 60 * 60 // 30 days for refresh token, 2 hours for others
   };
   
@@ -18,15 +18,39 @@ export const setCookie = (name, value, options = {}) => {
     httpOnly: false // Ensure PWA can access cookies
   };
 
+  // Set the primary cookie
   cookies.set(name, value, finalOptions);
+
+  // For tokens, also set a lax version for PWA compatibility
+  if (name === 'token' || name === 'refreshToken') {
+    const pwaOptions = {
+      ...finalOptions,
+      sameSite: 'lax',
+      // Add PWA suffix to distinguish the cookie
+      name: `${name}_pwa`
+    };
+    cookies.set(name + '_pwa', value, pwaOptions);
+  }
 };
 
 export const getCookie = (name) => {
-  return cookies.get(name);
+  // Try getting the regular cookie first
+  const value = cookies.get(name);
+  if (value) return value;
+
+  // If not found and it's a token, try the PWA version
+  if (name === 'token' || name === 'refreshToken') {
+    return cookies.get(name + '_pwa');
+  }
+  return null;
 };
 
 export const removeCookie = (name) => {
   cookies.remove(name, { path: '/' });
+  // Also remove PWA version if it's a token
+  if (name === 'token' || name === 'refreshToken') {
+    cookies.remove(name + '_pwa', { path: '/' });
+  }
 };
 
 // Get backend URL from environment or default
@@ -50,6 +74,12 @@ api.interceptors.request.use(
     const token = getCookie('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('%c🔑 Session Validation - Access Token Used', 'color: #4CAF50; font-weight: bold', {
+        tokenType: 'access',
+        source: token === getCookie('token_pwa') ? 'pwa_cookie' : 'regular_cookie',
+        urlPath: config.url,
+        timestamp: new Date().toISOString()
+      });
     }
 
     // Add CSRF token if available
@@ -77,7 +107,7 @@ let refreshSubscribers = [];
 api.interceptors.response.use(
   (response) => {
     // Debug response
-    console.debug('API Response:', {
+    console.log('%c📦 API Response:', 'color: #03A9F4; font-weight: bold', {
       url: response.config.url,
       status: response.status,
       hasToken: !!response.data.token,
@@ -95,27 +125,15 @@ api.interceptors.response.use(
     if (response.config.url.includes('/auth/login') || response.config.url.includes('/auth/google-login')) {
       if (response.data.token) {
         // Set token cookie
-        setCookie('token', response.data.token, {
-          path: '/',
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax'
-        });
+        setCookie('token', response.data.token);
       }
       if (response.data.refreshToken) {
         // Set refresh token cookie
-        setCookie('refreshToken', response.data.refreshToken, {
-          path: '/',
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax'
-        });
+        setCookie('refreshToken', response.data.refreshToken);
       }
       if (response.data.user) {
         // Set user data cookie
-        setCookie('user', JSON.stringify(response.data.user), {
-          path: '/',
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax'
-        });
+        setCookie('user', JSON.stringify(response.data.user));
       }
     }
 
@@ -125,7 +143,7 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     // Debug error
-    console.error('API Error:', {
+    console.error('%c🚨 API Error:', 'color: #FF0000; font-weight: bold', {
       url: error.config?.url,
       status: error.response?.status,
       message: error.message
@@ -144,6 +162,12 @@ api.interceptors.response.use(
     if (!isRefreshing) {
       isRefreshing = true;
       const refreshToken = getCookie('refreshToken');
+      
+      console.log('%c🔄 Session Validation - Refresh Token Used', 'color: #2196F3; font-weight: bold', {
+        tokenType: 'refresh',
+        source: refreshToken === getCookie('refreshToken_pwa') ? 'pwa_cookie' : 'regular_cookie',
+        timestamp: new Date().toISOString()
+      });
 
       try {
         const response = await axios.post(`${getBackendUrl()}/api/auth/refresh-token`, 
@@ -158,14 +182,25 @@ api.interceptors.response.use(
 
         const { token, refreshToken: newRefreshToken } = response.data;
 
-        // Update cookies with new tokens
+        // Update cookies with new tokens - this will set both regular and PWA versions
         setCookie('token', token);
         if (newRefreshToken) {
           setCookie('refreshToken', newRefreshToken);
         }
 
-        // Update authorization header
-        originalRequest.headers.Authorization = `Bearer ${token}`;
+        console.log('%c✨ Session Validation - Tokens Refreshed', 'color: #9C27B0; font-weight: bold', {
+          accessTokenUpdated: true,
+          refreshTokenUpdated: !!newRefreshToken,
+          timestamp: new Date().toISOString(),
+          source: {
+            token: getCookie('token') === getCookie('token_pwa') ? 'pwa_cookie' : 'regular_cookie',
+            refreshToken: newRefreshToken && getCookie('refreshToken') === getCookie('refreshToken_pwa') ? 'pwa_cookie' : 'regular_cookie'
+          }
+        });
+
+        // Update authorization header - try PWA version if regular token is not available
+        const currentToken = getCookie('token') || getCookie('token_pwa');
+        originalRequest.headers.Authorization = `Bearer ${currentToken}`;
         
         // Notify subscribers and reset state
         refreshSubscribers.forEach(callback => callback(token));
