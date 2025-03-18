@@ -146,6 +146,7 @@ api.interceptors.response.use(
         removeCookie('token');
         removeCookie('refreshToken');
         removeCookie('user');
+        window.dispatchEvent(new CustomEvent('auth-state-changed', { detail: { isAuthenticated: false } }));
         if (window.location.pathname !== '/login') {
           window.location.href = '/login';
         }
@@ -166,6 +167,7 @@ api.interceptors.response.use(
         removeCookie('token');
         removeCookie('refreshToken');
         removeCookie('user');
+        window.dispatchEvent(new CustomEvent('auth-state-changed', { detail: { isAuthenticated: false } }));
         if (window.location.pathname !== '/login') {
           window.location.href = '/login';
         }
@@ -193,23 +195,26 @@ api.interceptors.response.use(
           throw new Error('No token received from refresh endpoint');
         }
 
-        const { token, refreshToken: newRefreshToken } = response.data;
+        const { token, refreshToken: newRefreshToken, user } = response.data;
 
-        // Update cookies with new tokens - this will set both regular and PWA versions
+        // Update cookies with new tokens
         setCookie('token', token);
         if (newRefreshToken) {
           setCookie('refreshToken', newRefreshToken);
+        }
+
+        // Update user data if provided
+        if (user) {
+          setCookie('user', JSON.stringify(user));
+          window.dispatchEvent(new CustomEvent('auth-state-changed', { detail: { isAuthenticated: true, user } }));
         }
 
         // Log successful token refresh
         console.log('%c✨ Session Validation - Tokens Refreshed', 'color: #9C27B0; font-weight: bold', {
           accessTokenUpdated: true,
           refreshTokenUpdated: !!newRefreshToken,
-          timestamp: new Date().toISOString(),
-          source: {
-            token: getCookie('token') === getCookie('token_pwa') ? 'pwa_cookie' : 'regular_cookie',
-            refreshToken: newRefreshToken && getCookie('refreshToken') === getCookie('refreshToken_pwa') ? 'pwa_cookie' : 'regular_cookie'
-          }
+          userUpdated: !!user,
+          timestamp: new Date().toISOString()
         });
 
         // Update authorization header for the original request
@@ -235,6 +240,9 @@ api.interceptors.response.use(
         removeCookie('token');
         removeCookie('refreshToken');
         removeCookie('user');
+        
+        // Notify about auth state change
+        window.dispatchEvent(new CustomEvent('auth-state-changed', { detail: { isAuthenticated: false } }));
         
         // Redirect to login if not already there
         if (window.location.pathname !== '/login') {

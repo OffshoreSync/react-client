@@ -44,6 +44,27 @@ export const AuthProvider = ({ children }) => {
     setError(null);
   };
 
+  // Listen for auth state changes from token refresh
+  useEffect(() => {
+    const handleAuthStateChange = (event) => {
+      const { isAuthenticated, user: newUser } = event.detail;
+      console.debug('Auth State Change:', {
+        isAuthenticated,
+        hasUser: !!newUser,
+        timestamp: new Date().toISOString()
+      });
+      
+      if (isAuthenticated && newUser) {
+        setUser(newUser);
+      } else if (!isAuthenticated) {
+        setUser(null);
+      }
+    };
+
+    window.addEventListener('auth-state-changed', handleAuthStateChange);
+    return () => window.removeEventListener('auth-state-changed', handleAuthStateChange);
+  }, []);
+
   useEffect(() => {
     const token = getCookie('token');
     const refreshToken = getCookie('refreshToken') || getCookie('refreshToken_pwa');
