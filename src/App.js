@@ -33,6 +33,9 @@ import VerifyEmail from './components/VerifyEmail';
 import { getCookie, setCookie, removeCookie, api } from './utils/apiUtils';
 import { AuthProvider } from './context/AuthContext';
 
+// Define public routes that don't require authentication
+const publicRoutes = ['/', '/home', '/login', '/register', '/verify-email', '/reset-password'];
+
 // Explicitly declare colors to prevent no-undef
 const primaryColor = blue[500];
 const secondaryColor = green[500];
@@ -100,74 +103,119 @@ function AppRoutes() {
   const checkAuth = useCallback(async () => {
     try {
       // Skip auth check for public routes
-      const publicRoutes = ['/', '/home', '/login', '/register', '/verify-email', '/reset-password'];
       if (publicRoutes.includes(location.pathname)) {
         setIsCheckingAuth(false);
         return;
       }
 
-      // Debug token before request
+      // Check for both token and refresh token
       const token = getCookie('token');
+      const refreshToken = getCookie('refreshToken') || getCookie('refreshToken_pwa');
+
+      // Debug token state
       console.debug('Auth Check - Token State:', {
-        hasToken: !!token,
-        tokenLength: token?.length,
+        hasAccessToken: !!token,
+        hasRefreshToken: !!refreshToken,
         timestamp: new Date().toISOString()
       });
 
-      // If no token, immediately set as not authenticated
-      if (!token) {
-        console.warn('No authentication token found');
+      // If no tokens at all, clear auth state
+      if (!token && !refreshToken) {
+        console.warn('No authentication tokens found');
         setIsAuthenticated(false);
         setIsCheckingAuth(false);
+        if (!publicRoutes.includes(location.pathname)) {
+          navigate('/login', {
+            state: { 
+              returnTo: location.pathname,
+              message: 'Your session has expired. Please log in again.'
+            },
+            replace: true
+          });
+        }
         return;
       }
 
       // Try to get user data from API
-      const response = await api.get('/auth/profile');
-      
-      // Debug API response
-      console.debug('Auth Check - API Response:', {
-        status: response.status,
-        hasUser: !!response.data.user,
-        hasToken: !!response.data.token
-      });
-      
-      if (response.data.user) {
-        setIsAuthenticated(true);
-        // Update user cookie in case it changed
-        setCookie('user', response.data.user, {
-          path: '/',
-          sameSite: 'lax',
-          secure: process.env.NODE_ENV === 'production'
+      try {
+        const response = await api.get('/auth/profile');
+        
+        // Debug API response
+        console.debug('Auth Check - API Response:', {
+          status: response.status,
+          hasUser: !!response.data.user,
+          hasToken: !!response.data.token
         });
         
-        // If we got a new token, update it
-        if (response.data.token) {
-          setCookie('token', response.data.token, {
+        if (response.data.user) {
+          setIsAuthenticated(true);
+          // Update user cookie in case it changed
+          setCookie('user', JSON.stringify(response.data.user), {
             path: '/',
             sameSite: 'lax',
             secure: process.env.NODE_ENV === 'production'
           });
+          
+          // If we got a new token, update it
+          if (response.data.token) {
+            setCookie('token', response.data.token, {
+              path: '/',
+              sameSite: 'lax',
+              secure: process.env.NODE_ENV === 'production'
+            });
+          }
+        } else {
+          throw new Error('No user data in response');
         }
-      } else {
-        setIsAuthenticated(false);
+      } catch (apiError) {
+        console.error('Auth check API error:', {
+          message: apiError.message,
+          response: apiError.response?.data,
+          status: apiError.response?.status
+        });
+
+        // If the error is not a 401 or we don't have a refresh token, clear auth state
+        if (apiError.response?.status !== 401 || !refreshToken) {
+          setIsAuthenticated(false);
+          removeCookie('token');
+          removeCookie('refreshToken');
+          removeCookie('user');
+          if (!publicRoutes.includes(location.pathname)) {
+            navigate('/login', {
+              state: { 
+                returnTo: location.pathname,
+                message: 'Your session has expired. Please log in again.'
+              },
+              replace: true
+            });
+          }
+        }
+        // If it's a 401 with a refresh token, the token refresh interceptor will handle it
       }
     } catch (error) {
       console.error('Auth check error:', {
         message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
+        stack: error.stack
       });
       
-      // Clear auth state
+      // Clear auth state on unexpected errors
       setIsAuthenticated(false);
       removeCookie('token');
       removeCookie('refreshToken');
       removeCookie('user');
+      if (!publicRoutes.includes(location.pathname)) {
+        navigate('/login', {
+          state: { 
+            returnTo: location.pathname,
+            message: 'An unexpected error occurred. Please log in again.'
+          },
+          replace: true
+        });
+      }
     } finally {
       setIsCheckingAuth(false);
     }
-  }, [location.pathname]);
+  }, [location.pathname, navigate]);
 
   // Protected route component
   const ProtectedRoute = ({ children }) => {

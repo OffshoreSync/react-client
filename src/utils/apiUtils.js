@@ -2,14 +2,16 @@ import axios from 'axios';
 import { Cookies } from 'react-cookie';
 
 const cookies = new Cookies();
+let isRefreshing = false;
+let refreshSubscribers = [];
 
 // Cookie utilities
 export const setCookie = (name, value, options = {}) => {
   const defaultOptions = {
     path: '/',
     secure: process.env.NODE_ENV === 'production',
-    sameSite: name === 'refreshToken' ? 'lax' : 'strict',
-    maxAge: name === 'refreshToken' ? 30 * 24 * 60 * 60 : 2 * 60 * 60 // 30 days for refresh token, 2 hours for others
+    sameSite: 'lax', // Changed to 'lax' for all cookies to improve mobile compatibility
+    maxAge: name === 'refreshToken' ? 30 * 24 * 60 * 60 : 60 // 30 days for refresh token, 1 minute for others (for testing)
   };
   
   const finalOptions = {
@@ -21,12 +23,10 @@ export const setCookie = (name, value, options = {}) => {
   // Set the primary cookie
   cookies.set(name, value, finalOptions);
 
-  // For tokens, also set a lax version for PWA compatibility
+  // For tokens, also set a PWA version
   if (name === 'token' || name === 'refreshToken') {
     const pwaOptions = {
       ...finalOptions,
-      sameSite: 'lax',
-      // Add PWA suffix to distinguish the cookie
       name: `${name}_pwa`
     };
     cookies.set(name + '_pwa', value, pwaOptions);
@@ -101,9 +101,6 @@ api.interceptors.request.use(
 );
 
 // Response interceptor with enhanced token refresh
-let isRefreshing = false;
-let refreshSubscribers = [];
-
 api.interceptors.response.use(
   (response) => {
     // Debug response
@@ -150,19 +147,37 @@ api.interceptors.response.use(
     });
 
     // If error is not 401 or request already retried, reject
-    if (error.response?.status !== 401 || originalRequest._retry) {
+    if (!error.response || error.response.status !== 401 || originalRequest._retry || originalRequest.url.includes('/auth/refresh-token')) {
       if (error.response?.status === 401) {
         removeCookie('token');
         removeCookie('refreshToken');
         removeCookie('user');
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
       }
       return Promise.reject(error);
     }
 
+    // Mark this request as retried
+    originalRequest._retry = true;
+
     if (!isRefreshing) {
       isRefreshing = true;
-      const refreshToken = getCookie('refreshToken');
+      // Try both regular and PWA refresh tokens
+      const refreshToken = getCookie('refreshToken') || getCookie('refreshToken_pwa');
       
+      if (!refreshToken) {
+        isRefreshing = false;
+        removeCookie('token');
+        removeCookie('refreshToken');
+        removeCookie('user');
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+        return Promise.reject(new Error('No refresh token available'));
+      }
+
       console.log('%c🔄 Session Validation - Refresh Token Used', 'color: #2196F3; font-weight: bold', {
         tokenType: 'refresh',
         source: refreshToken === getCookie('refreshToken_pwa') ? 'pwa_cookie' : 'regular_cookie',
@@ -180,6 +195,10 @@ api.interceptors.response.use(
           }
         );
 
+        if (!response.data.token) {
+          throw new Error('No token received from refresh endpoint');
+        }
+
         const { token, refreshToken: newRefreshToken } = response.data;
 
         // Update cookies with new tokens - this will set both regular and PWA versions
@@ -188,6 +207,7 @@ api.interceptors.response.use(
           setCookie('refreshToken', newRefreshToken);
         }
 
+        // Log successful token refresh
         console.log('%c✨ Session Validation - Tokens Refreshed', 'color: #9C27B0; font-weight: bold', {
           accessTokenUpdated: true,
           refreshTokenUpdated: !!newRefreshToken,
@@ -198,37 +218,43 @@ api.interceptors.response.use(
           }
         });
 
-        // Update authorization header - try PWA version if regular token is not available
-        const currentToken = getCookie('token') || getCookie('token_pwa');
-        originalRequest.headers.Authorization = `Bearer ${currentToken}`;
+        // Update authorization header for the original request
+        originalRequest.headers.Authorization = `Bearer ${token}`;
         
-        // Notify subscribers and reset state
-        refreshSubscribers.forEach(callback => callback(token));
-        refreshSubscribers = [];
+        // Reset refresh state
         isRefreshing = false;
+        refreshSubscribers = [];
 
-        // Retry original request
-        return api(originalRequest);
-      } catch (error) {
+        // Retry the original request with new token
+        return axios(originalRequest);
+
+      } catch (refreshError) {
+        console.error('%c❌ Token Refresh Failed:', 'color: #FF5722; font-weight: bold', {
+          error: refreshError.message,
+          timestamp: new Date().toISOString()
+        });
+
         isRefreshing = false;
         refreshSubscribers = [];
+        
+        // Clear all auth cookies
         removeCookie('token');
         removeCookie('refreshToken');
         removeCookie('user');
         
-        // Only redirect if not already on login page
+        // Redirect to login if not already there
         if (window.location.pathname !== '/login') {
           window.location.href = '/login';
         }
-        return Promise.reject(error);
+        return Promise.reject(refreshError);
       }
     }
 
-    // If we're already refreshing, wait for the token
+    // If we're already refreshing, wait for the new token
     return new Promise(resolve => {
       refreshSubscribers.push(token => {
         originalRequest.headers.Authorization = `Bearer ${token}`;
-        resolve(api(originalRequest));
+        resolve(axios(originalRequest));
       });
     });
   }
