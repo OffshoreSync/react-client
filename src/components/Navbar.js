@@ -22,7 +22,8 @@ import {
   Divider,
   Avatar,
   Container,
-  Button
+  Button,
+  Link
 } from '@mui/material';
 
 // Material UI icons
@@ -36,6 +37,7 @@ import LoginIcon from '@mui/icons-material/Login';
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import LanguageIcon from '@mui/icons-material/Language';
 import PersonIcon from '@mui/icons-material/Person';
+import GitHubIcon from '@mui/icons-material/GitHub';
 
 // Import country flag component
 import ReactCountryFlag from 'react-country-flag';
@@ -48,11 +50,17 @@ import i18n from '../i18n';
 import { getCookie, setCookie, removeCookie, api } from '../utils/apiUtils';
 import { useAuth } from '../context/AuthContext';
 
+// Import legal components
+import PrivacyPolicy from './legal/PrivacyPolicy';
+import TermsAndConditions from './legal/TermsAndConditions';
+
 function Navbar() {
   const navigate = useNavigate();
   const [language, setLanguage] = useState(getCookie('language') || 'en');
   const [anchorEl, setAnchorEl] = useState(null);
   const [languageMenuAnchor, setLanguageMenuAnchor] = useState(null);
+  const [privacyOpen, setPrivacyOpen] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
   const theme = useTheme();
   const { t } = useTranslation();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
@@ -329,11 +337,14 @@ function Navbar() {
         onClose={handleClose}
         sx={{
           '& .MuiDrawer-paper': {
-            width: 250
+            width: 250,
+            display: 'flex',
+            flexDirection: 'column'
           }
         }}
       >
-        <List>
+        {/* Main Menu */}
+        <List sx={{ flexGrow: 1 }}>
           {menuItems.map((item) => (
             <ListItem 
               key={item.text}
@@ -348,7 +359,71 @@ function Navbar() {
             </ListItem>
           ))}
         </List>
+
+        {/* Footer Section */}
+        <Box sx={{ mt: 'auto', borderTop: 1, borderColor: 'divider' }}>
+          <List>
+            {/* GitHub Icon */}
+            <ListItem sx={{ justifyContent: 'center', py: 1 }}>
+              <IconButton
+                component="a"
+                href="https://github.com/OffshoreSync"
+                target="_blank"
+                rel="noopener noreferrer"
+                sx={{ 
+                  color: 'text.primary',
+                  '&:hover': {
+                    color: 'primary.main'
+                  }
+                }}
+              >
+                <GitHubIcon fontSize="large" />
+              </IconButton>
+            </ListItem>
+
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => setPrivacyOpen(true)}>
+                <ListItemText 
+                  primary={t('legal.privacyPolicy.title')}
+                  primaryTypographyProps={{
+                    variant: 'body2',
+                    color: 'text.secondary'
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton onClick={() => setTermsOpen(true)}>
+                <ListItemText 
+                  primary={t('legal.termsAndConditions.title')}
+                  primaryTypographyProps={{
+                    variant: 'body2',
+                    color: 'text.secondary'
+                  }}
+                />
+              </ListItemButton>
+            </ListItem>
+            <ListItem sx={{ justifyContent: 'center', py: 0 }}>
+              <Typography 
+                variant="caption" 
+                color="text.secondary"
+                sx={{ fontStyle: 'italic' }}
+              >
+                v0.1.0
+              </Typography>
+            </ListItem>
+            <ListItem sx={{ justifyContent: 'center', py: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                &copy; {new Date().getFullYear()} OffshoreSync
+              </Typography>
+            </ListItem>
+          </List>
+        </Box>
       </Drawer>
+
+      {/* Legal Modals */}
+      <PrivacyPolicy open={privacyOpen} onClose={() => setPrivacyOpen(false)} />
+      <TermsAndConditions open={termsOpen} onClose={() => setTermsOpen(false)} />
     </>
   );
 }

@@ -333,5 +333,198 @@
       "goToLogin": "Ir a Iniciar Sesión",
       "goToHome": "Volver al Inicio"
     }
+  },
+  "legal": {
+    "privacyPolicy": {
+      "title": "Política de Privacidad",
+      "lastUpdated": "Última actualización: 18 de marzo de 2025",
+      "sections": {
+        "informationCollect": {
+          "title": "1. Información que Recopilamos",
+          "intro": "Recopilamos la información que nos proporciona directamente cuando:",
+          "items": [
+            "Crea una cuenta",
+            "Actualiza su perfil",
+            "Utiliza nuestros servicios",
+            "Se comunica con otros usuarios",
+            "Contacta a nuestro equipo de soporte"
+          ]
+        },
+        "informationUse": {
+          "title": "2. Cómo Utilizamos su Información",
+          "intro": "Utilizamos la información que recopilamos para:",
+          "items": [
+            "Proporcionar y mantener nuestros servicios",
+            "Personalizar su experiencia",
+            "Mejorar nuestros servicios",
+            "Comunicarnos con usted",
+            "Garantizar la seguridad de la plataforma"
+          ]
+        },
+        "thirdPartyServices": {
+          "title": "3. Servicios de Terceros",
+          "intro": "Utilizamos los siguientes servicios de terceros para proporcionar y mejorar nuestra plataforma:",
+          "services": [
+            "Render (render.com) - Para el alojamiento e infraestructura de nuestro sitio web",
+            "Cloudflare - Para servicios de dominio y seguridad mejorada",
+            "Amazon SES (Simple Email Service) - Para enviar correos electrónicos de confirmación de registro",
+            "GitHub - Para el alojamiento y control de versiones del código de nuestra aplicación",
+            "Google OAuth - Para autenticación segura e inicio de sesión de usuarios",
+            "Google Calendar API - Para integración de calendario y gestión de eventos"
+          ],
+          "privacyPoliciesIntro": "Estos servicios pueden recopilar y procesar ciertos datos de acuerdo con sus propias políticas de privacidad:",
+          "privacyPolicies": {
+            "render": "https://render.com/privacy",
+            "cloudflare": "https://www.cloudflare.com/privacypolicy/",
+            "amazonSes": "https://aws.amazon.com/privacy/",
+            "github": "https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement",
+            "google": "https://policies.google.com/privacy"
+          }
+        },
+        "informationSharing": {
+          "title": "4. Compartir Información",
+          "intro": "No vendemos su información personal. Podemos compartir su información con:",
+          "items": [
+            "Nuestros proveedores de servicios terceros mencionados anteriormente, únicamente con el propósito de proporcionar nuestros servicios",
+            "Servicios de Google para autenticación e integración de calendario",
+            "Proveedores de servicios que nos ayudan en nuestras operaciones",
+            "Autoridades cuando lo requiera la ley",
+            "Otros usuarios según su configuración de privacidad"
+          ]
+        },
+        "dataProcessing": {
+          "title": "5. Procesamiento y Almacenamiento de Datos",
+          "content": "Sus datos se procesan y almacenan principalmente en entornos cloud seguros proporcionados por Render. Las comunicaciones por correo electrónico se procesan a través de Amazon SES, y nuestros servicios de dominio son gestionados por Cloudflare. La autenticación se maneja a través de Google OAuth, y los datos del calendario se procesan a través de la API de Google Calendar. Toda la transmisión de datos está encriptada utilizando protocolos estándar de la industria."
+        },
+        "dataSecurity": {
+          "title": "6. Seguridad de Datos",
+          "content": "Implementamos medidas técnicas y organizativas apropiadas para proteger su información personal."
+        },
+        "userRights": {
+          "title": "7. Sus Derechos",
+          "intro": "Usted tiene derecho a:",
+          "items": [
+            "Acceder a su información personal",
+            "Corregir datos inexactos",
+            "Solicitar la eliminación de sus datos",
+            "Oponerse al procesamiento de datos",
+            "Exportar sus datos"
+          ]
+        },
+        "contact": {
+          "title": "8. Contáctenos",
+          "content": "Si tiene preguntas sobre esta Política de Privacidad, contáctenos en: support@offshoresync.com"
+        }
+      }
+    },
+    "termsAndConditions": {
+      "title": "Términos y Condiciones",
+      "lastUpdated": "Última actualización: 18 de marzo de 2025",
+      "sections": {
+        "acceptance": {
+          "title": "1. Aceptación de los Términos",
+          "content": "Al acceder y utilizar esta plataforma, usted acepta y se compromete a cumplir estos Términos y Condiciones."
+        },
+        "userRegistration": {
+          "title": "2. Registro de Usuario",
+          "items": [
+            "Debe proporcionar información precisa y completa al crear una cuenta",
+            "Es responsable de mantener la seguridad de su cuenta",
+            "No debe compartir sus credenciales de cuenta",
+            "Debe tener al menos 13 años para utilizar nuestros servicios"
+          ]
+        },
+        "userConduct": {
+          "title": "3. Conducta del Usuario",
+          "intro": "Usted se compromete a no:",
+          "items": [
+            "Violar leyes o regulaciones",
+            "Suplantar a otros usuarios",
+            "Compartir contenido inapropiado o dañino",
+            "Intentar vulnerar la seguridad de la plataforma",
+            "Interferir con la funcionalidad de la plataforma"
+          ]
+        },
+        "thirdPartyServices": {
+          "title": "4. Servicios de Terceros",
+          "intro": "Nuestra plataforma utiliza los siguientes servicios de terceros:",
+          "services": [
+            "Render (render.com) para alojamiento e infraestructura",
+            "Cloudflare para servicios de dominio y seguridad",
+            "Amazon SES para comunicaciones por correo electrónico",
+            "GitHub para el alojamiento y control de versiones del código de nuestra aplicación",
+            "Google OAuth para autenticación segura de usuarios",
+            "Google Calendar API para integración de calendario"
+          ],
+          "acknowledgment": {
+            "intro": "Al utilizar nuestra plataforma, usted reconoce y acepta que:",
+            "items": [
+              "Su uso de estos servicios está sujeto a sus respectivos términos de servicio",
+              "No somos responsables de la disponibilidad o funcionalidad de estos servicios",
+              "Estos servicios pueden recopilar y procesar datos según sus propias políticas"
+            ]
+          },
+          "privacyPoliciesIntro": "Por favor, revise las políticas de privacidad de nuestros proveedores de servicios:",
+          "privacyPolicies": {
+            "render": "https://render.com/privacy",
+            "cloudflare": "https://www.cloudflare.com/privacypolicy/",
+            "amazonSes": "https://aws.amazon.com/privacy/",
+            "github": "https://docs.github.com/en/site-policy/privacy-policies/github-privacy-statement",
+            "google": "https://policies.google.com/privacy"
+          }
+        },
+        "serviceAvailability": {
+          "title": "5. Disponibilidad y Rendimiento del Servicio",
+          "intro": "Si bien nos esforzamos por mantener una alta disponibilidad a través de nuestro proveedor de alojamiento Render:",
+          "items": [
+            "No garantizamos un servicio ininterrumpido",
+            "El mantenimiento ocasional o problemas técnicos pueden afectar la disponibilidad",
+            "El rendimiento del servicio puede variar según su ubicación y condiciones de red",
+            "Podemos suspender temporalmente el servicio para mantenimiento o actualizaciones"
+          ]
+        },
+        "dataProcessing": {
+          "title": "6. Procesamiento de Datos y Comunicaciones",
+          "intro": "Al utilizar nuestro servicio, usted consiente:",
+          "items": [
+            "El procesamiento y almacenamiento de datos en la infraestructura de Render",
+            "El procesamiento de datos relacionados con el dominio por Cloudflare",
+            "Recibir correos electrónicos de registro y relacionados con la cuenta a través de Amazon SES",
+            "Autenticación a través de servicios de Google OAuth",
+            "Procesamiento de datos del calendario a través de la API de Google Calendar",
+            "La transmisión de datos a través de las redes de estos proveedores de servicios"
+          ]
+        },
+        "intellectualProperty": {
+          "title": "7. Propiedad Intelectual",
+          "items": [
+            "Todo el contenido de la plataforma está protegido por derechos de autor y otras leyes de propiedad intelectual",
+            "Los usuarios conservan la propiedad de su contenido pero nos otorgan una licencia para usarlo",
+            "No debe utilizar nuestra propiedad intelectual sin permiso"
+          ]
+        },
+        "serviceModifications": {
+          "title": "8. Modificaciones del Servicio",
+          "intro": "Nos reservamos el derecho a:",
+          "items": [
+            "Modificar o descontinuar servicios",
+            "Actualizar estos términos",
+            "Eliminar contenido que viole nuestras políticas"
+          ]
+        },
+        "limitationOfLiability": {
+          "title": "9. Limitación de Responsabilidad",
+          "items": [
+            "Proporcionamos el servicio \"tal cual\" sin garantías",
+            "No somos responsables de daños indirectos",
+            "Nuestra responsabilidad está limitada al monto pagado por el servicio"
+          ]
+        },
+        "contact": {
+          "title": "10. Información de Contacto",
+          "content": "Para preguntas sobre estos Términos y Condiciones, contáctenos en: support@offshoresync.com"
+        }
+      }
+    }
   }
 }
