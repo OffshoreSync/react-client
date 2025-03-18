@@ -6,51 +6,45 @@ let isRefreshing = false;
 let refreshSubscribers = [];
 
 // Cookie utilities
+export const getCookie = (name) => {
+  // Try both regular and PWA versions
+  const regularCookie = cookies.get(name);
+  const pwaCookie = cookies.get(`${name}_pwa`);
+  return regularCookie || pwaCookie;
+};
+
 export const setCookie = (name, value, options = {}) => {
   const defaultOptions = {
     path: '/',
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax', // Changed to 'lax' for all cookies to improve mobile compatibility
-    maxAge: name === 'refreshToken' ? 30 * 24 * 60 * 60 : 60 // 30 days for refresh token, 1 minute for others (for testing)
-  };
-  
-  const finalOptions = {
-    ...defaultOptions,
-    ...options,
-    httpOnly: false // Ensure PWA can access cookies
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production'
   };
 
-  // Set the primary cookie
-  cookies.set(name, value, finalOptions);
+  const cookieOptions = { ...defaultOptions, ...options };
 
-  // For tokens, also set a PWA version
-  if (name === 'token' || name === 'refreshToken') {
-    const pwaOptions = {
-      ...finalOptions,
-      name: `${name}_pwa`
-    };
-    cookies.set(name + '_pwa', value, pwaOptions);
-  }
-};
-
-export const getCookie = (name) => {
-  // Try getting the regular cookie first
-  const value = cookies.get(name);
-  if (value) return value;
-
-  // If not found and it's a token, try the PWA version
-  if (name === 'token' || name === 'refreshToken') {
-    return cookies.get(name + '_pwa');
-  }
-  return null;
+  // Set both regular and PWA versions
+  cookies.set(name, value, cookieOptions);
+  cookies.set(`${name}_pwa`, value, {
+    ...cookieOptions,
+    sameSite: 'none',  // Required for PWA
+    secure: true       // Required when sameSite is 'none'
+  });
 };
 
 export const removeCookie = (name) => {
-  cookies.remove(name, { path: '/' });
-  // Also remove PWA version if it's a token
-  if (name === 'token' || name === 'refreshToken') {
-    cookies.remove(name + '_pwa', { path: '/' });
-  }
+  // Remove both regular and PWA versions
+  const options = {
+    path: '/',
+    sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production'
+  };
+
+  cookies.remove(name, options);
+  cookies.remove(`${name}_pwa`, {
+    ...options,
+    sameSite: 'none',
+    secure: true
+  });
 };
 
 // Get backend URL from environment or default
