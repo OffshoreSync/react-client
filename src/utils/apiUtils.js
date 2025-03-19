@@ -14,38 +14,69 @@ export const getCookie = (name) => {
 };
 
 export const setCookie = (name, value, options = {}) => {
+  const isProd = process.env.NODE_ENV === 'production';
+  
+  // Calculate expiration time
+  let expires;
+  if (name.includes('refreshToken')) {
+    expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+  } else if (name === 'token') {
+    expires = new Date(Date.now() + 60 * 1000); // 1 minute
+  }
+
   const defaultOptions = {
     path: '/',
-    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
-    secure: process.env.NODE_ENV === 'production',
-    expires: name.includes('refreshToken') ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : undefined // 7 days for refresh token
+    sameSite: isProd ? 'none' : 'lax', // Changed to 'none' for both in production
+    secure: isProd,
+    expires
   };
 
   const cookieOptions = { ...defaultOptions, ...options };
 
-  // Set both regular and PWA versions
-  cookies.set(name, value, cookieOptions);
-  cookies.set(`${name}_pwa`, value, {
-    ...cookieOptions,
-    sameSite: 'none',  // Required for PWA
-    secure: true       // Required when sameSite is 'none'
+  // Debug cookie settings
+  console.debug('Setting cookie:', {
+    name,
+    isProd,
+    expires: expires?.toISOString(),
+    sameSite: cookieOptions.sameSite,
+    secure: cookieOptions.secure
   });
+
+  // Set both regular and PWA versions with same settings in production
+  if (isProd) {
+    // In production, both regular and PWA cookies use same secure settings
+    cookies.set(name, value, cookieOptions);
+    cookies.set(`${name}_pwa`, value, cookieOptions);
+  } else {
+    // In development, keep original behavior
+    cookies.set(name, value, cookieOptions);
+    cookies.set(`${name}_pwa`, value, {
+      ...cookieOptions,
+      sameSite: 'none',
+      secure: true
+    });
+  }
 };
 
 export const removeCookie = (name) => {
-  // Remove both regular and PWA versions
+  const isProd = process.env.NODE_ENV === 'production';
   const options = {
     path: '/',
-    sameSite: 'lax',
-    secure: process.env.NODE_ENV === 'production'
+    sameSite: isProd ? 'none' : 'lax',
+    secure: isProd
   };
 
-  cookies.remove(name, options);
-  cookies.remove(`${name}_pwa`, {
-    ...options,
-    sameSite: 'none',
-    secure: true
+  // Debug cookie removal
+  console.debug('Removing cookie:', {
+    name,
+    isProd,
+    sameSite: options.sameSite,
+    secure: options.secure
   });
+
+  // Use same settings for both in production
+  cookies.remove(name, options);
+  cookies.remove(`${name}_pwa`, options);
 };
 
 // Get backend URL from environment or default
