@@ -94,40 +94,68 @@ export const api = axios.create({
   }
 });
 
+let tokenRefreshPromise = null;
+
+// Function to get a valid token, refreshing if necessary
+const getValidToken = async () => {
+  const token = getCookie('token');
+  if (!token) return null;
+
+  try {
+    const tokenData = JSON.parse(atob(token.split('.')[1]));
+    const currentTime = Math.floor(Date.now() / 1000);
+    
+    // Log token status
+    console.log('%c🔑 Token Status Check', 'color: #4CAF50; font-weight: bold', {
+      tokenType: 'access',
+      source: token === getCookie('token_pwa') ? 'pwa_cookie' : 'regular_cookie',
+      expiresAt: new Date(tokenData.exp * 1000).toISOString(),
+      currentTime: new Date(currentTime * 1000).toISOString(),
+      hasExpired: currentTime >= tokenData.exp,
+      isRefreshing: !!tokenRefreshPromise
+    });
+
+    // If token is expired or about to expire (within 5 seconds)
+    if (currentTime >= tokenData.exp - 5) {
+      // If refresh is already in progress, wait for it
+      if (tokenRefreshPromise) {
+        console.log('%c🔄 Waiting for ongoing refresh', 'color: #FF9800; font-weight: bold');
+        return tokenRefreshPromise;
+      }
+
+      // Start new refresh
+      console.log('%c🔄 Starting token refresh', 'color: #2196F3; font-weight: bold');
+      tokenRefreshPromise = refreshTokenAndRetry();
+      
+      try {
+        const newToken = await tokenRefreshPromise;
+        return newToken;
+      } finally {
+        tokenRefreshPromise = null;
+      }
+    }
+
+    return token;
+  } catch (error) {
+    console.log('%c🔑 Token Validation Failed', 'color: #FF5722; font-weight: bold', {
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+    return null;
+  }
+};
+
 // Request interceptor with enhanced error handling
 api.interceptors.request.use(
-  (config) => {
-    const token = getCookie('token');
+  async (config) => {
+    // Skip token validation for refresh token requests
+    if (config.url.includes('/auth/refresh-token')) {
+      return config;
+    }
+
+    const token = await getValidToken();
     if (token) {
-      // Decode token to check expiration
-      try {
-        const tokenData = JSON.parse(atob(token.split('.')[1]));
-        const currentTime = Math.floor(Date.now() / 1000);
-        
-        console.log('%c🔑 Session Validation Check', 'color: #4CAF50; font-weight: bold', {
-          tokenType: 'access',
-          source: token === getCookie('token_pwa') ? 'pwa_cookie' : 'regular_cookie',
-          urlPath: config.url,
-          expiresAt: new Date(tokenData.exp * 1000).toISOString(),
-          currentTime: new Date(currentTime * 1000).toISOString(),
-          hasExpired: currentTime >= tokenData.exp
-        });
-
-        if (currentTime >= tokenData.exp) {
-          // Token has expired, trigger refresh flow
-          throw new Error('Token expired');
-        }
-
-        config.headers.Authorization = `Bearer ${token}`;
-      } catch (error) {
-        console.log('%c🔑 Token Validation Failed', 'color: #FF5722; font-weight: bold', {
-          error: error.message,
-          timestamp: new Date().toISOString()
-        });
-        // Don't set the Authorization header if token is invalid
-        // This will trigger the 401 flow
-        return Promise.reject(error);
-      }
+      config.headers.Authorization = `Bearer ${token}`;
     }
 
     // Add CSRF token if available
@@ -149,13 +177,17 @@ api.interceptors.request.use(
 );
 
 // Function to refresh token and retry original request
-const refreshTokenAndRetry = async (originalRequest) => {
+const refreshTokenAndRetry = async (originalRequest = null) => {
   if (isRefreshing) {
     // If refresh is already in progress, wait for it to complete
     return new Promise((resolve) => {
       refreshSubscribers.push((token) => {
-        originalRequest.headers.Authorization = `Bearer ${token}`;
-        resolve(api(originalRequest));
+        if (originalRequest) {
+          originalRequest.headers.Authorization = `Bearer ${token}`;
+          resolve(api(originalRequest));
+        } else {
+          resolve(token);
+        }
       });
     });
   }
