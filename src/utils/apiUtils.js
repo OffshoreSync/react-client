@@ -99,13 +99,35 @@ api.interceptors.request.use(
   (config) => {
     const token = getCookie('token');
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-      console.log('%c🔑 Session Validation - Access Token Used', 'color: #4CAF50; font-weight: bold', {
-        tokenType: 'access',
-        source: token === getCookie('token_pwa') ? 'pwa_cookie' : 'regular_cookie',
-        urlPath: config.url,
-        timestamp: new Date().toISOString()
-      });
+      // Decode token to check expiration
+      try {
+        const tokenData = JSON.parse(atob(token.split('.')[1]));
+        const currentTime = Math.floor(Date.now() / 1000);
+        
+        console.log('%c🔑 Session Validation Check', 'color: #4CAF50; font-weight: bold', {
+          tokenType: 'access',
+          source: token === getCookie('token_pwa') ? 'pwa_cookie' : 'regular_cookie',
+          urlPath: config.url,
+          expiresAt: new Date(tokenData.exp * 1000).toISOString(),
+          currentTime: new Date(currentTime * 1000).toISOString(),
+          hasExpired: currentTime >= tokenData.exp
+        });
+
+        if (currentTime >= tokenData.exp) {
+          // Token has expired, trigger refresh flow
+          throw new Error('Token expired');
+        }
+
+        config.headers.Authorization = `Bearer ${token}`;
+      } catch (error) {
+        console.log('%c🔑 Token Validation Failed', 'color: #FF5722; font-weight: bold', {
+          error: error.message,
+          timestamp: new Date().toISOString()
+        });
+        // Don't set the Authorization header if token is invalid
+        // This will trigger the 401 flow
+        return Promise.reject(error);
+      }
     }
 
     // Add CSRF token if available
@@ -125,6 +147,100 @@ api.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+
+// Function to refresh token and retry original request
+const refreshTokenAndRetry = async (originalRequest) => {
+  if (isRefreshing) {
+    // If refresh is already in progress, wait for it to complete
+    return new Promise((resolve) => {
+      refreshSubscribers.push((token) => {
+        originalRequest.headers.Authorization = `Bearer ${token}`;
+        resolve(api(originalRequest));
+      });
+    });
+  }
+
+  isRefreshing = true;
+  const refreshToken = getCookie('refreshToken') || getCookie('refreshToken_pwa');
+
+  if (!refreshToken) {
+    isRefreshing = false;
+    removeCookie('token');
+    removeCookie('refreshToken');
+    removeCookie('user');
+    window.dispatchEvent(new CustomEvent('auth-state-changed', { detail: { isAuthenticated: false } }));
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login';
+    }
+    return Promise.reject(new Error('No refresh token available'));
+  }
+
+  try {
+    console.log('%c🔄 Token Refresh Attempt', 'color: #2196F3; font-weight: bold', {
+      tokenType: 'refresh',
+      source: refreshToken === getCookie('refreshToken_pwa') ? 'pwa_cookie' : 'regular_cookie',
+      timestamp: new Date().toISOString()
+    });
+
+    const response = await axios.post(`${getBackendUrl()}/api/auth/refresh-token`,
+      { refreshToken },
+      {
+        withCredentials: true,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
+
+    const { token, refreshToken: newRefreshToken, user } = response.data;
+
+    if (!token) {
+      throw new Error('No token received from refresh endpoint');
+    }
+
+    // Update cookies with new tokens
+    setCookie('token', token);
+    if (newRefreshToken) {
+      setCookie('refreshToken', newRefreshToken);
+    }
+
+    // Update user data if provided
+    if (user) {
+      setCookie('user', JSON.stringify(user));
+      window.dispatchEvent(new CustomEvent('auth-state-changed', { detail: { isAuthenticated: true, user } }));
+    }
+
+    // Notify subscribers and clear the queue
+    refreshSubscribers.forEach((callback) => callback(token));
+    refreshSubscribers = [];
+
+    // Update the original request with new token
+    originalRequest.headers.Authorization = `Bearer ${token}`;
+
+    console.log('%c✨ Token Refresh Success', 'color: #9C27B0; font-weight: bold', {
+      accessTokenUpdated: true,
+      refreshTokenUpdated: !!newRefreshToken,
+      userUpdated: !!user,
+      timestamp: new Date().toISOString()
+    });
+
+    isRefreshing = false;
+    return api(originalRequest);
+  } catch (error) {
+    isRefreshing = false;
+    refreshSubscribers = [];
+
+    // Clear all auth cookies and redirect to login
+    removeCookie('token');
+    removeCookie('refreshToken');
+    removeCookie('user');
+    window.dispatchEvent(new CustomEvent('auth-state-changed', { detail: { isAuthenticated: false } }));
+
+    if (window.location.pathname !== '/login') {
+      window.location.href = '/login';
+    }
+
+    return Promise.reject(error);
+  }
+};
 
 // Response interceptor with enhanced token refresh
 api.interceptors.response.use(
@@ -171,6 +287,12 @@ api.interceptors.response.use(
       status: error.response?.status,
       message: error.message
     });
+
+    // Handle token expiration from request interceptor
+    if (error.message === 'Token expired' && !originalRequest._retry) {
+      originalRequest._retry = true;
+      return refreshTokenAndRetry(originalRequest);
+    }
 
     // If error is not 401 or request already retried, reject
     if (!error.response || error.response.status !== 401 || originalRequest._retry || originalRequest.url.includes('/auth/refresh-token')) {
