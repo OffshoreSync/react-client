@@ -294,30 +294,16 @@ const Sync = () => {
 
   // Google Calendar event creation
   const handleGoogleLogin = useGoogleLogin({
+    flow: 'auth-code',
+    scope: 'https://www.googleapis.com/auth/calendar.events',
     onSuccess: async (codeResponse) => {
       try {
-        console.log('Google login success:', {
-          code: codeResponse.code ? 'present' : 'missing',
-          origin: window.location.origin,
-          clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID ? 'present' : 'missing'
-        });
+        console.log('Google login success, exchanging code for token...');
 
-        // Exchange authorization code for access token
-        const tokenResponse = await axios.post(
-          'https://oauth2.googleapis.com/token',
-          {
-            code: codeResponse.code,
-            client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
-            client_secret: process.env.REACT_APP_GOOGLE_CLIENT_SECRET,
-            redirect_uri: process.env.REACT_APP_FRONTEND_URL || window.location.origin,
-            grant_type: 'authorization_code'
-          },
-          {
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          }
-        );
+        // Exchange authorization code for access token using our backend
+        const tokenResponse = await api.post('/api/auth/google-token-exchange', {
+          code: codeResponse.code
+        });
 
         console.log('Token exchange success');
         setGoogleAccessToken(tokenResponse.data.access_token);
@@ -327,7 +313,15 @@ const Sync = () => {
           response: error.response?.data,
           status: error.response?.status
         });
-        setSnackbarMessage(error.response?.data?.error_description || 'Failed to authenticate with Google');
+        
+        let errorMessage = 'Failed to authenticate with Google';
+        if (error.response?.data?.error) {
+          errorMessage = error.response.data.error;
+        } else if (error.message) {
+          errorMessage = error.message;
+        }
+        
+        setSnackbarMessage(errorMessage);
         setSnackbarSeverity('error');
         setSnackbarOpen(true);
       }
@@ -370,16 +364,10 @@ const Sync = () => {
         }
       };
 
-      const response = await api.post(
-        'https://www.googleapis.com/calendar/v3/calendars/primary/events',
-        event,
-        {
-          headers: {
-            Authorization: `Bearer ${googleAccessToken}`,
-            'Content-Type': 'application/json'
-          }
-        }
-      );
+      const response = await api.post('/api/auth/google-calendar-event', {
+        accessToken: googleAccessToken,
+        event
+      });
 
       // Show success snackbar
       setSnackbarOpen(true);
