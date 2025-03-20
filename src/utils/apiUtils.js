@@ -410,6 +410,12 @@ api.interceptors.response.use(
         isRefreshing = false;
         refreshSubscribers = [];
 
+        // If we're on the home page and authenticated, redirect to dashboard
+        if (window.location.pathname === '/' && user) {
+          window.location.href = '/dashboard';
+          return;
+        }
+
         // Retry the original request with new token
         return axios(originalRequest);
 
