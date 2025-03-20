@@ -296,6 +296,12 @@ const Sync = () => {
   const handleGoogleLogin = useGoogleLogin({
     onSuccess: async (codeResponse) => {
       try {
+        console.log('Google login success:', {
+          code: codeResponse.code ? 'present' : 'missing',
+          origin: window.location.origin,
+          clientId: process.env.REACT_APP_GOOGLE_CLIENT_ID ? 'present' : 'missing'
+        });
+
         // Exchange authorization code for access token
         const tokenResponse = await axios.post(
           'https://oauth2.googleapis.com/token',
@@ -303,27 +309,38 @@ const Sync = () => {
             code: codeResponse.code,
             client_id: process.env.REACT_APP_GOOGLE_CLIENT_ID,
             client_secret: process.env.REACT_APP_GOOGLE_CLIENT_SECRET,
-            redirect_uri: window.location.origin,
+            redirect_uri: process.env.REACT_APP_FRONTEND_URL || window.location.origin,
             grant_type: 'authorization_code'
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json'
+            }
           }
         );
 
+        console.log('Token exchange success');
         setGoogleAccessToken(tokenResponse.data.access_token);
       } catch (error) {
-        console.error('Google token exchange error:', error);
-        setSnackbarMessage('Failed to authenticate with Google');
+        console.error('Google token exchange error:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status
+        });
+        setSnackbarMessage(error.response?.data?.error_description || 'Failed to authenticate with Google');
         setSnackbarSeverity('error');
         setSnackbarOpen(true);
       }
     },
     onError: (error) => {
       console.error('Google login error:', error);
-      setSnackbarMessage('Google login failed');
+      setSnackbarMessage('Google login failed: ' + error.message);
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     },
     flow: 'auth-code',
-    scope: 'https://www.googleapis.com/auth/calendar.events'
+    scope: 'https://www.googleapis.com/auth/calendar.events',
+    redirect_uri: process.env.REACT_APP_FRONTEND_URL || window.location.origin
   });
 
   // Function to create Google Calendar event
