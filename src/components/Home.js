@@ -26,19 +26,40 @@ function Home() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
 
+  // Listen for auth state changes
   useEffect(() => {
-    const token = getCookie('token');
-    const user = getCookie('user');
-    
-    setIsLoggedIn(!!token && !!user);
-  }, []);
+    const handleAuthChange = (event) => {
+      const { isAuthenticated } = event.detail;
+      setIsLoggedIn(isAuthenticated);
+      if (isAuthenticated) {
+        navigate('/dashboard');
+      }
+    };
 
+    window.addEventListener('auth-state-changed', handleAuthChange);
+    return () => window.removeEventListener('auth-state-changed', handleAuthChange);
+  }, [navigate]);
+
+  // Initial auth check
   useEffect(() => {
-    const token = getCookie('token');
-    if (token) {
-      navigate('/dashboard');
-    }
+    const checkAuth = () => {
+      const token = getCookie('token');
+      const user = getCookie('user');
+      const isAuth = !!token && !!user;
+      
+      setIsLoggedIn(isAuth);
+      setIsCheckingAuth(false);
+
+      if (isAuth) {
+        navigate('/dashboard');
+      }
+    };
+
+    // Small delay to allow potential token refresh to complete
+    const timeoutId = setTimeout(checkAuth, 500);
+    return () => clearTimeout(timeoutId);
   }, [navigate]);
 
   const handleLogin = () => {
