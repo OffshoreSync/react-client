@@ -30,11 +30,13 @@ import Register from './components/Register';
 import EditProfile from './components/EditProfile';
 import FriendManagement from './components/FriendManagement';
 import VerifyEmail from './components/VerifyEmail';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
+import TermsPage from './pages/TermsPage';
 import { getCookie, setCookie, removeCookie, api } from './utils/apiUtils';
 import { AuthProvider } from './context/AuthContext';
 
 // Define public routes that don't require authentication
-const publicRoutes = ['/', '/home', '/login', '/register', '/verify-email', '/reset-password'];
+const publicRoutes = ['/', '/home', '/login', '/register', '/verify-email', '/reset-password', '/privacy-policy', '/terms'];
 
 // Explicitly declare colors to prevent no-undef
 const primaryColor = blue[500];
@@ -246,6 +248,8 @@ function AppRoutes() {
       <Navbar isAuthenticated={isAuthenticated} />
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Dashboard />

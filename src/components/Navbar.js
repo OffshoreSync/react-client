@@ -38,6 +38,8 @@ import AccountCircle from '@mui/icons-material/AccountCircle';
 import LanguageIcon from '@mui/icons-material/Language';
 import PersonIcon from '@mui/icons-material/Person';
 import GitHubIcon from '@mui/icons-material/GitHub';
+import SecurityIcon from '@mui/icons-material/Security';
+import GavelIcon from '@mui/icons-material/Gavel';
 
 // Import country flag component
 import ReactCountryFlag from 'react-country-flag';
@@ -50,17 +52,13 @@ import i18n from '../i18n';
 import { getCookie, setCookie, removeCookie, api } from '../utils/apiUtils';
 import { useAuth } from '../context/AuthContext';
 
-// Import legal components
-import PrivacyPolicy from './legal/PrivacyPolicy';
-import TermsAndConditions from './legal/TermsAndConditions';
+
 
 function Navbar() {
   const navigate = useNavigate();
   const [language, setLanguage] = useState(getCookie('language') || 'en');
   const [anchorEl, setAnchorEl] = useState(null);
   const [languageMenuAnchor, setLanguageMenuAnchor] = useState(null);
-  const [privacyOpen, setPrivacyOpen] = useState(false);
-  const [termsOpen, setTermsOpen] = useState(false);
   const theme = useTheme();
   const { t } = useTranslation();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
@@ -159,6 +157,17 @@ function Navbar() {
       text: t('navbar.login'),
       icon: <LoginIcon />,
       onClick: () => handleNavigation('/login')
+    },
+    { divider: true },
+    {
+      text: t('navbar.privacy'),
+      icon: <SecurityIcon />,
+      onClick: () => handleNavigation('/privacy-policy')
+    },
+    {
+      text: t('navbar.terms'),
+      icon: <GavelIcon />,
+      onClick: () => handleNavigation('/terms')
     }
   ];
 
@@ -345,18 +354,21 @@ function Navbar() {
       >
         {/* Main Menu */}
         <List sx={{ flexGrow: 1 }}>
-          {menuItems.map((item) => (
-            <ListItem 
-              key={item.text}
-              disablePadding
-            >
-              <ListItemButton onClick={item.onClick}>
-                <ListItemIcon>
-                  {item.icon}
-                </ListItemIcon>
-                <ListItemText primary={item.text} />
-              </ListItemButton>
-            </ListItem>
+          {menuItems.map((item, index) => (
+            item.divider ? (
+              <Divider key={`divider-${index}`} />
+            ) : (
+              <ListItem 
+                key={item.text}
+                disablePadding
+              >
+                <ListItemButton onClick={item.onClick}>
+                  <ListItemIcon>
+                    {item.icon}
+                  </ListItemIcon>
+                  <ListItemText primary={item.text} />
+                </ListItemButton>
+              </ListItem>)
           ))}
         </List>
 
@@ -382,7 +394,14 @@ function Navbar() {
             </ListItem>
 
             <ListItem disablePadding>
-              <ListItemButton onClick={() => setPrivacyOpen(true)}>
+              <ListItemButton 
+                component="a" 
+                href="/privacy-policy"
+                sx={{ textDecoration: 'none', color: 'inherit' }}
+              >
+                <ListItemIcon>
+                  <SecurityIcon sx={{ color: 'text.secondary' }} />
+                </ListItemIcon>
                 <ListItemText 
                   primary={t('legal.privacyPolicy.title')}
                   primaryTypographyProps={{
@@ -393,7 +412,14 @@ function Navbar() {
               </ListItemButton>
             </ListItem>
             <ListItem disablePadding>
-              <ListItemButton onClick={() => setTermsOpen(true)}>
+              <ListItemButton 
+                component="a" 
+                href="/terms"
+                sx={{ textDecoration: 'none', color: 'inherit' }}
+              >
+                <ListItemIcon>
+                  <GavelIcon sx={{ color: 'text.secondary' }} />
+                </ListItemIcon>
                 <ListItemText 
                   primary={t('legal.termsAndConditions.title')}
                   primaryTypographyProps={{
@@ -421,9 +447,7 @@ function Navbar() {
         </Box>
       </Drawer>
 
-      {/* Legal Modals */}
-      <PrivacyPolicy open={privacyOpen} onClose={() => setPrivacyOpen(false)} />
-      <TermsAndConditions open={termsOpen} onClose={() => setTermsOpen(false)} />
+      {/* End of Drawer */}
     </>
   );
 }
