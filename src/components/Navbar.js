@@ -157,17 +157,6 @@ function Navbar() {
       text: t('navbar.login'),
       icon: <LoginIcon />,
       onClick: () => handleNavigation('/login')
-    },
-    { divider: true },
-    {
-      text: t('navbar.privacy'),
-      icon: <SecurityIcon />,
-      onClick: () => handleNavigation('/privacy-policy')
-    },
-    {
-      text: t('navbar.terms'),
-      icon: <GavelIcon />,
-      onClick: () => handleNavigation('/terms')
     }
   ];
 
