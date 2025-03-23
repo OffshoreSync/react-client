@@ -15,11 +15,12 @@ import {
   Alert,
   AlertTitle
 } from '@mui/material';
-import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import WorkIcon from '@mui/icons-material/Work';
 import SecurityIcon from '@mui/icons-material/Security';
-import PublicIcon from '@mui/icons-material/Public';
 import GoogleIcon from '@mui/icons-material/Google';
+import GroupAddIcon from '@mui/icons-material/GroupAdd';
+import EventIcon from '@mui/icons-material/Event';
+import TranslateIcon from '@mui/icons-material/Translate';
 import { getCookie, removeCookie } from '../utils/apiUtils';
 
 function Home() {
@@ -162,9 +163,9 @@ function Home() {
               <List>
                 {[
                   {
-                    icon: <CheckCircleOutlineIcon color="primary" />,
-                    primary: t('home.features.workManagement.title'),
-                    secondary: t('home.features.workManagement.description')
+                    icon: <WorkIcon color="primary" />,
+                    primary: t('home.features.flexibleWork.title'),
+                    secondary: t('home.features.flexibleWork.description')
                   },
                   {
                     icon: <SecurityIcon color="primary" />,
@@ -172,14 +173,19 @@ function Home() {
                     secondary: t('home.features.authentication.description')
                   },
                   {
-                    icon: <WorkIcon color="primary" />,
-                    primary: t('home.features.roleBasedAccess.title'),
-                    secondary: t('home.features.roleBasedAccess.description')
+                    icon: <GroupAddIcon color="primary" />,
+                    primary: t('home.features.friendship.title'),
+                    secondary: t('home.features.friendship.description')
                   },
                   {
-                    icon: <PublicIcon color="primary" />,
-                    primary: t('home.features.globalSupport.title'),
-                    secondary: t('home.features.globalSupport.description')
+                    icon: <EventIcon color="primary" />,
+                    primary: t('home.features.events.title'),
+                    secondary: t('home.features.events.description')
+                  },
+                  {
+                    icon: <TranslateIcon color="primary" />,
+                    primary: t('home.features.localization.title'),
+                    secondary: t('home.features.localization.description')
                   }
                 ].map((feature, index) => (
                   <ListItem key={index}>

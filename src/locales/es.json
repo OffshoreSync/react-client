@@ -165,21 +165,25 @@
     "dashboardButton": "Ir al Panel",
     "logoutButton": "Cerrar Sesión en Su Cuenta",
     "features": {
-      "workManagement": {
+      "flexibleWork": {
         "title": "Regímenes de Trabajo Flexibles",
         "description": "Elija entre regímenes predefinidos de 7/7, 14/14, 28/28 o cree un régimen personalizado"
       },
       "authentication": {
         "title": "Autenticación de Usuario",
-        "description": "Registro e inicio de sesión seguros con paneles personalizados"
+        "description": "Registro e inicio de sesión seguros utilizando criptografía de última generación"
       },
-      "roleBasedAccess": {
-        "title": "Acceso Basado en Roles",
-        "description": "Experiencia personalizada para diferentes roles offshore"
+      "friendship": {
+        "title": "Sistema de Amigos",
+        "description": "Agregue a sus amigos y sincronice sus horarios de trabajo fácilmente"
       },
-      "globalSupport": {
-        "title": "Soporte Offshore Global",
-        "description": "Trabaja con profesionales offshore de múltiples países"
+      "events": {
+        "title": "Eventos del Calendario",
+        "description": "Cree eventos en Google Calendar para gestionar sus encuentros durante la folga"
+      },
+      "localization": {
+        "title": "Múltiples Idiomas",
+        "description": "Soporte para inglés, español y portugués, con más idiomas próximamente"
       }
     },
     "googleLogin": {
