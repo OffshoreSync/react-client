@@ -351,6 +351,24 @@ const Sync = () => {
         return;
       }
 
+      // Get selected synced friends
+      console.log('Available users:', availableUsers);
+      console.log('Selected users:', selectedUsers);
+      
+      const selectedFriendIds = selectedUsers
+        .filter(userId => {
+          const friend = availableUsers.find(f => f.id === userId);
+          console.log('Checking friend:', { userId, friend });
+          return friend && friend.syncStatus === 'enabled' && !friend.isCurrentUser;
+        });
+      
+      console.log('Selected friend IDs:', selectedFriendIds);
+
+      if (selectedFriendIds.length === 0) {
+        alert('Please select at least one synced friend');
+        return;
+      }
+
       const event = {
         summary: eventDetails.summary,
         description: eventDetails.description || 'Offshore Work Off Board Day',
@@ -364,14 +382,20 @@ const Sync = () => {
         }
       };
 
-      const response = await api.post('/api/auth/google-calendar-event', {
-        accessToken: googleAccessToken,
-        event
-      });
+      const response = await api.post('/api/auth/google-calendar-event', 
+        {
+          accessToken: googleAccessToken,
+          event,
+          attendeeIds: selectedFriendIds
+        },
+        {
+          timeout: 30000  // Increase timeout to 30 seconds
+        }
+      );
 
       // Show success snackbar
       setSnackbarOpen(true);
-      setSnackbarMessage('Event created successfully!');
+      setSnackbarMessage('Event created successfully! Invites have been sent to selected friends.');
       setSnackbarSeverity('success');
 
       return response.data;
@@ -381,12 +405,18 @@ const Sync = () => {
       // Detailed error handling
       let errorMessage = 'Failed to create event';
       
-      if (error.response) {
+      if (error.code === 'ECONNABORTED') {
+        errorMessage = 'Request timed out. Please try again.';
+      } else if (error.response) {
         if (error.response.status === 401) {
           errorMessage = 'Unauthorized. Please re-authenticate with Google.';
           setGoogleAccessToken(null);
         } else if (error.response.status === 403) {
           errorMessage = 'Insufficient permissions to create event.';
+        } else if (error.response.status === 404) {
+          errorMessage = 'One or more selected friends were not found.';
+        } else if (error.response.data?.error) {
+          errorMessage = error.response.data.error;
         }
       }
 
