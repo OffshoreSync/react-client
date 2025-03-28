@@ -58,6 +58,21 @@ const PrivacyPolicyPage = () => {
               </Typography>
             )}
 
+            {section.googleData && (
+              <Box sx={{ mt: 2 }}>
+                <Typography variant="h6" gutterBottom>
+                  {section.googleData.title}
+                </Typography>
+                <Typography variant="body1" paragraph>
+                  {section.googleData.intro}
+                </Typography>
+                <BulletList items={section.googleData.items} />
+                <Typography variant="body1" paragraph sx={{ mt: 2 }}>
+                  {section.googleData.usage}
+                </Typography>
+              </Box>
+            )}
+
             {section.services && (
               <>
                 <BulletList items={section.services} />

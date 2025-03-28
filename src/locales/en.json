@@ -354,10 +354,20 @@
           "items": [
             "Create an account",
             "Update your profile",
-            "Use our services",
-            "Communicate with other users",
-            "Contact our support team"
-          ]
+            "Create a work schedule",
+            "Create events with your friends",
+            "Contact our support team",
+            "Use Google to authenticate to our services"
+          ],
+          "googleData": {
+            "title": "Google User Data We Collect",
+            "intro": "When you use Google Sign-In or connect your Google Calendar, we collect the following data:",
+            "items": [
+              "Google profile information (name, email, profile picture)",
+              "Google Calendar access tokens and events data (to create and manage your calendar events)"
+            ],
+            "usage": "This data is used solely for authentication and calendar integration purposes. We do not share this data with third parties. We neither make it available to any other user on the platform."
+          }
         },
         "informationUse": {
           "title": "2. How We Use Your Information",

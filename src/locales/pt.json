@@ -350,10 +350,20 @@
           "items": [
             "Cria uma conta",
             "Atualiza seu perfil",
-            "Utiliza nossos serviços",
-            "Se comunica com outros usuários",
-            "Contata nossa equipe de suporte"
-          ]
+            "Cria uma escala de trabalho",
+            "Cria eventos com seus amigos",
+            "Contata nossa equipe de suporte",
+            "Usa o Google para autenticar em nossos serviços"
+          ],
+          "googleData": {
+            "title": "Dados do Google que Coletamos",
+            "intro": "Quando você usa o login do Google ou conecta seu Google Calendar, coletamos os seguintes dados:",
+            "items": [
+              "Informações do perfil do Google (nome, e-mail, foto do perfil)",
+              "Tokens de acesso e dados de eventos do Google Calendar (para criar e gerenciar seus eventos do calendário)"
+            ],
+            "usage": "Estes dados são utilizados exclusivamente para fins de autenticação e integração do calendário. Não compartilhamos estes dados com terceiros. Tampouco os disponibilizamos para qualquer outro usuário na plataforma."
+          }
         },
         "informationUse": {
           "title": "2. Como Utilizamos suas Informações",
