@@ -180,7 +180,15 @@ function Navbar() {
             }}
           >
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <WavesIcon sx={{ mr: 1, color: 'white' }} />
+              <img 
+                src="/offshoresync_logo_nobg.svg" 
+                alt="OffshoreSyncLogo" 
+                style={{ 
+                  height: 32, 
+                  marginRight: 10,
+                  filter: 'brightness(0) invert(1)' 
+                }} 
+              />
               <Typography 
                 variant="h6" 
                 component="div" 
