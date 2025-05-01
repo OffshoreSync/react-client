@@ -432,7 +432,7 @@ function Navbar() {
                 color="text.secondary"
                 sx={{ fontStyle: 'italic' }}
               >
-                v0.3.0
+                v0.4.0
               </Typography>
             </ListItem>
             <ListItem sx={{ justifyContent: 'center', py: 1 }}>
