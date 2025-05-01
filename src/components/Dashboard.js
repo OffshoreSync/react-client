@@ -382,26 +382,27 @@ useEffect(() => {
 
   const handleSetOnBoardDate = async () => {
     try {
-      // Call backend API to set On Board date
-      const response = await api.put('/auth/set-onboard-date', { nextOnBoardDate: date });
+      // Call backend API to set On Board date with past date support
+      const response = await api.put('/auth/set-onboard-date', { 
+        nextOnBoardDate: date,
+        allowPastDates: true  // New flag to allow past dates
+      });
 
       console.log('Set On Board Date Response:', response.data);
 
-      // Generate work cycles
-      const cyclesResponse = await api.post('/auth/generate-work-cycles');
+      // Generate work cycles with initial date
+      const cyclesResponse = await api.post('/auth/generate-work-cycles', {
+        initialDate: date  // Pass initial date to cycle generation
+      });
 
       console.log('Generate Work Cycles Response:', cyclesResponse.data);
 
-      // Ensure the user object is complete and update both workSchedule and workingRegime
+      // Ensure the user object is complete and update workSchedule
       const updatedUser = {
         ...response.data.user,
         workCycles: cyclesResponse.data.workCycles,
         workSchedule: {
           ...response.data.user.workSchedule,
-          nextOnBoardDate: date
-        },
-        workingRegime: {
-          ...response.data.user.workingRegime,
           nextOnBoardDate: date
         }
       };
@@ -422,19 +423,32 @@ useEffect(() => {
       setSnackbarOpen(true);
     } catch (error) {
       console.error('Error in handleSetOnBoardDate:', error);
-      
+    
       // More detailed error logging
       if (error.response) {
         console.error('Response Error Details:', {
           status: error.response.status,
           data: error.response.data,
-          headers: error.response.headers
+          headers: error.response.headers,
+          requestData: { 
+            nextOnBoardDate: date,
+            allowPastDates: true
+          }
         });
+      } else if (error.request) {
+        console.error('Request Error Details:', {
+          request: error.request,
+          message: error.message
+        });
+      } else {
+        console.error('Unexpected Error:', error.message);
       }
-      
+    
       // Show error message
       setSnackbarMessage(
-        error.response?.data?.message || t('dashboard.snackbarMessages.onBoardDateSetError')
+        error.response?.data?.message || 
+        error.message || 
+        t('dashboard.snackbarMessages.onBoardDateSetError')
       );
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
@@ -794,7 +808,6 @@ useEffect(() => {
                   sx={{ mt: 1 }}
                 />
               )}
-              minDate={new Date()}
               views={['year', 'month', 'day']}
             />
           </LocalizationProvider>
