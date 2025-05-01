@@ -229,6 +229,8 @@ const Dashboard = () => {
   const [snackbarMessage, setSnackbarMessage] = useState('');
   const [snackbarSeverity, setSnackbarSeverity] = useState('success');
   const [showProfileAlert, setShowProfileAlert] = useState(false);
+  const [daysCounter, setDaysCounter] = useState(null);
+  const [counterType, setCounterType] = useState(null); // 'onBoard' or 'offBoard'
   const theme = useTheme();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
   const [calendarLocale, setCalendarLocale] = useState(
@@ -241,6 +243,113 @@ const Dashboard = () => {
   const updateUserInCookies = (updatedUser) => {
     setCookie('user', updatedUser);
   };
+
+  // Calculate days remaining in current cycle
+  const calculateDaysRemaining = (user) => {
+    console.log('User object:', user);
+    console.log('Work Cycles:', user?.workCycles);
+
+    if (!user || !user.workCycles?.length) {
+      console.log('No work cycles found');
+      return null;
+    }
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    console.log('Current date:', now);
+
+    // Safely parse dates
+    const safeParseDateString = (dateString) => {
+      if (!dateString) return null;
+      
+      const parsedDate = new Date(dateString);
+      parsedDate.setHours(0, 0, 0, 0);
+      
+      return !isNaN(parsedDate.getTime()) ? parsedDate : null;
+    };
+
+    // Prepare cycles with safely parsed dates
+    const validCycles = user.workCycles.map(cycle => ({
+      ...cycle,
+      startDate: safeParseDateString(cycle.startDate),
+      endDate: safeParseDateString(cycle.endDate)
+    })).filter(cycle => cycle.startDate && cycle.endDate);
+
+    console.log('Valid Cycles:', validCycles);
+
+    // Find the closest cycle to current date
+    const closestCycle = validCycles.reduce((closest, current) => {
+      // Check if current cycle contains today
+      if (now >= current.startDate && now <= current.endDate) {
+        return current;
+      }
+
+      // If no cycle contains today, find the closest cycle
+      if (!closest) return current;
+
+      const currentDiff = Math.abs(current.startDate - now);
+      const closestDiff = Math.abs(closest.startDate - now);
+
+      return currentDiff < closestDiff ? current : closest;
+    }, null);
+
+    console.log('Closest Cycle:', closestCycle);
+
+    // Determine status based on cycle type and current date
+    if (closestCycle.type === 'OnBoard') {
+      // For OnBoard cycle
+      if (now >= closestCycle.startDate && now <= closestCycle.endDate) {
+        // Currently waiting to start working
+        const daysLeft = Math.max(0, Math.ceil((closestCycle.endDate - now) / (1000 * 60 * 60 * 24)));
+        console.log('Days until work starts:', daysLeft);
+        return { days: daysLeft, type: 'onBoard' };
+      } else if (closestCycle.startDate > now) {
+        // Waiting for cycle to start
+        const daysLeft = Math.max(0, Math.ceil((closestCycle.startDate - now) / (1000 * 60 * 60 * 24)));
+        console.log('Days until on board cycle starts:', daysLeft);
+        return { days: daysLeft, type: 'onBoard' };
+      }
+    } else if (closestCycle.type === 'OffBoard') {
+      // For OffBoard cycle
+      if (now >= closestCycle.startDate && now <= closestCycle.endDate) {
+        // Currently off board
+        const daysLeft = Math.max(0, Math.ceil((closestCycle.endDate - now) / (1000 * 60 * 60 * 24)));
+        console.log('Days left in off board cycle:', daysLeft);
+        return { days: daysLeft, type: 'offBoard' };
+      } else if (closestCycle.startDate > now) {
+        // Waiting for off board cycle to start
+        const daysLeft = Math.max(0, Math.ceil((closestCycle.startDate - now) / (1000 * 60 * 60 * 24)));
+        console.log('Days until off board cycle starts:', daysLeft);
+        return { days: daysLeft, type: 'onBoard' };
+      }
+    }
+
+    // If no clear status, find next cycle
+    const nextCycle = validCycles.find(cycle => cycle.startDate > closestCycle.endDate);
+    
+    if (nextCycle) {
+      const daysLeft = Math.max(0, Math.ceil((nextCycle.startDate - now) / (1000 * 60 * 60 * 24)));
+      console.log('Days until next cycle:', daysLeft);
+      return { days: daysLeft, type: 'onBoard' };
+    }
+
+    return null;
+  };
+
+  useEffect(() => {
+    if (user?.workCycles) {
+      const remainingDays = calculateDaysRemaining(user);
+      console.log('Updating days counter due to workCycles change:', remainingDays);
+      if (remainingDays) {
+        setDaysCounter(remainingDays.days);
+        setCounterType(remainingDays.type);
+      } else {
+        setDaysCounter(null);
+        setCounterType(null);
+      }
+    }
+  }, [user?.workCycles]);
 
   // Memoize the checkAuth function to prevent unnecessary re-renders
   const checkAuth = useCallback(async () => {
@@ -323,6 +432,17 @@ useEffect(() => {
           setUser(authResult.user);
         }
         setShowProfileAlert(authResult.showProfileAlert);
+        
+        // Calculate and set days counter
+      console.log('Auth Result User:', authResult.user);
+      const remainingDays = calculateDaysRemaining(authResult.user);
+      console.log('Remaining Days:', remainingDays);
+      if (remainingDays) {
+        setDaysCounter(remainingDays.days);
+        setCounterType(remainingDays.type);
+      } else {
+        console.log('No remaining days calculated');
+      }  
         
         // Only show onboard dialog if we need onboard date AND it's not already set
         if (authResult.needsOnboardDate && !authResult.user.workSchedule?.nextOnBoardDate) {
@@ -602,6 +722,36 @@ useEffect(() => {
         </Box>
       )}
       <Box sx={{ my: 4 }}>
+        {/* Days Counter Card */}
+        {user?.workCycles?.length > 0 && daysCounter !== null && (
+          <Grid item xs={12}>
+            <Card 
+              sx={{ 
+                mb: 2, 
+                backgroundColor: counterType === 'onBoard' 
+                  ? '#FF3B30'  // Red from calendar on-board event
+                  : '#34C759'  // Green from calendar off-board event
+              }}
+            >
+              <CardContent>
+                <Typography 
+                  variant="h6" 
+                  align="center"
+                  sx={{ 
+                    color: 'white',
+                    textTransform: 'uppercase',
+                    fontWeight: 'bold'
+                  }}
+                >
+                  {counterType === 'offBoard' 
+                    ? t('dashboard.daysUntilOnBoard', { days: daysCounter }) 
+                    : t('dashboard.daysUntilOffBoard', { days: daysCounter })}
+                </Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
         <Grid container spacing={3}>
           <Grid item xs={12}>
             <Card 

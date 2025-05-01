@@ -89,6 +89,8 @@
     "verificationMessage": "Registro bem-sucedido! Verifique seu email para confirmar sua conta."
   },
   "dashboard": {
+    "daysUntilOffBoard": "Faltam {{days}} dias para a folga",
+    "daysUntilOnBoard": "Faltam {{days}} dias para embarcar",
     "welcome": "Bem-vindo, {{name}}",
     "workCycles": "Ciclos de Trabalho",
     "completeProfile": "Complete seu Perfil",

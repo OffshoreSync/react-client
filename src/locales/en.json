@@ -89,6 +89,8 @@
     "verificationMessage": "Registration successful! Please check your email to verify your account."
   },
   "dashboard": {
+    "daysUntilOffBoard": "{{days}} days left until getting off",
+    "daysUntilOnBoard": "{{days}} days left until getting on",
     "welcome": "Welcome, {{name}}",
     "workCycles": "Work Cycles",
     "completeProfile": "Complete Your Profile",
