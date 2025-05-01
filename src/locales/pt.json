@@ -127,9 +127,6 @@
       "resetOnBoardDateFailed": "Falha ao redefinir data de embarque. Tente novamente.",
       "noServerResponse": "Sem resposta do servidor. Verifique sua conexão com a internet.",
       "requestSetupFailed": "Falha ao enviar a solicitação. Tente novamente."
-    },
-    "snackbarMessages": {
-      "onBoardDateResetSuccess": "A data de embarque foi redefinida com sucesso."
     }
   },
   "settings": {

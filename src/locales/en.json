@@ -134,9 +134,6 @@
     "title": "User Settings",
     "personalInfo": "Personal Information",
     "workInfo": "Work Information",
-    "unitName": "Unit Name",
-    "country": "Country",
-    "workingRegime": "Working Regime",
     "errors": {
       "updateFailed": "Failed to update profile. Please try again."
     },
