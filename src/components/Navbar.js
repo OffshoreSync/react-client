@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // Material UI components
-import {
+import { 
   AppBar,
   Toolbar,
   IconButton,
@@ -48,9 +48,14 @@ import ReactCountryFlag from 'react-country-flag';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
 
+// Import offline status hook
+import { useOfflineStatus } from '../hooks/useOfflineStatus';
+
 // Import cookies and API
 import { getCookie, setCookie, removeCookie, api } from '../utils/apiUtils';
 import { useAuth } from '../context/AuthContext';
+import Badge from '@mui/material/Badge';
+import { styled } from '@mui/material/styles';
 
 
 
@@ -63,6 +68,37 @@ function Navbar() {
   const { t } = useTranslation();
   const isSmallScreen = useMediaQuery(theme.breakpoints.down('md'));
   const { user, loading, setUser } = useAuth();
+  const isOffline = useOfflineStatus();
+
+  // Styled badge for offline indicator
+  const OfflineBadge = styled(Badge)(({ theme }) => ({
+    '& .MuiBadge-badge': {
+      backgroundColor: theme.palette.error.main,
+      color: theme.palette.error.main,
+      boxShadow: `0 0 0 2px ${theme.palette.background.paper}`,
+      '&::after': {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        borderRadius: '50%',
+        animation: 'offline-ripple 1.2s infinite ease-in-out',
+        border: `1px solid ${theme.palette.error.main}`,
+        content: '""',
+      },
+    },
+    '@keyframes offline-ripple': {
+      '0%': {
+        transform: 'scale(.8)',
+        opacity: 1,
+      },
+      '100%': {
+        transform: 'scale(2.4)',
+        opacity: 0,
+      },
+    },
+  }));
 
   // Logout method
   const handleLogout = () => {
@@ -204,21 +240,23 @@ function Navbar() {
 
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               {isSmallScreen ? (
-                <IconButton 
-                  id="language-select"
-                  onClick={(e) => {
-                    handleClose();
-                    handleLanguageMenu(e);
-                  }}
-                  sx={{ 
-                    color: 'white',
-                    '&:hover': { 
-                      backgroundColor: 'rgba(255,255,255,0.1)' 
-                    }
-                  }}
-                >
-                  <LanguageIcon />
-                </IconButton>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  <IconButton 
+                    id="language-select"
+                    onClick={(e) => {
+                      handleClose();
+                      handleLanguageMenu(e);
+                    }}
+                    sx={{ 
+                      color: 'white',
+                      '&:hover': { 
+                        backgroundColor: 'rgba(255,255,255,0.1)' 
+                      }
+                    }}
+                  >
+                    <LanguageIcon />
+                  </IconButton>
+                </Box>
               ) : (
                 <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
                   <IconButton 
@@ -301,35 +339,49 @@ function Navbar() {
                     }
                   }}
                 >
-                  <Avatar 
-                    src={user.profilePicture} 
-                    alt={user.name || 'User'} 
-                    sx={{ 
-                      width: 40, 
-                      height: 40,
-                      border: '2px solid rgba(255, 255, 255, 0.8)',
-                      backgroundColor: 'rgba(255, 255, 255, 0.9)',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-                      transition: 'transform 0.2s ease-in-out',
-                      '&:hover': {
-                        transform: 'scale(1.05)'
-                      }
-                    }}
-                  />
+                  <OfflineBadge
+                    overlap="circular"
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    badgeContent={isOffline ? ' ' : null}
+                    invisible={!isOffline}
+                  >
+                    <Avatar 
+                      src={user.profilePicture} 
+                      alt={user.name || 'User'} 
+                      sx={{ 
+                        width: 40, 
+                        height: 40,
+                        border: '2px solid rgba(255, 255, 255, 0.8)',
+                        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+                        transition: 'transform 0.2s ease-in-out',
+                        '&:hover': {
+                          transform: 'scale(1.05)'
+                        }
+                      }}
+                    />
+                  </OfflineBadge>
                 </IconButton>
               ) : (
-                <IconButton
-                  onClick={handleMenu}
-                  sx={{ 
-                    marginLeft: 2,
-                    color: 'white',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)'
-                    }
-                  }}
+                <OfflineBadge
+                  overlap="circular"
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                  badgeContent={isOffline ? ' ' : null}
+                  invisible={!isOffline}
                 >
-                  <MenuIcon />
-                </IconButton>
+                  <IconButton
+                    onClick={handleMenu}
+                    sx={{ 
+                      marginLeft: 2,
+                      color: 'white',
+                      '&:hover': {
+                        backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                      }
+                    }}
+                  >
+                    <MenuIcon />
+                  </IconButton>
+                </OfflineBadge>
               )}
             </Box>
           </Toolbar>
