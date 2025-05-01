@@ -73,7 +73,9 @@ const findMatchingOffBoardPeriods = (userCycles) => {
       // Check if any cycle covers this date
       const isOffBoard = cycles.some(cycle => {
         const startDate = new Date(cycle.startDate);
+        startDate.setHours(0, 0, 0, 0);
         const endDate = new Date(cycle.endDate);
+        endDate.setHours(23, 59, 59, 999);
         return currentDate >= startDate && currentDate <= endDate;
       });
 
