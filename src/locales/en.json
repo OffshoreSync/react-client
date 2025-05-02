@@ -129,7 +129,8 @@
       "userNotFound": "User account not found. Please contact support.",
       "resetOnBoardDateFailed": "Failed to reset onboard date. Please try again.",
       "noServerResponse": "No response from the server. Please check your internet connection.",
-      "requestSetupFailed": "Failed to send the request. Please try again."
+      "requestSetupFailed": "Failed to send the request. Please try again.",
+      "authenticationFailed": "Authentication failed. Please log in again."
     }
   },
   "settings": {

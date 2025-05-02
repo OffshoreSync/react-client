@@ -128,7 +128,8 @@
       "userNotFound": "Conta de usuário não encontrada. Entre em contato com o suporte.",
       "resetOnBoardDateFailed": "Falha ao redefinir data de embarque. Tente novamente.",
       "noServerResponse": "Sem resposta do servidor. Verifique sua conexão com a internet.",
-      "requestSetupFailed": "Falha ao enviar a solicitação. Tente novamente."
+      "requestSetupFailed": "Falha ao enviar a solicitação. Tente novamente.",
+      "authenticationFailed": "Falha na autenticação. Por favor, faça login novamente."
     }
   },
   "settings": {

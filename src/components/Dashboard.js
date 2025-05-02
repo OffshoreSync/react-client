@@ -449,15 +449,17 @@ useEffect(() => {
           setOpenOnBoardDialog(true);
         }
       } else {
-        throw new Error('Not authenticated');
+        setError(t('dashboard.errors.authenticationFailed'));
+        setSnackbarMessage(t('c'));
+        setSnackbarSeverity('error');
+        setSnackbarOpen(true);
       }
     } catch (error) {
       console.error('Dashboard initialization error:', error);
       setError(error.message);
-      removeCookie('token');
-      removeCookie('refreshToken');
-      removeCookie('user');
-      navigate('/login', { state: { message: 'Please log in to access your dashboard.' } });
+      setSnackbarMessage(error.message);
+      setSnackbarSeverity('error');
+      setSnackbarOpen(true);
     } finally {
       setLoading(false);
     }

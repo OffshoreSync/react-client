@@ -129,7 +129,8 @@
       "userNotFound": "Cuenta de usuario no encontrada. Contacte al soporte.",
       "resetOnBoardDateFailed": "No se pudo restablecer la fecha de embarque. Intente de nuevo.",
       "noServerResponse": "Sin respuesta del servidor. Verifique su conexión a internet.",
-      "requestSetupFailed": "No se pudo enviar la solicitud. Intente de nuevo."
+      "requestSetupFailed": "No se pudo enviar la solicitud. Intente de nuevo.",
+      "authenticationFailed": "Autenticación fallida. Por favor, inicie sesión de nuevo."
     }
   },
   "settings": {
