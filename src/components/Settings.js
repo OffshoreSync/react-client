@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import { getCountryCode } from '../utils/countries';
 import { useTranslation } from 'react-i18next';
-import { api, getCookie, removeCookie, setCookie } from '../utils/apiUtils';
+import { api, getCookie, removeCookie, setCookie, clearAuthAndRedirect } from '../utils/apiUtils';
 import { useAuth } from '../context/AuthContext';
 
 const Settings = () => {
@@ -69,40 +69,19 @@ const Settings = () => {
   }, [navigate]);
 
   const handleLogout = () => {
-    // Clear cookies
-    removeCookie('token');
-    removeCookie('refreshToken');
-    removeCookie('user');
-    removeCookie('XSRF-TOKEN');
-
+    // Centralized auth clear and redirect
+    clearAuthAndRedirect('/login');
     // Update auth context
     logout();
-
-    // Navigate to login
-    navigate('/login');
   };
 
   const handleDeleteAccount = async () => {
     try {
       await api.delete('/api/auth/delete-account');
-
-      // Clear all auth-related cookies
-      removeCookie('token');
-      removeCookie('refreshToken');
-      removeCookie('user');
-      removeCookie('XSRF-TOKEN');
-
-      // Clear any other app-specific cookies that might exist
-      document.cookie.split(';').forEach(cookie => {
-        const name = cookie.split('=')[0].trim();
-        removeCookie(name);
-      });
-
+      // Centralized auth clear and redirect (to home after delete)
+      clearAuthAndRedirect('/');
       // Update auth context
       logout();
-
-      // Navigate to home page
-      navigate('/', { replace: true });
     } catch (error) {
       console.error('Account deletion error:', error);
       alert(t('settings.errors.deleteFailed'));

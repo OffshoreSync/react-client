@@ -1,6 +1,19 @@
 import axios from 'axios';
 import { Cookies } from 'react-cookie';
 
+// Centralized auth clear utility
+export function clearAuthAndRedirect(redirectTo = '/login') {
+  removeCookie('token');
+  removeCookie('refreshToken');
+  removeCookie('user');
+  removeCookie('XSRF-TOKEN');
+  window.dispatchEvent(new CustomEvent('auth-state-changed', { detail: { isAuthenticated: false } }));
+  if (window.location.pathname !== redirectTo) {
+    window.location.href = redirectTo;
+  }
+}
+
+
 const cookies = new Cookies();
 let isRefreshing = false;
 let refreshSubscribers = [];
@@ -275,16 +288,8 @@ const refreshTokenAndRetry = async (originalRequest = null) => {
     isRefreshing = false;
     refreshSubscribers = [];
 
-    // Clear all auth cookies and redirect to login
-    removeCookie('token');
-    removeCookie('refreshToken');
-    removeCookie('user');
-    window.dispatchEvent(new CustomEvent('auth-state-changed', { detail: { isAuthenticated: false } }));
-
-    if (window.location.pathname !== '/login') {
-      window.location.href = '/login';
-    }
-
+    // Centralized auth clear and redirect
+    clearAuthAndRedirect('/login');
     return Promise.reject(error);
   }
 };
@@ -344,13 +349,7 @@ api.interceptors.response.use(
     // If error is not 401 or request already retried, reject
     if (!error.response || error.response.status !== 401 || originalRequest._retry || originalRequest.url.includes('/auth/refresh-token')) {
       if (error.response?.status === 401) {
-        removeCookie('token');
-        removeCookie('refreshToken');
-        removeCookie('user');
-        window.dispatchEvent(new CustomEvent('auth-state-changed', { detail: { isAuthenticated: false } }));
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
-        }
+        clearAuthAndRedirect('/login');
       }
       return Promise.reject(error);
     }
@@ -448,13 +447,7 @@ api.interceptors.response.use(
         // Use the BroadcastChannel-based isOffline variable instead of navigator.onLine
         if (!isOffline && refreshError.response) {
           // Only clear tokens and redirect if we are online and the server responded with an error
-          removeCookie('token');
-          removeCookie('refreshToken');
-          removeCookie('user');
-          window.dispatchEvent(new CustomEvent('auth-state-changed', { detail: { isAuthenticated: false } }));
-          if (window.location.pathname !== '/login') {
-            window.location.href = '/login';
-          }
+          clearAuthAndRedirect('/login');
         } else {
           // If offline, do not clear tokens or redirect, just reject
           console.warn('[Offline] Token refresh failed, but user remains authenticated for offline access.');

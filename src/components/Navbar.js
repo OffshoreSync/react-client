@@ -52,7 +52,7 @@ import i18n from '../i18n';
 import { useOfflineStatus } from '../hooks/useOfflineStatus';
 
 // Import cookies and API
-import { getCookie, setCookie, removeCookie, api } from '../utils/apiUtils';
+import { getCookie, setCookie, removeCookie, api, clearAuthAndRedirect } from '../utils/apiUtils';
 import { useAuth } from '../context/AuthContext';
 import Badge from '@mui/material/Badge';
 import { styled } from '@mui/material/styles';
@@ -102,18 +102,9 @@ function Navbar() {
 
   // Logout method
   const handleLogout = () => {
-    // Remove authentication cookies
-    removeCookie('token');
-    removeCookie('refreshToken');
-    
-    // Clear user state
+    clearAuthAndRedirect('/login');
     setUser(null);
-    
-    // Close any open menus
     handleClose();
-    
-    // Navigate to login
-    navigate('/login');
   };
 
   // Language change method

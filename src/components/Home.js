@@ -23,6 +23,8 @@ import EventIcon from '@mui/icons-material/Event';
 import TranslateIcon from '@mui/icons-material/Translate';
 import { getCookie, removeCookie } from '../utils/apiUtils';
 
+import { clearAuthAndRedirect } from '../utils/apiUtils';
+
 function Home() {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -72,11 +74,7 @@ function Home() {
   };
 
   const handleLogout = () => {
-    removeCookie('token');
-    removeCookie('user');
-    
-    navigate('/');
-    
+    clearAuthAndRedirect('/');
     setIsLoggedIn(false);
   };
 

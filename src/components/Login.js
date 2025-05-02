@@ -106,7 +106,9 @@ const Login = () => {
         sameSite: 'lax'
       });
 
-      navigate('/dashboard');
+      setTimeout(() => {
+  navigate('/dashboard');
+}, 100);
     } catch (error) {
       console.error('Login error:', error);
       setError(error.response?.data?.message || t('login.errors.loginFailed'));
@@ -158,7 +160,9 @@ const Login = () => {
         });
       }
 
-      navigate('/dashboard');
+      setTimeout(() => {
+  navigate('/dashboard');
+}, 100);
     } catch (error) {
       console.error('Google login failed:', error);
       setError('Failed to authenticate with Google');
