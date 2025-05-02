@@ -11,9 +11,7 @@ const MAIN_COMPONENTS = [
 const STATIC_ASSETS = [
   '/',
   '/index.html',
-  '/manifest.json',
-  '/static/js/bundle.js',
-  '/static/css/main.css'
+  '/manifest.json'
 ];
 
 const API_ROUTES = [
@@ -39,9 +37,7 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll([
-        ...STATIC_ASSETS,
-        ...MAIN_COMPONENTS,
-        ...API_ROUTES
+        ...STATIC_ASSETS
       ]);
     })
   );
