@@ -424,22 +424,37 @@ useEffect(() => {
     try {
       setLoading(true);
       if (isOffline) {
-        // Offline mode: use cached user data from cookies
-        const cachedUser = getCookie('user');
-        if (cachedUser) {
-          setUser(cachedUser);
-          setShowProfileAlert(false);
-          // Calculate and set days counter
-          const remainingDays = calculateDaysRemaining(cachedUser);
-          if (remainingDays) {
-            setDaysCounter(remainingDays.days);
-            setCounterType(remainingDays.type);
+        // Offline mode: try to fetch cached profile endpoint first
+        try {
+          const response = await api.get('/api/auth/profile');
+          if (response.data && response.data.user) {
+            setUser(response.data.user);
+            setShowProfileAlert(false);
+            const remainingDays = calculateDaysRemaining(response.data.user);
+            if (remainingDays) {
+              setDaysCounter(remainingDays.days);
+              setCounterType(remainingDays.type);
+            }
+            return;
           }
-        } else {
+        } catch (err) {
+          // If fetch fails, fall back to cookie
+          const cachedUser = getCookie('user');
+          if (cachedUser) {
+            setUser(cachedUser);
+            setShowProfileAlert(false);
+            const remainingDays = calculateDaysRemaining(cachedUser);
+            if (remainingDays) {
+              setDaysCounter(remainingDays.days);
+              setCounterType(remainingDays.type);
+            }
+            return;
+          }
           setError(t('dashboard.errors.authenticationFailed'));
           setSnackbarMessage(t('dashboard.errors.authenticationFailed'));
           setSnackbarSeverity('error');
           setSnackbarOpen(true);
+          return;
         }
       } else {
         // Online mode: perform authentication check
