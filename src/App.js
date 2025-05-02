@@ -36,7 +36,7 @@ import { getCookie, setCookie, removeCookie, api } from './utils/apiUtils';
 import { AuthProvider } from './context/AuthContext';
 
 // Define public routes that don't require authentication
-const publicRoutes = ['/', '/home', '/login', '/register', '/verify-email', '/reset-password', '/privacy-policy', '/terms'];
+const publicRoutes = ['/', '/home', '/login', '/register', '/verify-email', '/reset-password', '/forgot-password', '/privacy-policy', '/terms'];
 
 // Explicitly declare colors to prevent no-undef
 const primaryColor = blue[500];
