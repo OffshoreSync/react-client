@@ -40,6 +40,7 @@ import { useTranslation } from 'react-i18next';
 
 // Import getBackendUrl
 import { api, getCookie, setCookie, removeCookie } from '../utils/apiUtils';
+import { useOfflineStatus } from '../hooks/useOfflineStatus';
 
 // Import FullCalendar locales
 import ptLocale from '@fullcalendar/core/locales/pt-br';
@@ -218,6 +219,7 @@ const generateCalendarEvents = (user, t) => {
 };
 
 const Dashboard = () => {
+  const isOffline = useOfflineStatus();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -421,38 +423,53 @@ useEffect(() => {
   const initializeDashboard = async () => {
     try {
       setLoading(true);
-      const authResult = await checkAuth();
-      if (authResult) {
-        if (!authResult.user.workCycles?.length) {
-          const cyclesResponse = await api.post('/auth/generate-work-cycles');
-          const updatedUser = { ...authResult.user, workCycles: cyclesResponse.data.workCycles };
-          updateUserInCookies(updatedUser);
-          setUser(updatedUser);
+      if (isOffline) {
+        // Offline mode: use cached user data from cookies
+        const cachedUser = getCookie('user');
+        if (cachedUser) {
+          setUser(cachedUser);
+          setShowProfileAlert(false);
+          // Calculate and set days counter
+          const remainingDays = calculateDaysRemaining(cachedUser);
+          if (remainingDays) {
+            setDaysCounter(remainingDays.days);
+            setCounterType(remainingDays.type);
+          }
         } else {
-          setUser(authResult.user);
-        }
-        setShowProfileAlert(authResult.showProfileAlert);
-        
-        // Calculate and set days counter
-      console.log('Auth Result User:', authResult.user);
-      const remainingDays = calculateDaysRemaining(authResult.user);
-      console.log('Remaining Days:', remainingDays);
-      if (remainingDays) {
-        setDaysCounter(remainingDays.days);
-        setCounterType(remainingDays.type);
-      } else {
-        console.log('No remaining days calculated');
-      }  
-        
-        // Only show onboard dialog if we need onboard date AND it's not already set
-        if (authResult.needsOnboardDate && !authResult.user.workSchedule?.nextOnBoardDate) {
-          setOpenOnBoardDialog(true);
+          setError(t('dashboard.errors.authenticationFailed'));
+          setSnackbarMessage(t('dashboard.errors.authenticationFailed'));
+          setSnackbarSeverity('error');
+          setSnackbarOpen(true);
         }
       } else {
-        setError(t('dashboard.errors.authenticationFailed'));
-        setSnackbarMessage(t('c'));
-        setSnackbarSeverity('error');
-        setSnackbarOpen(true);
+        // Online mode: perform authentication check
+        const authResult = await checkAuth();
+        if (authResult) {
+          if (!authResult.user.workCycles?.length) {
+            const cyclesResponse = await api.post('/auth/generate-work-cycles');
+            const updatedUser = { ...authResult.user, workCycles: cyclesResponse.data.workCycles };
+            updateUserInCookies(updatedUser);
+            setUser(updatedUser);
+          } else {
+            setUser(authResult.user);
+          }
+          setShowProfileAlert(authResult.showProfileAlert);
+          // Calculate and set days counter
+          const remainingDays = calculateDaysRemaining(authResult.user);
+          if (remainingDays) {
+            setDaysCounter(remainingDays.days);
+            setCounterType(remainingDays.type);
+          }
+          // Only show onboard dialog if we need onboard date AND it's not already set
+          if (authResult.needsOnboardDate && !authResult.user.workSchedule?.nextOnBoardDate) {
+            setOpenOnBoardDialog(true);
+          }
+        } else {
+          setError(t('dashboard.errors.authenticationFailed'));
+          setSnackbarMessage(t('dashboard.errors.authenticationFailed'));
+          setSnackbarSeverity('error');
+          setSnackbarOpen(true);
+        }
       }
     } catch (error) {
       console.error('Dashboard initialization error:', error);
@@ -465,7 +482,8 @@ useEffect(() => {
     }
   };
   initializeDashboard();
-}, [checkAuth, navigate]);
+  // Only re-run when offline status changes or navigation changes
+}, [isOffline, checkAuth, navigate]);
 
   // Update locales when language changes
   useEffect(() => {
