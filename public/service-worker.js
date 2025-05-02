@@ -65,47 +65,52 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  event.respondWith(
-    caches.open(CACHE_NAME).then((cache) => {
-      const url = new URL(event.request.url);
+  const url = new URL(event.request.url);
+  const isStaticAsset = STATIC_ASSETS.some(asset => url.pathname.includes(asset));
+  const isMainComponent = MAIN_COMPONENTS.some(path => url.pathname.includes(path));
+  const isAuthApiRoute = url.pathname.startsWith('/api/auth/');
 
-      // Check if request is for a static asset, main component, or API route
-      const isStaticAsset = STATIC_ASSETS.some(asset => url.pathname.includes(asset));
-      const isMainComponent = MAIN_COMPONENTS.some(path => url.pathname.includes(path));
-      const isApiRoute = API_ROUTES.some(route => url.pathname.includes(route));
-
-      // Cache first strategy for static assets and main components
-      if (isStaticAsset || isMainComponent) {
-        return cache.match(event.request).then((cachedResponse) => {
+  // Cache first for static assets and main components
+  if (isStaticAsset || isMainComponent) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then((cache) =>
+        cache.match(event.request).then((cachedResponse) => {
           if (cachedResponse) return cachedResponse;
           return fetch(event.request).then((networkResponse) => {
             cache.put(event.request, networkResponse.clone());
             return networkResponse;
           });
-        });
-      }
+        })
+      )
+    );
+    return;
+  }
 
-      // Network first strategy for API and other routes
-      return fetch(event.request).then((networkResponse) => {
-        // Cache API routes with original request headers
-        if (isApiRoute) {
-          const responseToCache = networkResponse.clone();
-          const cachedRequest = new Request(event.request, {
-            headers: new Headers(event.request.headers)
-          });
-          cache.put(cachedRequest, responseToCache);
-        }
-        return networkResponse;
-      }).catch(() => {
-        // Fallback to cache if network fails
-        // Attempt to serve cached response with original headers
-        const cachedRequest = new Request(event.request, {
-          headers: new Headers(event.request.headers)
-        });
-        return cache.match(cachedRequest).then((cachedResponse) => {
-          return cachedResponse || new Response('Offline', { status: 503 });
-        });
-      });
-    })
-  );
+  // Network first for authenticated API GET requests
+  if (isAuthApiRoute) {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse.ok) {
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          // If offline, try to serve from cache (using the full original request, including headers)
+          return caches.open(CACHE_NAME).then((cache) =>
+            cache.match(event.request).then((cachedResponse) => {
+              return cachedResponse || new Response('Offline', { status: 503 });
+            })
+          );
+        })
+    );
+    return;
+  }
+
+  // Default: just fetch from network
+  event.respondWith(fetch(event.request));
 });
