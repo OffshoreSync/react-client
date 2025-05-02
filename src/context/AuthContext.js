@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { api, getCookie, setCookie } from '../utils/apiUtils';
+import { api, getCookie, setCookie, removeCookie } from '../utils/apiUtils';
 
 const AuthContext = createContext(null);
 
@@ -20,17 +20,57 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   const fetchUserData = async () => {
+    const token = getCookie('token');
+    const refreshToken = getCookie('refreshToken') || getCookie('refreshToken_pwa');
+
+    if (!token && !refreshToken) {
+      console.warn('No tokens found, cannot fetch user data');
+      setLoading(false);
+      setUser(null);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
       const response = await api.get('/api/auth/profile');
       if (response.data.user) {
         setUser(response.data.user);
+        // Update user cookie to ensure consistency
+        setCookie('user', JSON.stringify(response.data.user), {
+          path: '/',
+          sameSite: 'lax',
+          secure: process.env.NODE_ENV === 'production'
+        });
+      } else {
+        console.warn('No user data received from profile endpoint');
+        setUser(null);
       }
     } catch (error) {
-      console.error('Failed to fetch user data:', error);
+      console.error('Failed to fetch user data:', {
+        errorMessage: error.message,
+        errorStatus: error.response?.status,
+        hasToken: !!token,
+        hasRefreshToken: !!refreshToken
+      });
+
       if (error.response?.status === 401) {
+        // Clear all auth-related cookies on 401
+        ['token', 'refreshToken', 'refreshToken_pwa', 'user'].forEach(removeCookie);
         setUser(null);
+      } else if (error.message === 'Network Error') {
+        // Try to use cached user data if network fails
+        const cachedUser = getCookie('user');
+        if (cachedUser) {
+          try {
+            setUser(JSON.parse(cachedUser));
+          } catch (parseError) {
+            console.error('Failed to parse cached user:', parseError);
+            setUser(null);
+          }
+        } else {
+          setError('Unable to fetch user data. Please check your connection.');
+        }
       } else {
         setError('Failed to fetch user data');
       }
@@ -68,17 +108,31 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const token = getCookie('token');
     const refreshToken = getCookie('refreshToken') || getCookie('refreshToken_pwa');
+    const cachedUser = getCookie('user');
     
-    // Debug auth state
-    console.debug('Auth State Check:', {
+    // Enhanced debug logging
+    console.debug('Auth State Initialization:', {
       hasToken: !!token,
       hasRefreshToken: !!refreshToken,
+      hasCachedUser: !!cachedUser,
       hasUser: !!user,
       timestamp: new Date().toISOString()
     });
 
+    // Prioritize token-based authentication
     if (token || refreshToken) {
       fetchUserData();
+    } else if (cachedUser) {
+      // Fallback to cached user if no tokens
+      try {
+        const parsedUser = JSON.parse(cachedUser);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error('Failed to parse cached user:', error);
+        setUser(null);
+      } finally {
+        setLoading(false);
+      }
     } else {
       setLoading(false);
       setUser(null);
