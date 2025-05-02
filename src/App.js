@@ -101,6 +101,16 @@ function AppRoutes() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  // Listen for auth-state-changed events and sync state
+  useEffect(() => {
+    const handler = (event) => {
+      const { isAuthenticated } = event.detail;
+      setIsAuthenticated(!!isAuthenticated);
+    };
+    window.addEventListener('auth-state-changed', handler);
+    return () => window.removeEventListener('auth-state-changed', handler);
+  }, []);
+
   // Check authentication status
   const checkAuth = useCallback(async () => {
     try {
