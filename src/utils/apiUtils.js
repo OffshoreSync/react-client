@@ -5,6 +5,21 @@ const cookies = new Cookies();
 let isRefreshing = false;
 let refreshSubscribers = [];
 
+// --- Track offline status via BroadcastChannel ---
+let isOffline = !navigator.onLine; // fallback for initial load
+try {
+  const statusChannel = new BroadcastChannel('offshoresync-status');
+  statusChannel.addEventListener('message', (event) => {
+    if (event.data && typeof event.data.type === 'string') {
+      if (event.data.type === 'offline') isOffline = true;
+      if (event.data.type === 'online') isOffline = false;
+    }
+  });
+} catch (err) {
+  // BroadcastChannel may not be supported
+  console.warn('BroadcastChannel unavailable for offline status:', err);
+}
+
 // Cookie utilities
 export const getCookie = (name) => {
   // Try both regular and PWA versions
@@ -427,18 +442,22 @@ api.interceptors.response.use(
 
         isRefreshing = false;
         refreshSubscribers = [];
-        
-        // Clear all auth cookies
-        removeCookie('token');
-        removeCookie('refreshToken');
-        removeCookie('user');
-        
-        // Notify about auth state change
-        window.dispatchEvent(new CustomEvent('auth-state-changed', { detail: { isAuthenticated: false } }));
-        
-        // Redirect to login if not already there
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
+
+        // Only clear tokens and redirect if we are online or the error is not a network error
+        // Network errors usually have !refreshError.response
+        // Use the BroadcastChannel-based isOffline variable instead of navigator.onLine
+        if (!isOffline && refreshError.response) {
+          // Only clear tokens and redirect if we are online and the server responded with an error
+          removeCookie('token');
+          removeCookie('refreshToken');
+          removeCookie('user');
+          window.dispatchEvent(new CustomEvent('auth-state-changed', { detail: { isAuthenticated: false } }));
+          if (window.location.pathname !== '/login') {
+            window.location.href = '/login';
+          }
+        } else {
+          // If offline, do not clear tokens or redirect, just reject
+          console.warn('[Offline] Token refresh failed, but user remains authenticated for offline access.');
         }
         return Promise.reject(refreshError);
       }
