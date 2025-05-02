@@ -1,11 +1,25 @@
 // Simple Caching Service Worker
 
-const CACHE_NAME = 'offshoresync-cache-v1';
+const CACHE_NAME = 'offshoresync-cache-v2';
 const MAIN_COMPONENTS = [
   '/dashboard',
   '/sync',
   '/friends',
   '/settings'
+];
+
+const STATIC_ASSETS = [
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/static/js/bundle.js',
+  '/static/css/main.css'
+];
+
+const API_ROUTES = [
+  '/api/auth/profile',
+  '/api/auth/friends',
+  '/api/auth/friend-requests'
 ];
 
 // Broadcast Channel for online/offline status
@@ -20,10 +34,16 @@ self.addEventListener('offline', () => {
   statusChannel.postMessage({ type: 'offline' });
 });
 
-// Install event - prepare cache
+// Install event - prepare cache and pre-cache main components
 self.addEventListener('install', (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll([
+        ...STATIC_ASSETS,
+        ...MAIN_COMPONENTS,
+        ...API_ROUTES
+      ]);
+    })
   );
 });
 
@@ -42,36 +62,54 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - cache main components
+// Fetch event - advanced caching strategy
 self.addEventListener('fetch', (event) => {
-  // Only cache GET requests for main components
-  if (event.request.method !== 'GET') return;
+  // Only handle GET requests
+  if (event.request.method !== 'GET') {
+    return;
+  }
 
   event.respondWith(
-    (async () => {
-      try {
-        // Try network first
-        const networkResponse = await fetch(event.request);
-        
-        // Cache successful responses for main components
-        if (networkResponse.ok && 
-            MAIN_COMPONENTS.some(path => event.request.url.includes(path))) {
-          const cache = await caches.open(CACHE_NAME);
-          cache.put(event.request, networkResponse.clone());
-        }
-        
-        return networkResponse;
-      } catch (error) {
-        // Network failed, try cache
-        const cachedResponse = await caches.match(event.request);
-        
-        if (cachedResponse) {
-          return cachedResponse;
-        }
-        
-        // No cache available
-        throw error;
+    caches.open(CACHE_NAME).then((cache) => {
+      const url = new URL(event.request.url);
+
+      // Check if request is for a static asset, main component, or API route
+      const isStaticAsset = STATIC_ASSETS.some(asset => url.pathname.includes(asset));
+      const isMainComponent = MAIN_COMPONENTS.some(path => url.pathname.includes(path));
+      const isApiRoute = API_ROUTES.some(route => url.pathname.includes(route));
+
+      // Cache first strategy for static assets and main components
+      if (isStaticAsset || isMainComponent) {
+        return cache.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) return cachedResponse;
+          return fetch(event.request).then((networkResponse) => {
+            cache.put(event.request, networkResponse.clone());
+            return networkResponse;
+          });
+        });
       }
-    })()
+
+      // Network first strategy for API and other routes
+      return fetch(event.request).then((networkResponse) => {
+        // Cache API routes with original request headers
+        if (isApiRoute) {
+          const responseToCache = networkResponse.clone();
+          const cachedRequest = new Request(event.request, {
+            headers: new Headers(event.request.headers)
+          });
+          cache.put(cachedRequest, responseToCache);
+        }
+        return networkResponse;
+      }).catch(() => {
+        // Fallback to cache if network fails
+        // Attempt to serve cached response with original headers
+        const cachedRequest = new Request(event.request, {
+          headers: new Headers(event.request.headers)
+        });
+        return cache.match(cachedRequest).then((cachedResponse) => {
+          return cachedResponse || new Response('Offline', { status: 503 });
+        });
+      });
+    })
   );
 });
