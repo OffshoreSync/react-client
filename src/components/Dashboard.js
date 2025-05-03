@@ -571,6 +571,18 @@ useEffect(() => {
       // Update the user state to trigger re-render
       setUser(updatedUser);
       
+      // Invalidate profile cache by making a fresh request to profile endpoint
+      try {
+        console.log('Refreshing profile cache after onboard date update');
+        await api.get('/api/auth/profile', { 
+          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
+          params: { _t: new Date().getTime() } // Add timestamp to bust cache
+        });
+      } catch (cacheError) {
+        console.warn('Failed to refresh profile cache:', cacheError);
+        // Continue with the flow even if cache refresh fails
+      }
+      
       // Close dialog and check if we still need to show profile alert
       setOpenOnBoardDialog(false);
       const needsCompanyInfo = !updatedUser.company || !updatedUser.unitName;
@@ -635,6 +647,18 @@ useEffect(() => {
       // Update cookies and state
       updateUserInCookies(updatedUser);
       setUser(updatedUser);
+      
+      // Invalidate profile cache by making a fresh request to profile endpoint
+      try {
+        console.log('Refreshing profile cache after resetting onboard date');
+        await api.get('/api/auth/profile', { 
+          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
+          params: { _t: new Date().getTime() } // Add timestamp to bust cache
+        });
+      } catch (cacheError) {
+        console.warn('Failed to refresh profile cache:', cacheError);
+        // Continue with the flow even if cache refresh fails
+      }
 
       // Open the onboard date dialog
       setOpenOnBoardDialog(true);
