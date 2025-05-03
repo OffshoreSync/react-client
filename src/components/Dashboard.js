@@ -4,6 +4,7 @@ import axios from 'axios';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import './FullCalendarDarkTheme.css';
 import { 
   Container, 
   Typography, 
@@ -566,6 +567,19 @@ useEffect(() => {
     const newDateFnsLocale = getDateFnsLocale(i18n.language);
     setDatePickerLocale(newDateFnsLocale);
   }, [i18n.language]);
+  
+  // Apply dark-mode class to body based on theme
+  useEffect(() => {
+    if (theme.palette.mode === 'dark') {
+      document.body.classList.add('dark-mode');
+    } else {
+      document.body.classList.remove('dark-mode');
+    }
+    
+    return () => {
+      document.body.classList.remove('dark-mode');
+    };
+  }, [theme.palette.mode]);
 
   // Calculate calendar events
   const calendarEvents = useMemo(() => generateCalendarEvents(user, t), [user, t]);
@@ -934,6 +948,7 @@ useEffect(() => {
               />
               <CardContent sx={{ flexGrow: 1, padding: 2 }}>
                 <FullCalendar
+                  key={`calendar-${theme.palette.mode}`} /* Force re-render on theme change */
                   themeSystem="standard"
                   plugins={[dayGridPlugin, interactionPlugin]}
                   initialView="dayGridMonth"

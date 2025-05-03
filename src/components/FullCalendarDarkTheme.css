@@ -1,0 +1,96 @@
+/* FullCalendar Dark Theme CSS aligned with Material UI dark theme */
+
+/* Only apply dark theme when dark mode is active */
+body.dark-mode .fc {
+  /* Main colors aligned with Material UI dark theme */
+  --main-page-bg-color: #121212; /* MUI dark background.default */
+  --fc-small-font-size: .85em;
+  --fc-page-bg-color: #1e1e1e; /* MUI dark background.paper */
+  --fc-neutral-bg-color: #2a2a2a; /* Slightly lighter than background.paper */
+  --fc-neutral-text-color: #ffffff; /* White text for dark background */
+  --fc-border-color: #424242; /* MUI dark divider color */
+
+  /* Button colors using MUI primary blue */
+  --fc-button-text-color: #ffffff;
+  --fc-button-bg-color: #1976d2; /* MUI primary.main */
+  --fc-button-border-color: #1976d2;
+  --fc-button-hover-bg-color: #115293; /* MUI primary.dark */
+  --fc-button-hover-border-color: #115293;
+  --fc-button-active-bg-color: #0d47a1; /* Darker blue for active state */
+  --fc-button-active-border-color: #0d47a1;
+
+  /* Event colors using MUI primary and secondary colors */
+  --fc-event-bg-color: #1976d2; /* MUI primary.main */
+  --fc-event-border-color: #1976d2;
+  --fc-event-text-color: #ffffff;
+  --fc-event-selected-overlay-color: rgba(255, 255, 255, 0.15); /* Subtle highlight */
+
+  /* Other UI elements */
+  --fc-more-link-bg-color: #333333;
+  --fc-more-link-text-color: #ffffff;
+
+  --fc-event-resizer-thickness: 8px;
+  --fc-event-resizer-dot-total-width: 8px;
+  --fc-event-resizer-dot-border-width: 1px;
+
+  --fc-non-business-color: rgba(255, 255, 255, 0.1);
+  --fc-bg-event-color: #4791db; /* MUI primary.light */
+  --fc-bg-event-opacity: 0.2;
+  --fc-highlight-color: rgba(25, 118, 210, 0.15); /* MUI primary with low opacity */
+  --fc-today-bg-color: rgba(25, 118, 210, 0.15); /* MUI primary with low opacity */
+  --fc-now-indicator-color: #dc004e; /* MUI secondary.main */
+}
+
+/* Specific overrides for dark mode */
+body.dark-mode .fc .fc-daygrid-day.fc-day-other {
+  background: var(--fc-neutral-bg-color);
+}
+
+body.dark-mode .fc .fc-scrollgrid-section-sticky > * {
+  background: unset;
+  position: sticky;
+  z-index: 3;
+}
+
+body.dark-mode .fc :not(td[aria-labelledby]) > .fc-daygrid-day-frame {
+  background: var(--fc-neutral-bg-color);
+}
+
+body.dark-mode .fc .fc-scrollgrid-section-body {
+  background: var(--fc-page-bg-color);
+}
+
+body.dark-mode .fc .fc-timegrid-slot-label, 
+body.dark-mode .fc .fc-timegrid-axis-frame {
+  background-color: var(--main-page-bg-color);
+}
+
+body.dark-mode .fc a.fc-event.fc-daygrid-event[href] {
+  color: #c90064;
+}
+
+body.dark-mode .fc a.fc-event.fc-daygrid-event[href]:visited {
+  color: #9c3dd3;
+}
+
+/* Make sure day numbers are visible in dark mode */
+body.dark-mode .fc .fc-daygrid-day-number {
+  color: var(--fc-neutral-text-color);
+}
+
+/* Make sure column headers are visible in dark mode */
+body.dark-mode .fc .fc-col-header-cell-cushion {
+  color: var(--fc-neutral-text-color);
+}
+
+/* Make sure the calendar background is dark in dark mode */
+body.dark-mode .fc .fc-view-harness {
+  background-color: var(--fc-page-bg-color);
+}
+
+/* Make sure borders are visible in dark mode */
+body.dark-mode .fc .fc-scrollgrid,
+body.dark-mode .fc td,
+body.dark-mode .fc th {
+  border-color: var(--fc-border-color);
+}
