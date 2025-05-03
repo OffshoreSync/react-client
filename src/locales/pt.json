@@ -206,7 +206,8 @@
       "en": "Inglês",
       "es": "Espanhol",
       "pt": "Português"
-    }
+    },
+    "donations": "Doações"
   },
   "countries": {
     "US": "Estados Unidos",
@@ -338,6 +339,25 @@
       "goToLogin": "Ir para Login",
       "goToHome": "Voltar ao Início"
     }
+  },
+  "donations": {
+    "title": "Apoiar OffshoreSync",
+    "supportTitle": "Ajude a manter OffshoreSync funcionando!",
+    "mainDescription1": "OffshoreSync é uma ferramenta gratuita desenvolvida para ajudar os trabalhadores offshore a gerenciar seus horários de trabalho. Nos comprometemos a manter a funcionalidade básica gratuita para todos.",
+    "mainDescription2": "No entanto, manter e melhorar a aplicação requer recursos. Custos de servidores, tempo de desenvolvimento e suporte contínuo somam tudo. Suas doações nos ajudam a cobrir esses gastos e continuar fornecendo um serviço confiável.",
+    "mainDescription3": "Se encontrar útil OffshoreSync e quiser apoiar seu desenvolvimento contínuo, considere fazer uma doação por meio de um dos métodos abaixo. Cada contribuição, não importa o quanto seja pequena, faz uma diferença!",
+    "donationMethods": "Temos suporte a diversos métodos de doação como Wise, PayPal, Revolut, Bitcoin e Ethereum.",
+    "wiseDescription": "Transferência direta para nossa conta com taxas baixas. Excelente para transferências internacionais.",
+    "paypalDescription": "Doações rápidas e fáceis usando PayPal.",
+    "revolutDescription": "Transferências rápidas com taxas de câmbio competitivas.",
+    "bitcoinDescription": "Ajude OffshoreSync com criptomoedas de Bitcoin.",
+    "ethereumDescription": "Doar usando criptomoedas de Ethereum.",
+    "copyToClipboard": "Copiar para a área de transferência",
+    "copiedToClipboard": "Copiado para a área de transferência!",
+    "copyFailed": "Erro ao copiar. Por favor, tente manualmente.",
+    "donateVia": "Doar por meio de {{method}}",
+    "thankYou": "Obrigado por seu apoio!",
+    "contactUs": "Se tiver alguma dúvida ou precisar de ajuda com as doações, por favor, entre em contato com suporte@offshoresync.com."
   },
   "legal": {
     "privacyPolicy": {

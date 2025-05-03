@@ -202,12 +202,13 @@
     "register": "Registrarse",
     "logout": "Cerrar Sesión",
     "language": "Idioma",
+    "friends": "Amigos",
     "languages": {
       "en": "Inglés",
       "es": "Español",
       "pt": "Portugués"
     },
-    "friends": "Amigos"
+    "donations": "Donaciones"
   },
   "countries": {
     "US": "Estados Unidos",
@@ -340,6 +341,25 @@
       "goToLogin": "Ir a Iniciar Sesión",
       "goToHome": "Volver al Inicio"
     }
+  },
+  "donations": {
+    "title": "Apoya a OffshoreSync",
+    "supportTitle": "Ayuda a mantener a OffshoreSync funcionando!",
+    "mainDescription1": "OffshoreSync es una herramienta gratuita desarrollada para ayudar a los trabajadores offshore a gestionar sus horarios de trabajo. Nos comprometemos a mantener la funcionalidad básica gratuita para todos.",
+    "mainDescription2": "Sin embargo, mantener e mejorar la aplicación requiere recursos. Los costos de los servidores, el tiempo de desarrollo y el soporte continuo suman todo. Tus donaciones nos ayudan a cubrir estos gastos y continuar proporcionando un servicio confiable.",
+    "mainDescription3": "Si encuentras útil OffshoreSync y quieres apoyar su desarrollo continuo, considera hacer una donación a través de uno de los métodos siguientes. Cada contribución, sin importar cuán pequeña sea, hace una diferencia!",
+    "donationMethods": "Soportamos una amplia variedad de métodos de donación como Wise, PayPal, Revolut, Bitcoin y Ethereum.",
+    "wiseDescription": "Transferencia directa a nuestra cuenta con tarifas bajas. Excelente para transferencias internacionales.",
+    "paypalDescription": "Donaciones rápidas y fáciles usando PayPal.",
+    "revolutDescription": "Transferencias rápidas con tasas de cambio competitivas.",
+    "bitcoinDescription": "Apoya a OffshoreSync con criptomonedas de Bitcoin.",
+    "ethereumDescription": "Donar usando criptomonedas de Ethereum.",
+    "copyToClipboard": "Copiar al portapapeles",
+    "copiedToClipboard": "Copiado al portapapeles!",
+    "copyFailed": "Error al copiar. Por favor, intenta manualmente.",
+    "donateVia": "Donar a través de {{method}}",
+    "thankYou": "Gracias por tu apoyo!",
+    "contactUs": "Si tienes alguna pregunta o necesitas ayuda con las donaciones, por favor contacta a soporte@offshoresync.com."
   },
   "legal": {
     "privacyPolicy": {

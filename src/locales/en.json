@@ -209,7 +209,8 @@
       "en": "English",
       "es": "Spanish",
       "pt": "Portuguese"
-    }
+    },
+    "donations": "Donations"
   },
   "countries": {
     "US": "United States",
@@ -342,6 +343,25 @@
       "goToLogin": "Go to Login",
       "goToHome": "Back to Home"
     }
+  },
+  "donations": {
+    "title": "Support OffshoreSync",
+    "supportTitle": "Help us keep OffshoreSync up and running!",
+    "mainDescription1": "OffshoreSync is a free tool developed to help offshore workers manage their work schedules. We're committed to keeping the core functionality free for everyone.",
+    "mainDescription2": "However, maintaining and improving the application requires resources. Server costs, development time, and ongoing support all add up. Your donations help us cover these expenses and continue to provide a reliable service.",
+    "mainDescription3": "If you find OffshoreSync useful and would like to support its continued development, please consider making a donation through one of the methods below. Every contribution, no matter how small, makes a difference!",
+    "donationMethods": "We support a broad variaty of donation methods like Wise, PayPal, Revolut, Bitcoin, and Ethereum.",
+    "wiseDescription": "Transfer directly to our account with low fees. Great for international transfers.",
+    "paypalDescription": "Quick and easy donations using PayPal.",
+    "revolutDescription": "Fast transfers with competitive exchange rates.",
+    "bitcoinDescription": "Support us with Bitcoin cryptocurrency.",
+    "ethereumDescription": "Donate using Ethereum cryptocurrency.",
+    "copyToClipboard": "Copy to clipboard",
+    "copiedToClipboard": "Copied to clipboard!",
+    "copyFailed": "Failed to copy. Please try manually.",
+    "donateVia": "Donate via {{method}}",
+    "thankYou": "Thank you for your support!",
+    "contactUs": "If you have any questions or need assistance with donations, please contact us at support@offshoresync.com."
   },
   "legal": {
     "privacyPolicy": {

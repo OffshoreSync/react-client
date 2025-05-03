@@ -23,7 +23,8 @@ import {
   Avatar,
   Container,
   Button,
-  Link
+  Link,
+  Tooltip
 } from '@mui/material';
 
 // Material UI icons
@@ -431,6 +432,26 @@ function Navbar() {
               >
                 <GitHubIcon fontSize="large" />
               </IconButton>
+            </ListItem>
+
+            <ListItem disablePadding>
+              <ListItemButton 
+                onClick={() => handleNavigation('/donations')}
+                sx={{ textDecoration: 'none', color: 'inherit' }}
+              >
+                <ListItemIcon>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24, color: 'text.secondary' }}>
+                    $
+                  </Box>
+                </ListItemIcon>
+                <ListItemText 
+                  primary={t('navbar.donations')}
+                  primaryTypographyProps={{
+                    variant: 'body2',
+                    color: 'text.secondary'
+                  }}
+                />
+              </ListItemButton>
             </ListItem>
 
             <ListItem disablePadding>

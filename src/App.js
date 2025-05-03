@@ -32,11 +32,12 @@ import FriendManagement from './components/FriendManagement';
 import VerifyEmail from './components/VerifyEmail';
 import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import TermsPage from './pages/TermsPage';
+import Donations from './components/Donations';
 import { getCookie, setCookie, removeCookie, api } from './utils/apiUtils';
 import { AuthProvider } from './context/AuthContext';
 
 // Define public routes that don't require authentication
-const publicRoutes = ['/', '/home', '/login', '/register', '/verify-email', '/reset-password', '/forgot-password', '/privacy-policy', '/terms'];
+const publicRoutes = ['/', '/home', '/login', '/register', '/verify-email', '/reset-password', '/forgot-password', '/privacy-policy', '/terms', '/donations'];
 
 // Explicitly declare colors to prevent no-undef
 const primaryColor = blue[500];
@@ -260,6 +261,7 @@ function AppRoutes() {
         <Route path="/" element={<Home />} />
         <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
         <Route path="/terms" element={<TermsPage />} />
+        <Route path="/donations" element={<Donations />} />
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Dashboard />
