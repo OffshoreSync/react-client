@@ -18,6 +18,7 @@ import {
   VisibilityOff 
 } from '@mui/icons-material';
 import { GoogleLogin } from '@react-oauth/google';
+import { useTheme } from '../context/ThemeContext';
 import { styled } from '@mui/material/styles';
 import { api, getCookie, getValidToken } from '../utils/apiUtils';
 import { useAuth } from '../context/AuthContext';
@@ -46,6 +47,7 @@ const Login = () => {
   const location = useLocation();
   const { t } = useTranslation();
   const { setUser, login, user } = useAuth();
+  const { mode } = useTheme(); // Get current theme mode
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -279,6 +281,8 @@ const Login = () => {
               text="signin_with"
               shape="rectangular"
               logo_alignment="center"
+              theme={mode === 'dark' ? 'filled_black' : 'outline'}
+              type="standard"
             />
           </GoogleSignInContainer>
 
