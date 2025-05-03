@@ -31,7 +31,10 @@ import {
 import { 
   ChevronLeft as ChevronLeftIcon, 
   ChevronRight as ChevronRightIcon,
-  Edit as EditIcon 
+  Edit as EditIcon,
+  AccessTime as AccessTimeIcon,
+  DirectionsBoat as DirectionsBoatIcon,
+  Home as HomeIcon
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 
@@ -757,35 +760,7 @@ useEffect(() => {
         </Box>
       )}
       <Box sx={{ my: 4 }}>
-        {/* Days Counter Card */}
-        {user?.workCycles?.length > 0 && daysCounter !== null && (
-          <Grid item xs={12}>
-            <Card 
-              sx={{ 
-                mb: 2, 
-                backgroundColor: counterType === 'onBoard' 
-                  ? '#FF3B30'  // Red from calendar on-board event
-                  : '#34C759'  // Green from calendar off-board event
-              }}
-            >
-              <CardContent>
-                <Typography 
-                  variant="h6" 
-                  align="center"
-                  sx={{ 
-                    color: 'white',
-                    textTransform: 'uppercase',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  {counterType === 'offBoard' 
-                    ? t('dashboard.daysUntilOnBoard', { days: daysCounter }) 
-                    : t('dashboard.daysUntilOffBoard', { days: daysCounter })}
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        )}
+        {/* Days counter integrated into the calendar card */}
 
         <Grid container spacing={3}>
           <Grid item xs={12}>
@@ -812,15 +787,42 @@ useEffect(() => {
               </IconButton>
               <CardHeader
                 title={t('dashboard.workSchedule')}
-                subheader={t('dashboard.workScheduleSubheader')}
+                subheader={
+                  <Box>
+                    {user?.workCycles?.length > 0 && daysCounter !== null ? (
+                      <Typography 
+                        variant="body2" 
+                        sx={{
+                          color: counterType === 'onBoard' ? '#D32F2F' : '#1976D2',
+                          fontWeight: 500,
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 0.5
+                        }}
+                      >
+                        {counterType === 'offBoard' ? (
+                          <>
+                            <DirectionsBoatIcon fontSize="small" />
+                            {t('dashboard.daysUntilOnBoard', { days: daysCounter })}
+                          </>
+                        ) : (
+                          <>
+                            <HomeIcon fontSize="small" />
+                            {t('dashboard.daysUntilOffBoard', { days: daysCounter })}
+                          </>
+                        )}
+                      </Typography>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        {t('dashboard.workScheduleSubheader')}
+                      </Typography>
+                    )}
+                  </Box>
+                }
                 titleTypographyProps={{
                   variant: 'h6',
                   color: 'primary',
                   fontWeight: 600
-                }}
-                subheaderTypographyProps={{
-                  variant: 'body2',
-                  color: 'text.secondary'
                 }}
                 sx={{
                   borderBottom: '1px solid rgba(0,0,0,0.12)',
