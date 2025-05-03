@@ -3,12 +3,47 @@ import { Cookies } from 'react-cookie';
 
 // Centralized auth clear utility
 export function clearAuthAndRedirect(redirectTo = '/login') {
+  console.log('%c🔒 Logging out and clearing all auth data', 'color: #FF5722; font-weight: bold');
+  
+  // Clear all auth-related cookies (both regular and PWA versions)
   removeCookie('token');
+  removeCookie('token_pwa');
   removeCookie('refreshToken');
+  removeCookie('refreshToken_pwa');
   removeCookie('user');
+  removeCookie('user_pwa');
   removeCookie('XSRF-TOKEN');
-  window.dispatchEvent(new CustomEvent('auth-state-changed', { detail: { isAuthenticated: false } }));
+  
+  // Clear localStorage items as well (as backup)
+  try {
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+    localStorage.removeItem('XSRF-TOKEN');
+    
+    // Clear any cached API data
+    const cacheKeys = Object.keys(localStorage).filter(key => 
+      key.startsWith('offshoresync_cache_') || 
+      key.includes('_cache_') ||
+      key.includes('workCycles')
+    );
+    
+    cacheKeys.forEach(key => {
+      console.log(`%c🗑️ Clearing cached data: ${key}`, 'color: #FF9800');
+      localStorage.removeItem(key);
+    });
+  } catch (error) {
+    console.error('Error clearing localStorage:', error);
+  }
+  
+  // Notify the application that auth state has changed
+  window.dispatchEvent(new CustomEvent('auth-state-changed', { 
+    detail: { isAuthenticated: false } 
+  }));
+  
+  // Redirect to login page if not already there
   if (window.location.pathname !== redirectTo) {
+    console.log(`%c🚪 Redirecting to ${redirectTo}`, 'color: #2196F3');
     window.location.href = redirectTo;
   }
 }
