@@ -817,7 +817,7 @@ useEffect(() => {
                       <Typography 
                         variant="body2" 
                         sx={{
-                          color: counterType === 'onBoard' ? '#D32F2F' : '#1976D2',
+                          color: counterType === 'onBoard' ? '#D32F2F' : '#2196F3',
                           fontWeight: 500,
                           display: 'flex',
                           alignItems: 'center',
