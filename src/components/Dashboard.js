@@ -44,6 +44,7 @@ import { useTranslation } from 'react-i18next';
 // Import getBackendUrl
 import { api, getCookie, setCookie, removeCookie } from '../utils/apiUtils';
 import { useOfflineStatus } from '../hooks/useOfflineStatus';
+import { refreshWorkCycles, refreshProfileData } from '../utils/workCyclesUtils';
 
 // Import FullCalendar locales
 import ptLocale from '@fullcalendar/core/locales/pt-br';
@@ -571,16 +572,16 @@ useEffect(() => {
       // Update the user state to trigger re-render
       setUser(updatedUser);
       
-      // Invalidate profile cache by making a fresh request to profile endpoint
+      // Refresh work cycles to ensure they're up-to-date when navigating between pages
       try {
-        console.log('Refreshing profile cache after onboard date update');
-        await api.get('/api/auth/profile', { 
-          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
-          params: { _t: new Date().getTime() } // Add timestamp to bust cache
-        });
-      } catch (cacheError) {
-        console.warn('Failed to refresh profile cache:', cacheError);
-        // Continue with the flow even if cache refresh fails
+        console.log('Refreshing work cycles after onboard date update');
+        await refreshWorkCycles(updatedUser, setUser, updateUserInCookies);
+        
+        // Also refresh profile data to ensure it's up-to-date
+        await refreshProfileData();
+      } catch (refreshError) {
+        console.warn('Failed to refresh work cycles or profile:', refreshError);
+        // Continue with the flow even if refresh fails
       }
       
       // Close dialog and check if we still need to show profile alert
@@ -648,16 +649,16 @@ useEffect(() => {
       updateUserInCookies(updatedUser);
       setUser(updatedUser);
       
-      // Invalidate profile cache by making a fresh request to profile endpoint
+      // Refresh work cycles to ensure they're up-to-date when navigating between pages
       try {
-        console.log('Refreshing profile cache after resetting onboard date');
-        await api.get('/api/auth/profile', { 
-          headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate' },
-          params: { _t: new Date().getTime() } // Add timestamp to bust cache
-        });
-      } catch (cacheError) {
-        console.warn('Failed to refresh profile cache:', cacheError);
-        // Continue with the flow even if cache refresh fails
+        console.log('Refreshing work cycles after resetting onboard date');
+        await refreshWorkCycles(updatedUser, setUser, updateUserInCookies);
+        
+        // Also refresh profile data to ensure it's up-to-date
+        await refreshProfileData();
+      } catch (refreshError) {
+        console.warn('Failed to refresh work cycles or profile:', refreshError);
+        // Continue with the flow even if refresh fails
       }
 
       // Open the onboard date dialog
