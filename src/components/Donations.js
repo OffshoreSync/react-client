@@ -95,16 +95,6 @@ const Donations = () => {
   return (
     <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
       <Card sx={{ mb: 4 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
-          <img 
-            src="/offshoresync_logo_nobg.svg" 
-            alt="OffshoreSync Logo" 
-            style={{ 
-              height: 80,
-              marginBottom: 16
-            }} 
-          />
-        </Box>
         <CardHeader 
           title={t('donations.title')} 
           titleTypographyProps={{ 
