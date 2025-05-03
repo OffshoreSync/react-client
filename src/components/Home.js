@@ -107,7 +107,7 @@ function Home() {
           variant="h4" 
           gutterBottom 
           sx={{ 
-            color: 'text.primary', 
+            color: 'primary.main', 
             mb: 3,
             fontWeight: 'bold'
           }}
@@ -144,7 +144,7 @@ function Home() {
               elevation={2} 
               sx={{ 
                 p: 3, 
-                backgroundColor: 'white' 
+                backgroundColor: 'background.paper' 
               }}
             >
               <Typography 

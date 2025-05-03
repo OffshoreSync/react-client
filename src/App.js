@@ -7,9 +7,8 @@ import {
   useLocation,
   useNavigate 
 } from 'react-router-dom';
-import { ThemeProvider, createTheme } from '@mui/material/styles';
-import { blue, green } from '@mui/material/colors';
 import CssBaseline from '@mui/material/CssBaseline';
+import { ThemeProvider as CustomThemeProvider } from './context/ThemeContext';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { useTranslation } from 'react-i18next';
 import { CookiesProvider } from 'react-cookie';
@@ -39,61 +38,7 @@ import { AuthProvider } from './context/AuthContext';
 // Define public routes that don't require authentication
 const publicRoutes = ['/', '/home', '/login', '/register', '/verify-email', '/reset-password', '/forgot-password', '/privacy-policy', '/terms', '/donations'];
 
-// Explicitly declare colors to prevent no-undef
-const primaryColor = blue[500];
-const secondaryColor = green[500];
-
-// Create custom theme
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: primaryColor,
-    },
-    secondary: {
-      main: secondaryColor,
-    },
-    background: {
-      default: '#f4f4f4',
-      paper: '#ffffff',
-    },
-  },
-  typography: {
-    fontFamily: [
-      '-apple-system',
-      'BlinkMacSystemFont',
-      '"Segoe UI"',
-      'Roboto',
-      '"Helvetica Neue"',
-      'Arial',
-      'sans-serif',
-    ].join(','),
-    h1: {
-      fontSize: '2.5rem',
-      fontWeight: 600,
-    },
-    h2: {
-      fontSize: '2rem',
-      fontWeight: 500,
-    },
-  },
-  components: {
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          textTransform: 'none',
-          borderRadius: 8,
-        },
-      },
-    },
-    MuiTextField: {
-      styleOverrides: {
-        root: {
-          borderRadius: 8,
-        },
-      },
-    },
-  },
-});
+// No theme configuration here as we're using ThemeContext
 
 // Wrapper component to handle routing-specific hooks
 function AppRoutes() {
@@ -309,14 +254,14 @@ function App() {
   return (
     <CookiesProvider>
       <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
-        <ThemeProvider theme={theme}>
+        <CustomThemeProvider>
           <CssBaseline />
           <AuthProvider>
             <Router>
               <AppRoutes />
             </Router>
           </AuthProvider>
-        </ThemeProvider>
+        </CustomThemeProvider>
       </GoogleOAuthProvider>
     </CookiesProvider>
   );

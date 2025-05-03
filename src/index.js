@@ -5,12 +5,9 @@ import App from './App';
 import axios from 'axios';
 import { getBackendUrl } from './utils/apiUtils';
 import reportWebVitals from './reportWebVitals';
-import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import { GoogleOAuthProvider } from '@react-oauth/google';
-import theme from './theme';
 import { I18nextProvider } from 'react-i18next';
 import i18n from './i18n';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 
 // Import i18n configuration
 import './i18n';
@@ -80,12 +77,9 @@ const renderApp = async () => {
   root.render(
     <React.StrictMode>
       <I18nextProvider i18n={i18n}>
-        <ThemeProvider theme={theme}>
-          <CssBaseline />
-          <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
-            <App />
-          </GoogleOAuthProvider>
-        </ThemeProvider>
+        <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
+          <App />
+        </GoogleOAuthProvider>
       </I18nextProvider>
     </React.StrictMode>
   );
