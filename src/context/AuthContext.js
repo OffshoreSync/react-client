@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { api, getCookie, setCookie, removeCookie } from '../utils/apiUtils';
+import { api, getCookie, setCookie, removeCookie, getValidToken } from '../utils/apiUtils';
 
 const AuthContext = createContext(null);
 
@@ -18,6 +18,44 @@ export const AuthProvider = ({ children }) => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Centralized login method
+  const login = async (token, refreshToken, userData) => {
+    console.log('🔐 Centralizing login through AuthContext');
+    
+    // Store tokens in cookies
+    setCookie('token', token, {
+      path: '/',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax'
+    });
+
+    setCookie('refreshToken', refreshToken, {
+      path: '/',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax'
+    });
+
+    // Set user data in state
+    setUser(userData);
+
+    // Store user data in cookie for persistence
+    setCookie('user', JSON.stringify(userData), {
+      path: '/',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax'
+    });
+
+    // Dispatch auth state change event
+    window.dispatchEvent(new CustomEvent('auth-state-changed', { 
+      detail: { 
+        isAuthenticated: true, 
+        user: userData 
+      } 
+    }));
+
+    return userData;
+  };
 
   const fetchUserData = async () => {
     const token = getCookie('token');
@@ -119,6 +157,10 @@ export const AuthProvider = ({ children }) => {
       timestamp: new Date().toISOString()
     });
 
+    // Note: We no longer need a separate offline check here as getValidToken and api calls
+    // will handle offline detection internally
+
+    // Online flow or offline without cached user
     // Prioritize token-based authentication
     if (token || refreshToken) {
       fetchUserData();
@@ -161,12 +203,45 @@ export const AuthProvider = ({ children }) => {
     }
   }, [user]);
 
+  // Periodic token refresh mechanism
+  useEffect(() => {
+    // Only run if user is logged in
+    if (!user) return;
+
+    console.log('🔄 Starting periodic token refresh check (every 60 seconds)');
+    
+    // Check token validity every minute
+    const tokenRefreshInterval = setInterval(async () => {
+      try {
+        console.log('🔍 Checking token validity...');
+        // getValidToken will handle offline detection and skip validation when offline
+        const validToken = await getValidToken();
+        
+        if (validToken) {
+          console.log('✅ Token is valid or has been refreshed');
+        } else {
+          console.warn('⚠️ No valid token available, user may be logged out');
+          // Attempt to fetch user data which will handle token refresh if needed
+          fetchUserData();
+        }
+      } catch (error) {
+        console.error('❌ Error during periodic token check:', error);
+      }
+    }, 60000); // Check every 60 seconds
+    
+    return () => {
+      console.log('🛑 Stopping periodic token refresh check');
+      clearInterval(tokenRefreshInterval);
+    };
+  }, [user]);
+
   const value = {
     user,
     setUser,
     loading,
     error,
     fetchUserData,
+    login,
     logout
   };
 

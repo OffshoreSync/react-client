@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useContext } from 'react';
+import React, { useState, useCallback, useContext, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { 
   Container, 
@@ -19,7 +19,7 @@ import {
 } from '@mui/icons-material';
 import { GoogleLogin } from '@react-oauth/google';
 import { styled } from '@mui/material/styles';
-import { api, setCookie, getCookie } from '../utils/apiUtils';
+import { api, getCookie, getValidToken } from '../utils/apiUtils';
 import { useAuth } from '../context/AuthContext';
 
 // Import translation hook
@@ -45,7 +45,7 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
-  const { setUser } = useAuth();
+  const { setUser, login, user } = useAuth();
   const [formData, setFormData] = useState({
     username: '',
     password: ''
@@ -55,6 +55,31 @@ const Login = () => {
   const [successMessage, setSuccessMessage] = useState(location.state?.successMessage || '');
   const [showVerificationAlert] = useState(location.state?.showVerificationAlert || false);
   const [reAuthMessage] = useState(location.state?.reAuthRequired ? t('login.reAuthRequired') : '');
+  const [checkingAuth, setCheckingAuth] = useState(true);
+  
+  // Check for valid tokens on component mount
+  useEffect(() => {
+    const checkExistingAuth = async () => {
+      try {
+        setCheckingAuth(true);
+        // Check if we have a valid token (regular or PWA)
+        const token = await getValidToken();
+        const userCookie = getCookie('user');
+        
+        if (token && userCookie) {
+          console.log('%c🔄 Valid token found, redirecting to dashboard', 'color: #4CAF50; font-weight: bold');
+          navigate('/dashboard');
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking authentication:', error);
+      } finally {
+        setCheckingAuth(false);
+      }
+    };
+    
+    checkExistingAuth();
+  }, [navigate]);
   
   const { username, password } = formData;
 
@@ -82,33 +107,12 @@ const Login = () => {
         throw new Error('Invalid server response - missing token, refresh token or user data');
       }
 
-      // Store both tokens in cookies
-      setCookie('token', response.data.token, {
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax'
-      });
-
-      setCookie('refreshToken', response.data.refreshToken, {
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        httpOnly: true
-      });
-
-      // Set user data in context
-      setUser(response.data.user);
-
-      // Store user data in cookie for persistence
-      setCookie('user', JSON.stringify(response.data.user), {
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax'
-      });
+      // Use the AuthContext login method instead of directly setting cookies
+      await login(response.data.token, response.data.refreshToken, response.data.user);
 
       setTimeout(() => {
-  navigate('/dashboard');
-}, 100);
+        navigate('/dashboard');
+      }, 100);
     } catch (error) {
       console.error('Login error:', error);
       setError(error.response?.data?.message || t('login.errors.loginFailed'));
@@ -131,41 +135,14 @@ const Login = () => {
         throw new Error('Invalid server response - missing tokens');
       }
 
-      // Store both tokens in cookies
-      setCookie('token', loginResponse.data.token, {
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax'
-      });
+      // Use the AuthContext login method instead of directly setting cookies
+      await login(loginResponse.data.token, loginResponse.data.refreshToken, loginResponse.data.user);
 
-      setCookie('refreshToken', loginResponse.data.refreshToken, {
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        httpOnly: true
-      });
-
-      // Fetch user profile
-      const profileResponse = await api.get('/api/auth/profile');
-      console.debug('Profile loaded:', profileResponse.data);
-
-      if (profileResponse.data.user) {
-        setUser(profileResponse.data.user);
-
-        // Store user data in cookie for persistence
-        setCookie('user', JSON.stringify(profileResponse.data.user), {
-          path: '/',
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax'
-        });
-      }
-
-      setTimeout(() => {
-  navigate('/dashboard');
-}, 100);
+      // Navigate to dashboard
+      navigate('/dashboard');
     } catch (error) {
-      console.error('Google login failed:', error);
-      setError('Failed to authenticate with Google');
+      console.error('Google login error:', error);
+      setError(t('login.errors.googleLoginFailed'));
     }
   };
 
