@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
-import { api, setCookie, getCookie, removeCookie } from '../utils/apiUtils';
+import { api, publicApi, setCookie, getCookie, removeCookie } from '../utils/apiUtils';
 
 // Material-UI Imports
 import { 
@@ -86,7 +85,9 @@ const PasswordReset = () => {
     setIsLoading(true);
     setError(''); // Clear any previous errors
     try {
-      await api.post('/api/auth/request-password-reset', { 
+      // Use publicApi utility to bypass authentication and CSRF token validation
+      // for public endpoints like password reset
+      await publicApi.post('password/request', { 
         email, 
         language: i18n.language || 'en' // Use current language or default to English
       });
@@ -130,51 +131,48 @@ const PasswordReset = () => {
     // Clear previous errors
     setPasswordErrors([]);
     setError('');
-
-    // Attempt to retrieve email if not set
-    const resetEmail = email || getCookie('resetEmail');
-
-    // Log input details for debugging
-    console.log('Password Reset Attempt:', {
-      resetEmail,
-      newPasswordLength: newPassword.length,
-      confirmPasswordLength: confirmPassword.length,
-      passwordsMatch: newPassword === confirmPassword,
-      resetToken: resetToken ? 'Token Present' : 'No Token'
-    });
-
-    // Validate email
-    if (!resetEmail) {
-      setError(t('passwordReset.emailRequired'));
-      return;
-    }
-
-    // Validate password
-    if (!validatePassword(newPassword)) {
-      const errors = [
-        t('passwordReset.requirements.length'),
-        t('passwordReset.requirements.uppercase'),
-        t('passwordReset.requirements.lowercase'),
-        t('passwordReset.requirements.number'),
-        t('passwordReset.requirements.special')
-      ];
-      setPasswordErrors(errors);
-      return;
-    }
-
-    // Check password confirmation
-    if (newPassword !== confirmPassword) {
-      setError(t('passwordReset.passwordMismatch'));
-      return;
-    }
-
+    setIsLoading(true);
+    
     try {
-      const response = await api.post('/api/auth/reset-password', {
-        token: resetToken, 
-        password: newPassword,
-        email: resetEmail
-      });
+      // Attempt to retrieve email if not set
+      if (!email && resetToken) {
+        try {
+          // Try to extract email from token using publicApi utility
+          const response = await publicApi.post('password/verify-token', { token: resetToken });
+          if (response.data.email) {
+            setEmail(response.data.email);
+          }
+        } catch (error) {
+          console.error('Error validating token:', error);
+          // Continue with reset attempt even if validation fails
+        }
+      }
+
+      // Validate passwords match
+      if (newPassword !== confirmPassword) {
+        setError(t('passwordReset.passwordsMismatch'));
+        setIsLoading(false);
+        return;
+      }
       
+      // Validate password strength
+      if (!validatePassword(newPassword)) {
+        setPasswordErrors([
+          t('passwordReset.passwordRequirements1'),
+          t('passwordReset.passwordRequirements2'),
+          t('passwordReset.passwordRequirements3'),
+          t('passwordReset.passwordRequirements4')
+        ]);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Call API to reset password
+      const response = await publicApi.post('password/reset', {
+        token: resetToken,
+        password: newPassword,
+        email
+      });
       console.log('Password Reset Response:', response.data);
       setMessage(t('passwordReset.success'));
       

@@ -144,6 +144,47 @@ export const getBackendUrl = () => {
   return process.env.REACT_APP_BACKEND_URL || 'http://localhost:5000';
 };
 
+// Public API utility for endpoints that don't require authentication or CSRF tokens
+export const publicApi = {
+  get: async (url, config = {}) => {
+    try {
+      const backendUrl = getBackendUrl();
+      // Ensure URL starts with /api/ if it's not an absolute URL
+      const apiUrl = url.startsWith('http') ? url : 
+        url.startsWith('/api/') ? `${backendUrl}${url}` : 
+        `${backendUrl}/api/${url.startsWith('/') ? url.slice(1) : url}`;
+      
+      console.log('Making public API GET request:', { url: apiUrl });
+      return await axios.get(apiUrl, {
+        ...config,
+        withCredentials: true
+      });
+    } catch (error) {
+      console.error('Public API GET request failed:', error);
+      throw error;
+    }
+  },
+  
+  post: async (url, data = {}, config = {}) => {
+    try {
+      const backendUrl = getBackendUrl();
+      // Ensure URL starts with /api/ if it's not an absolute URL
+      const apiUrl = url.startsWith('http') ? url : 
+        url.startsWith('/api/') ? `${backendUrl}${url}` : 
+        `${backendUrl}/api/${url.startsWith('/') ? url.slice(1) : url}`;
+      
+      console.log('Making public API POST request:', { url: apiUrl });
+      return await axios.post(apiUrl, data, {
+        ...config,
+        withCredentials: true
+      });
+    } catch (error) {
+      console.error('Public API POST request failed:', error);
+      throw error;
+    }
+  }
+};
+
 // Create axios instance with enhanced retry logic
 export const api = axios.create({
   baseURL: getBackendUrl(),
