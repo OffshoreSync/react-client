@@ -2,8 +2,8 @@
 
 /* Apply dark mode styling to the AppBar itself */
 body.dark-mode .MuiAppBar-root {
-  /* Override the background in dark mode - slightly lighter blue gradient */
-  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%) !important;
+  /* Override the background in dark mode - slightly shadier blue gradient */
+  background: linear-gradient(135deg, #add5f6 0%, #70b7f1 100%) !important;
 }
 
 /* Style for icons in dark mode - applies to all states */
