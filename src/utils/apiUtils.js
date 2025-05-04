@@ -96,15 +96,20 @@ export const setCookie = (name, value, options = {}) => {
       expires: new Date(Date.now() + 60 * 1000) // 1 minute
     };
 
+    // Ensure value is properly serialized if it's an object
+    const serializedValue = typeof value === 'object' && value !== null 
+      ? JSON.stringify(value) 
+      : value;
+
     const mergedOptions = { ...defaultOptions, ...options };
-    cookies.set(name, value, mergedOptions);
+    cookies.set(name, serializedValue, mergedOptions);
 
     // Also set a PWA-specific cookie for offline access
-    cookies.set(`${name}_pwa`, value, { ...mergedOptions, expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) });
+    cookies.set(`${name}_pwa`, serializedValue, { ...mergedOptions, expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) });
     
     // CRITICAL: Also store in localStorage as a fallback
     try {
-      localStorage.setItem(name, value);
+      localStorage.setItem(name, serializedValue);
       console.log(`%c💾 Stored ${name} in localStorage as fallback`, 'color: #4CAF50; font-weight: bold');
     } catch (storageError) {
       console.error(`Error storing ${name} in localStorage:`, storageError);
@@ -113,7 +118,11 @@ export const setCookie = (name, value, options = {}) => {
     console.error(`Error setting cookie ${name}:`, error);
     // If cookie fails, try localStorage
     try {
-      localStorage.setItem(name, value);
+      // Ensure value is properly serialized if it's an object
+      const serializedValue = typeof value === 'object' && value !== null 
+        ? JSON.stringify(value) 
+        : value;
+      localStorage.setItem(name, serializedValue);
       console.log(`%c💾 Stored ${name} in localStorage after cookie failure`, 'color: #FF9800; font-weight: bold');
     } catch (storageError) {
       console.error(`Error storing ${name} in localStorage:`, storageError);
@@ -610,7 +619,7 @@ api.interceptors.response.use(
         id: response.data.user.id,
         company: response.data.user.company,
         unitName: response.data.user.unitName,
-        workCycles: response.data.user.workCycles?.length
+        workCycles: response.data.user.workCycles
       } : null,
       cookies: document.cookie
     });
