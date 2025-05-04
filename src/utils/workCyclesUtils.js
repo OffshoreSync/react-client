@@ -107,9 +107,10 @@ export const refreshProfileData = async () => {
   try {
     console.log('%c🔄 Refreshing profile data...', 'color: #2196F3; font-weight: bold');
     
-    // Use timestamp as query parameter to bust cache instead of headers
-    // This avoids CORS issues with custom headers
-    const response = await api.get(`/api/auth/profile?nocache=${Date.now()}`);
+    // Use cache-control headers to force revalidation
+    // This ensures we always get fresh data from the server
+    const { fetchWithRevalidation } = await import('../utils/apiUtils');
+    const response = await fetchWithRevalidation('/auth/profile');
     
     if (response.data && response.data.user) {
       console.log('%c✅ Profile data refreshed successfully', 'color: #2196F3');
@@ -213,12 +214,26 @@ export const forceCalendarUpdate = async (user, setUser, updateUserInCookies, de
 /**
  * Sets a timestamp when the onboard date was changed
  * This is used to detect when we need to force refresh data
+ * Also invalidates the profile cache to ensure fresh data is loaded
  */
-export const markOnboardDateChanged = () => {
+export const markOnboardDateChanged = async () => {
   try {
     const timestamp = Date.now();
     localStorage.setItem(CACHE_KEYS.ONBOARD_DATE_CHANGED, timestamp.toString());
     console.log(`%c🔖 Marked onboard date changed at ${new Date(timestamp).toISOString()}`, 'color: #FF5722; font-weight: bold');
+    
+    // Clear profile cache explicitly
+    localStorage.removeItem(CACHE_KEYS.PROFILE);
+    
+    // Force a profile refresh to ensure we get fresh data
+    try {
+      console.log('%c🔄 Invalidating profile cache after onboard date change', 'color: #FF5722; font-weight: bold');
+      await refreshProfileData();
+    } catch (refreshError) {
+      console.warn('Failed to refresh profile after onboard date change:', refreshError);
+      // Continue even if refresh fails - the timestamp is still set
+    }
+    
     return timestamp;
   } catch (error) {
     console.error('Failed to mark onboard date change:', error);

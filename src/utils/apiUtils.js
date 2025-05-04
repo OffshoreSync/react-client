@@ -324,6 +324,33 @@ export const getValidToken = async () => {
   }
 };
 
+/**
+ * Makes an API request with cache-control headers to force revalidation
+ * This ensures the browser always fetches fresh data from the server
+ * @param {string} url - The URL to request
+ * @param {Object} config - Additional axios config
+ * @returns {Promise<Object>} - The API response
+ */
+export const fetchWithRevalidation = async (url, config = {}) => {
+  // Add cache-control headers to force revalidation
+  const revalidationConfig = {
+    ...config,
+    headers: {
+      ...config.headers,
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    }
+  };
+  
+  console.log('%c🔄 Fetching with cache revalidation:', 'color: #FF5722; font-weight: bold', {
+    url,
+    headers: revalidationConfig.headers
+  });
+  
+  return api.get(url, revalidationConfig);
+};
+
 // Request interceptor with enhanced error handling
 api.interceptors.request.use(
   async (config) => {
