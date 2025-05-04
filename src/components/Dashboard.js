@@ -561,18 +561,7 @@ useEffect(() => {
     setDatePickerLocale(newDateFnsLocale);
   }, [i18n.language]);
   
-  // Apply dark-mode class to body based on theme
-  useEffect(() => {
-    if (theme.palette.mode === 'dark') {
-      document.body.classList.add('dark-mode');
-    } else {
-      document.body.classList.remove('dark-mode');
-    }
-    
-    return () => {
-      document.body.classList.remove('dark-mode');
-    };
-  }, [theme.palette.mode]);
+  // Dark mode class is now handled by ThemeContext
 
   // Calculate calendar events
   const calendarEvents = useMemo(() => generateCalendarEvents(user, t), [user, t]);

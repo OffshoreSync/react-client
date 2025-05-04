@@ -37,6 +37,15 @@ export const ThemeProvider = ({ children }) => {
     }
   }, []);
   
+  // Effect to apply dark-mode class to body when theme changes
+  useEffect(() => {
+    if (mode === 'dark') {
+      document.body.classList.add('dark-mode');
+    } else {
+      document.body.classList.remove('dark-mode');
+    }
+  }, [mode]);
+  
   return (
     <ThemeContext.Provider value={{ mode, toggleTheme }}>
       <MuiThemeProvider theme={theme}>

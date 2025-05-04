@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+// Import custom dark mode styles
+import './NavbarDarkMode.css';
+
 // Material UI components
 import { 
   AppBar,
@@ -415,7 +418,7 @@ function Navbar() {
                       sx={{ 
                         width: 40, 
                         height: 40,
-                        border: '2px solid rgba(255, 255, 255, 0.8)',
+                        border: mode === 'dark' ? '2px solid rgba(0, 0, 0, 0.8)' : '2px solid rgba(255, 255, 255, 0.8)',
                         backgroundColor: 'rgba(255, 255, 255, 0.9)',
                         boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
                         transition: 'transform 0.2s ease-in-out',
@@ -437,9 +440,9 @@ function Navbar() {
                     onClick={handleMenu}
                     sx={{ 
                       marginLeft: 2,
-                      color: 'white',
+                      color: mode === 'dark' ? 'black' : 'white',
                       '&:hover': {
-                        backgroundColor: 'rgba(255, 255, 255, 0.1)'
+                        backgroundColor: mode === 'dark' ? 'rgba(0,0,0,0.1)' : 'rgba(255, 255, 255, 0.1)'
                       }
                     }}
                   >

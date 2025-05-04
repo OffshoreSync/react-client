@@ -1,0 +1,51 @@
+/* Custom styling for Navbar in dark mode */
+
+/* Apply dark mode styling to the AppBar itself */
+body.dark-mode .MuiAppBar-root {
+  /* Override the background in dark mode - slightly lighter blue gradient */
+  background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%) !important;
+}
+
+/* Style for icons in dark mode - applies to all states */
+body.dark-mode .MuiAppBar-root .MuiIconButton-root {
+  color: black !important;
+}
+
+body.dark-mode .MuiAppBar-root .MuiIconButton-root:hover {
+  background-color: rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Style for avatar border in dark mode */
+body.dark-mode .MuiAppBar-root .MuiAvatar-root {
+  border: 2px solid rgba(0, 0, 0, 0.8) !important;
+}
+
+/* Style for all SVG icons in dark mode */
+body.dark-mode .MuiAppBar-root .MuiSvgIcon-root {
+  color: black !important;
+}
+
+/* Style for the OffshoreSync logo in dark mode */
+body.dark-mode .MuiAppBar-root img[alt="OffshoreSyncLogo"] {
+  filter: brightness(0) !important; /* Make the logo black instead of white */
+}
+
+/* Ensure avatar images aren't affected by dark mode filters */
+body.dark-mode .MuiAppBar-root .MuiAvatar-root img {
+  filter: none !important; /* Preserve original colors for avatar images */
+}
+
+/* Style for all text in the AppBar in dark mode */
+body.dark-mode .MuiAppBar-root .MuiTypography-root {
+  color: black !important;
+}
+
+/* Style for buttons in the AppBar */
+body.dark-mode .MuiAppBar-root .MuiButton-root {
+  color: black !important;
+}
+
+/* Style for menu items */
+body.dark-mode .MuiMenu-paper .MuiMenuItem-root {
+  color: inherit; /* Use the default color from the theme */
+}
