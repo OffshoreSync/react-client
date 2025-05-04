@@ -135,11 +135,6 @@
   },
   "settings": {
     "title": "User Settings",
-    "personalInfo": "Personal Information",
-    "workInfo": "Work Information",
-    "errors": {
-      "updateFailed": "Failed to update profile. Please try again."
-    },
     "profileSettings": "Profile Settings",
     "personalInformation": "Personal Information",
     "professionalDetails": "Professional Details",
@@ -159,7 +154,10 @@
     "deleteAccountWarning": "Are you sure you want to delete your account? This action cannot be undone.",
     "cancel": "Cancel",
     "confirmDelete": "Confirm Delete",
-    "notSet": "Not Set"
+    "notSet": "Not Set",
+    "errors": {
+      "updateFailed": "Failed to update profile. Please try again."
+    }
   },
   "home": {
     "title": "Manage Your Offshore Working Regime",

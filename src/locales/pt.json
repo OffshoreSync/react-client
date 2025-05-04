@@ -53,7 +53,7 @@
     "password": "Senha",
     "confirmPassword": "Confirmar Senha",
     "registerButton": "Cadastrar",
-    "profileUpdateSuccess": "Perfil actualizado con éxito",
+    "profileUpdateSuccess": "Perfil atualizado com sucesso",
     "completeProfileButton": "Completar Perfil",
     "alreadyHaveAccount": "Já tem uma conta?",
     "loginLink": "Entrar",
@@ -177,7 +177,7 @@
       },
       "friendship": {
         "title": "Sistema de Amizades",
-        "description": "Adicione seus amigos e sincronize seus horários de trabalho facilmente"
+        "description": "Adicione seus amigos e sincronize seus dias de folga facilmente"
       },
       "events": {
         "title": "Eventos do Calendário",
@@ -343,7 +343,7 @@
   "donations": {
     "title": "Dê apoio ao OffshoreSync",
     "supportTitle": "Ajude a manter o OffshoreSync funcionando!",
-    "mainDescription1": "OffshoreSync é uma ferramenta gratuita desenvolvida para ajudar os trabalhadores offshore a gerenciar seus horários de trabalho. Nos comprometemos a manter a funcionalidade básica gratuita para todos.",
+    "mainDescription1": "OffshoreSync é uma ferramenta gratuita desenvolvida para ajudar os trabalhadores offshore a gerenciar seus dias de trabalho ou folga. Nos comprometemos a manter a funcionalidade básica gratuita para todos.",
     "mainDescription2": "No entanto, manter e melhorar a aplicação requer recursos. Custos de servidores, tempo de desenvolvimento e suporte contínuo somam tudo. Suas doações nos ajudam a cobrir esses gastos e continuar fornecendo um serviço confiável.",
     "mainDescription3": "Se encontrar útil OffshoreSync e quiser apoiar seu desenvolvimento contínuo, considere fazer uma doação por meio de um dos métodos abaixo. Cada contribuição, não importa o quanto seja pequena, faz uma diferença!",
     "donationMethods": "Temos suporte a diversos métodos de doação como Wise, PayPal, Revolut, Bitcoin e Ethereum.",
@@ -370,10 +370,10 @@
           "items": [
             "Cria uma conta",
             "Atualiza seu perfil",
-            "Cria uma escala de trabalho",
-            "Cria eventos com seus amigos",
-            "Contata nossa equipe de suporte",
-            "Usa o Google para autenticar em nossos serviços"
+            "Crie uma escala de trabalho",
+            "Crie eventos com seus amigos",
+            "Contate nossa equipe de suporte",
+            "Use o Google para autenticar em nossos serviços"
           ],
           "googleData": {
             "title": "Dados do Google que Coletamos",

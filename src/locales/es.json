@@ -161,7 +161,7 @@
   },
   "home": {
     "title": "Gestione Su Régimen de Trabajo Offshore",
-    "subtitle": "Nuestra aplicación está diseñada específicamente para profesionales de la industria offshore para rastrear y gestionar sus complejos horarios de trabajo. Ya sea en perforación, producción, mantenimiento o roles de soporte, proporcionamos una solución integral para su único equilibrio entre trabajo y vida.",
+    "subtitle": "Nuestra aplicación está diseñada específicamente para profesionales de la industria offshore para rastrear y gestionar sus complejos días de trabajo. Ya sea en perforación, producción, mantenimiento o roles de soporte, proporcionamos una solución integral para su único equilibrio entre trabajo y vida.",
     "keyFeaturesTitle": "Características Principales",
     "loginButton": "Iniciar Sesión en Su Cuenta",
     "registerButton": "Crear Nueva Cuenta",
@@ -178,7 +178,7 @@
       },
       "friendship": {
         "title": "Sistema de Amigos",
-        "description": "Agregue a sus amigos y sincronice sus horarios de trabajo fácilmente"
+        "description": "Agregue a sus amigos y sincronice sus días de trabajo o folga fácilmente"
       },
       "events": {
         "title": "Eventos del Calendario",
@@ -289,8 +289,8 @@
     "decline": "Rechazar Solicitud",
     "noFriends": "Aún no tienes amigos. ¡Comienza a conectar!",
     "noPendingRequests": "No hay solicitudes de amistad pendientes",
-    "syncEnabled": "La sincronización de horarios está habilitada para este amigo",
-    "syncDisabled": "La sincronización de horarios está deshabilitada para este amigo",
+    "syncEnabled": "La sincronización está habilitada para este amigo",
+    "syncDisabled": "La sincronización está deshabilitada para este amigo",
     "syncOn": "Sincronización Activada",
     "syncOff": "Sincronización Desactivada"
   },
@@ -345,7 +345,7 @@
   "donations": {
     "title": "Apoya a OffshoreSync",
     "supportTitle": "Ayuda a mantener a OffshoreSync funcionando!",
-    "mainDescription1": "OffshoreSync es una herramienta gratuita desarrollada para ayudar a los trabajadores offshore a gestionar sus horarios de trabajo. Nos comprometemos a mantener la funcionalidad básica gratuita para todos.",
+    "mainDescription1": "OffshoreSync es una herramienta gratuita desarrollada para ayudar a los trabajadores offshore a gestionar sus días de trabajo o folga. Nos comprometemos a mantener la funcionalidad básica gratuita para todos.",
     "mainDescription2": "Sin embargo, mantener e mejorar la aplicación requiere recursos. Los costos de los servidores, el tiempo de desarrollo y el soporte continuo suman todo. Tus donaciones nos ayudan a cubrir estos gastos y continuar proporcionando un servicio confiable.",
     "mainDescription3": "Si encuentras útil OffshoreSync y quieres apoyar su desarrollo continuo, considera hacer una donación a través de uno de los métodos siguientes. Cada contribución, sin importar cuán pequeña sea, hace una diferencia!",
     "donationMethods": "Soportamos una amplia variedad de métodos de donación como Wise, PayPal, Revolut, Bitcoin y Ethereum.",
@@ -372,7 +372,7 @@
           "items": [
             "Crea una cuenta",
             "Actualiza su perfil",
-            "Crea un horario de trabajo",
+            "Crea una agenda de trabajo",
             "Crea eventos con sus amigos",
             "Contacta a nuestro equipo de soporte",
             "Utiliza Google para autenticarse en nuestros servicios"
