@@ -14,6 +14,9 @@ import { useTranslation } from 'react-i18next';
 import { CookiesProvider } from 'react-cookie';
 import CircularProgress from '@mui/material/CircularProgress';
 
+// Import ThemeMetaTags component for status bar theming
+import ThemeMetaTags from './components/ThemeMetaTags';
+
 // Import i18n configuration
 import './i18n';
 
@@ -256,6 +259,8 @@ function App() {
       <GoogleOAuthProvider clientId={process.env.REACT_APP_GOOGLE_CLIENT_ID}>
         <CustomThemeProvider>
           <CssBaseline />
+          {/* ThemeMetaTags component to update status bar colors based on theme */}
+          <ThemeMetaTags />
           <AuthProvider>
             <Router>
               <AppRoutes />
