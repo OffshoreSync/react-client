@@ -966,7 +966,7 @@ useEffect(() => {
                   }}
                   style={{
                     '--fc-border-color': 'rgba(0,0,0,0.12)',
-                    '--fc-today-bg-color': 'rgba(25, 118, 210, 0.1)',
+                    '--fc-today-bg-color': 'rgba(25, 118, 210, 0.05)', // Lighter background since we'll have a circle
                     '--fc-list-event-hover-bg-color': 'rgba(0, 0, 0, 0.04)',
                     '--fc-neutral-bg-color': '#f5f5f5',
                     '--fc-page-bg-color': 'white',
@@ -1026,6 +1026,27 @@ useEffect(() => {
                   dayCellDidMount={(arg) => {
                     const date = arg.date;
                     const el = arg.el;
+                    
+                    // Check if today's date to add a circle around it
+                    if (date.toDateString() === new Date().toDateString()) {
+                      const todayCell = el.querySelector('.fc-daygrid-day-top');
+                      if (todayCell) {
+                        const dayNumber = todayCell.querySelector('a');
+                        if (dayNumber) {
+                          // Style the day number with a circle
+                          dayNumber.style.backgroundColor = theme.palette.primary.main;
+                          dayNumber.style.color = '#ffffff';
+                          dayNumber.style.borderRadius = '50%';
+                          dayNumber.style.width = '22px';
+                          dayNumber.style.height = '22px';
+                          dayNumber.style.display = 'flex';
+                          dayNumber.style.justifyContent = 'center';
+                          dayNumber.style.alignItems = 'center';
+                          dayNumber.style.margin = '2px auto';
+                          dayNumber.style.fontWeight = 'bold';
+                        }
+                      }
+                    }
                     
                     // Check if the day is a weekend (0 = Sunday, 6 = Saturday)
                     if (date.getDay() === 0 || date.getDay() === 6) {
