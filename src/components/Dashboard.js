@@ -43,12 +43,9 @@ import { styled } from '@mui/material/styles';
 import { useTranslation } from 'react-i18next';
 
 // Import getBackendUrl
-import { api, getCookie, setCookie, removeCookie } from '../utils/apiUtils';
+import { api, getCookie, setCookie, removeCookie, clearProfileCache } from '../utils/apiUtils';
 import { useOfflineStatus } from '../hooks/useOfflineStatus';
-import { 
-  refreshWorkCycles, 
-  refreshProfileData, 
-  forceCalendarUpdate, 
+import {
   clearCalendarCache,
   markOnboardDateChanged,
   wasOnboardDateChanged,
@@ -482,18 +479,18 @@ useEffect(() => {
         // Online mode: perform authentication check
         const authResult = await checkAuth();
         if (authResult) {
-          // If onboard date was recently changed, force refresh work cycles
+          // If onboard date was recently changed, force refresh profile to get latest work cycles
           if (dateChanged) {
-            console.log('%c🔄 Fetching fresh work cycles after onboard date change', 'color: #4CAF50; font-weight: bold');
+            console.log('%c Fetching fresh profile data after onboard date change', 'color: #4CAF50; font-weight: bold');
             try {
-              // Get fresh work cycles directly from the server with cache busting
-              const cyclesResponse = await api.post('/auth/generate-work-cycles', {}, {
+              // Get fresh profile data from the server with cache busting
+              const profileResponse = await api.get('/api/auth/profile', {
                 params: { nocache: Date.now() }
               });
               
-              if (cyclesResponse.data && cyclesResponse.data.workCycles) {
-                // Update the user object with fresh work cycles
-                const updatedUser = { ...authResult.user, workCycles: cyclesResponse.data.workCycles };
+              if (profileResponse.data && profileResponse.data.user) {
+                // Update the user object with fresh data
+                const updatedUser = profileResponse.data.user;
                 updateUserInCookies(updatedUser);
                 setUser(updatedUser);
                 
@@ -511,20 +508,15 @@ useEffect(() => {
                 
                 return;
               }
-            } catch (cyclesError) {
-              console.warn('Failed to refresh work cycles after onboard date change:', cyclesError);
+            } catch (profileError) {
+              console.warn('Failed to refresh profile after onboard date change:', profileError);
               // Continue with normal flow if refresh fails
             }
           }
+          // No need to generate work cycles separately, they should be included in the user profile
+          // Just set the user from auth result
+          setUser(authResult.user);
           
-          if (!authResult.user.workCycles?.length) {
-            const cyclesResponse = await api.post('/auth/generate-work-cycles');
-            const updatedUser = { ...authResult.user, workCycles: cyclesResponse.data.workCycles };
-            updateUserInCookies(updatedUser);
-            setUser(updatedUser);
-          } else {
-            setUser(authResult.user);
-          }
           setShowProfileAlert(authResult.showProfileAlert);
           // Calculate and set days counter
           const remainingDays = calculateDaysRemaining(authResult.user);
@@ -532,6 +524,7 @@ useEffect(() => {
             setDaysCounter(remainingDays.days);
             setCounterType(remainingDays.type);
           }
+          
           // Only show onboard dialog if we need onboard date AND it's not already set
           if (authResult.needsOnboardDate && !authResult.user.workSchedule?.nextOnBoardDate) {
             setOpenOnBoardDialog(true);
@@ -608,6 +601,7 @@ useEffect(() => {
   const handleSetOnBoardDate = async () => {
     try {
       // Call backend API to set On Board date with past date support
+      // The server will now generate work cycles as part of this endpoint
       const response = await api.put('/auth/set-onboard-date', { 
         nextOnBoardDate: date,
         allowPastDates: true  // New flag to allow past dates
@@ -615,17 +609,10 @@ useEffect(() => {
 
       console.log('Set On Board Date Response:', response.data);
 
-      // Generate work cycles with initial date
-      const cyclesResponse = await api.post('/auth/generate-work-cycles', {
-        initialDate: date  // Pass initial date to cycle generation
-      });
-
-      console.log('Generate Work Cycles Response:', cyclesResponse.data);
-
       // Ensure the user object is complete and update workSchedule
+      // Work cycles are now included in the response from set-onboard-date
       const updatedUser = {
         ...response.data.user,
-        workCycles: cyclesResponse.data.workCycles,
         workSchedule: {
           ...response.data.user.workSchedule,
           nextOnBoardDate: date
@@ -641,14 +628,12 @@ useEffect(() => {
       // Clear calendar cache to ensure fresh data when navigating
       try {
         console.log('Clearing calendar cache after onboard date update');
-        // Just clear the cache - no need for additional API calls
-        // The work cycles were already generated by the server during the onboard date update
         clearCalendarCache();
         
         // Store the updated work cycles in localStorage for immediate access
-        if (cyclesResponse.data && cyclesResponse.data.workCycles) {
+        if (response.data.user && response.data.user.workCycles) {
           try {
-            localStorage.setItem('workCycles', JSON.stringify(cyclesResponse.data.workCycles));
+            localStorage.setItem('workCycles', JSON.stringify(response.data.user.workCycles));
             console.log('Stored fresh work cycles in localStorage');
           } catch (storageError) {
             console.warn('Failed to store work cycles in localStorage:', storageError);
@@ -658,6 +643,9 @@ useEffect(() => {
         // Mark that the onboard date was changed - this will trigger a refresh on next load
         markOnboardDateChanged();
         console.log('Marked onboard date as changed for future page loads');
+        
+        // Clear profile cache to ensure fresh data on subsequent requests
+        clearProfileCache();
       } catch (cacheError) {
         console.warn('Failed to clear calendar cache:', cacheError);
         // Continue with the flow even if cache clearing fails
@@ -709,19 +697,20 @@ useEffect(() => {
     try {
       const response = await api.put('/auth/reset-next-onboard-date');
 
-      // Detailed logging for debugging
       console.log('Reset Onboard Date Response:', response.data);
 
       // Update user in localStorage with reset workSchedule
       const currentUser = user;
       
-      // Safely update user object
+      // Safely update user object with both workSchedule and workCycles
       const updatedUser = {
         ...currentUser,
         workSchedule: {
           nextOnBoardDate: null,
           nextOffBoardDate: null
-        }
+        },
+        // Ensure workCycles is updated from the response or set to empty array
+        workCycles: response.data.workCycles || []
       };
 
       // Update cookies and state
@@ -743,6 +732,10 @@ useEffect(() => {
           } catch (storageError) {
             console.warn('Failed to store work cycles in localStorage:', storageError);
           }
+        } else {
+          // If no workCycles in response, store empty array to ensure cache is consistent
+          localStorage.setItem('workCycles', JSON.stringify([]));
+          console.log('Stored empty work cycles array in localStorage');
         }
         
         // Mark that the onboard date was changed - this will trigger a refresh on next load

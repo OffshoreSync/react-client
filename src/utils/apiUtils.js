@@ -360,6 +360,55 @@ export const fetchWithRevalidation = async (url, config = {}) => {
   return api.get(url, revalidationConfig);
 };
 
+/**
+ * Clears the profile endpoint from browser cache and ensures fresh data is fetched
+ * This should be called after operations that modify user data (like setting onboard date)
+ * to ensure subsequent profile requests get fresh data
+ */
+export const clearProfileCache = () => {
+  console.log('%c🧹 Clearing profile cache to ensure fresh data', 'color: #FF9800; font-weight: bold');
+  
+  // Clear any cached profile data from localStorage
+  try {
+    const cacheKeys = Object.keys(localStorage).filter(key => 
+      key.includes('profile') || 
+      key.includes('user') ||
+      key.includes('workCycles')
+    );
+    
+    cacheKeys.forEach(key => {
+      console.log(`%c🗑️ Clearing cached profile data: ${key}`, 'color: #FF9800');
+      localStorage.removeItem(key);
+    });
+  } catch (error) {
+    console.error('Error clearing profile cache from localStorage:', error);
+  }
+  
+  // If the Cache API is available, try to clear any cached profile requests
+  if ('caches' in window) {
+    caches.keys().then(cacheNames => {
+      cacheNames.forEach(cacheName => {
+        caches.open(cacheName).then(cache => {
+          // Delete any cached profile requests
+          cache.keys().then(requests => {
+            requests.forEach(request => {
+              if (request.url.includes('/api/auth/profile')) {
+                console.log(`%c🗑️ Deleting cached profile request: ${request.url}`, 'color: #FF9800');
+                cache.delete(request);
+              }
+            });
+          });
+        });
+      });
+    }).catch(err => {
+      console.error('Error clearing profile from Cache API:', err);
+    });
+  }
+  
+  // Dispatch an event to notify components that profile cache has been cleared
+  window.dispatchEvent(new CustomEvent('profile-cache-cleared'));
+};
+
 // Request interceptor with enhanced error handling
 api.interceptors.request.use(
   async (config) => {
@@ -513,14 +562,7 @@ const refreshTokenAndRetry = async (originalRequest = null) => {
     isRefreshing = false;
     removeCookie('token');
     removeCookie('refreshToken');
-    removeCookie('token_pwa');
-    removeCookie('refreshToken_pwa');
     removeCookie('user');
-    localStorage.removeItem('token');
-    localStorage.removeItem('refreshToken');
-    localStorage.removeItem('token_pwa');
-    localStorage.removeItem('refreshToken_pwa');
-    localStorage.removeItem('user');
     window.dispatchEvent(new CustomEvent('auth-state-changed', { detail: { isAuthenticated: false } }));
     if (window.location.pathname !== '/login') {
       window.location.href = '/login';
@@ -549,12 +591,39 @@ const refreshTokenAndRetry = async (originalRequest = null) => {
       throw new Error('No token received from refresh endpoint');
     }
 
-    // Update cookies with new tokens
-    setCookie('token', token);
-    if (newRefreshToken) {
-      setCookie('refreshToken', newRefreshToken);
+    // Debug token received from refresh
+    try {
+      const decodedToken = JSON.parse(atob(token.split('.')[1]));
+      console.debug('%c🔄 Refresh Token Details:', 'color: #9C27B0; font-weight: bold', {
+        exp: decodedToken.exp,
+        expDate: new Date(decodedToken.exp * 1000).toISOString(),
+        currentTime: new Date().toISOString(),
+        timeUntilExpiry: Math.round((decodedToken.exp * 1000 - Date.now()) / 1000) + ' seconds',
+        userId: decodedToken.userId || decodedToken.sub || 'unknown',
+        tokenFirstChars: token.substring(0, 10) + '...'
+      });
+    } catch (e) {
+      console.error('Failed to decode token:', e);
     }
 
+    // Update cookies with new tokens
+    setCookie('token', token);
+    
+    // CRITICAL: Always store the new refresh token when provided
+    // This handles refresh token rotation where each token can only be used once
+    if (newRefreshToken) {
+      console.log('%c🔄 Storing new refresh token', 'color: #FF9800; font-weight: bold', {
+        hasNewToken: true,
+        tokenFirstChars: newRefreshToken.substring(0, 10) + '...',
+        timestamp: new Date().toISOString()
+      });
+      setCookie('refreshToken', newRefreshToken);
+    } else {
+      console.warn('%c⚠️ No new refresh token provided', 'color: #FF5722; font-weight: bold', {
+        timestamp: new Date().toISOString()
+      });
+    }
+    
     // Also set PWA cookies for offline use
     setCookie('token_pwa', token, {
       path: '/',
@@ -572,37 +641,102 @@ const refreshTokenAndRetry = async (originalRequest = null) => {
       });
     }
 
-    // Update user data if provided
+    // If user data is included, update user cookie
     if (user) {
       setCookie('user', JSON.stringify(user));
-      window.dispatchEvent(new CustomEvent('auth-state-changed', { detail: { isAuthenticated: true, user } }));
     }
+    
+    // Notify the app that auth state has been refreshed successfully
+    window.dispatchEvent(new CustomEvent('auth-state-changed', { 
+      detail: { 
+        isAuthenticated: true, 
+        user: user || JSON.parse(getCookie('user') || '{}') 
+      } 
+    }));
 
-    // Notify subscribers and clear the queue
-    refreshSubscribers.forEach((callback) => callback(token));
-    refreshSubscribers = [];
-
-    // Update the original request with new token if provided
-    if (originalRequest) {
-      originalRequest.headers.Authorization = `Bearer ${token}`;
-    }
-
-    console.log('%c✨ Token Refresh Success', 'color: #9C27B0; font-weight: bold', {
+    // Log successful token refresh
+    console.log('%c✨ Session Validation - Tokens Refreshed', 'color: #9C27B0; font-weight: bold', {
       accessTokenUpdated: true,
       refreshTokenUpdated: !!newRefreshToken,
       userUpdated: !!user,
       timestamp: new Date().toISOString()
     });
 
-    isRefreshing = false;
-    return originalRequest ? api(originalRequest) : Promise.resolve(token);
-  } catch (error) {
+    // Update authorization header for the original request
+    originalRequest.headers.Authorization = `Bearer ${token}`;
+    
+    // Notify all subscribers about the new token
+    console.log('%c🔔 Notifying subscribers about new token', 'color: #4CAF50; font-weight: bold', {
+      subscribersCount: refreshSubscribers.length,
+      tokenFirstChars: token.substring(0, 15) + '...'
+    });
+    
+    refreshSubscribers.forEach(callback => callback(token));
+    
+    // Reset refresh state
     isRefreshing = false;
     refreshSubscribers = [];
 
-    // Centralized auth clear and redirect
-    clearAuthAndRedirect('/login');
-    return Promise.reject(error);
+    // If we're on the home page and authenticated, redirect to dashboard
+    if (window.location.pathname === '/' && user) {
+      window.location.href = '/dashboard';
+      return;
+    }
+
+    // Retry the original request with new token
+    return axios(originalRequest);
+
+  } catch (refreshError) {
+    console.error('%c❌ Token Refresh Failed:', 'color: #FF5722; font-weight: bold', {
+      error: refreshError.message,
+      status: refreshError.response?.status,
+      statusText: refreshError.response?.statusText,
+      data: refreshError.response?.data,
+      timestamp: new Date().toISOString(),
+      subscribersCount: refreshSubscribers.length,
+      tokenSource: 'unknown' // Default value since tokenSource might not be defined in this context
+    });
+
+    // Notify all subscribers about the error
+    console.log('%c🔔 Notifying subscribers about refresh error', 'color: #FF5722; font-weight: bold');
+    refreshSubscribers.forEach(callback => callback(null, refreshError));
+    
+    isRefreshing = false;
+    refreshSubscribers = [];
+
+    // Handle specific error cases
+    if (refreshError.response?.status === 401) {
+      console.warn('%c⚠️ Refresh token was rejected (401 Unauthorized)', 'color: #FF9800; font-weight: bold', {
+        reason: refreshError.response?.data?.message || 'Unknown reason',
+        error: refreshError.response?.data?.error
+      });
+      
+      // If we're online and got a 401, the token is invalid - clear auth and redirect
+      if (!isOffline) {
+        console.log('%c🚪 Redirecting to login due to invalid refresh token', 'color: #FF5722; font-weight: bold');
+        clearAuthAndRedirect('/login');
+        return Promise.reject(new Error('Invalid refresh token'));
+      }
+    }
+    
+    // Only clear tokens and redirect if we are online and the server responded with an error
+    // Network errors usually have !refreshError.response
+    if (!isOffline && refreshError.response) {
+      console.log('%c🚪 Redirecting to login due to refresh failure', 'color: #FF5722; font-weight: bold');
+      clearAuthAndRedirect('/login');
+    } else {
+      // If offline, do not clear tokens or redirect, just reject
+      console.warn('[Offline] Token refresh failed, but user remains authenticated for offline access.');
+      
+      // When offline, try to use whatever token we have cached
+      const cachedToken = getCookie('token') || getCookie('token_pwa');
+      if (cachedToken && originalRequest) {
+        console.log('%c📵 Using cached token for offline request despite refresh failure', 'color: #FF9800; font-weight: bold');
+        originalRequest.headers.Authorization = `Bearer ${cachedToken}`;
+        return api(originalRequest);
+      }
+    }
+    return Promise.reject(refreshError);
   }
 };
 
