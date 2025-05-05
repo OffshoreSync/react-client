@@ -268,7 +268,7 @@ const EditProfile = () => {
       });
       
       // Update the cookie with the complete user data
-      setCookie('user', JSON.stringify(updatedUser));
+      setCookie('user', updatedUser);
       
       // Clear calendar cache to ensure fresh data when navigating back to dashboard
       try {
@@ -303,7 +303,9 @@ const EditProfile = () => {
                 firstCycle: recalculatedUser.workCycles?.[0]
               });
               
-              setCookie('user', JSON.stringify(recalculatedUser));
+              // The setCookie function already handles JSON serialization
+              // so we pass the object directly
+              setCookie('user', recalculatedUser);
               
               // Store recalculated work cycles in localStorage
               if (recalculatedUser.workCycles && recalculatedUser.workCycles.length > 0) {

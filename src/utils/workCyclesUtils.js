@@ -63,7 +63,7 @@ export const refreshProfileData = async () => {
       console.log('%c✅ Profile data refreshed successfully', 'color: #2196F3');
       
       // Update user in cookies
-      setCookie('user', JSON.stringify(response.data.user));
+      setCookie('user', response.data.user);
       
       // Clear profile cache
       localStorage.removeItem(CACHE_KEYS.PROFILE);

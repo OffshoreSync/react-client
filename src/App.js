@@ -111,7 +111,7 @@ function AppRoutes() {
         if (response.data.user) {
           setIsAuthenticated(true);
           // Update user cookie in case it changed
-          setCookie('user', JSON.stringify(response.data.user), {
+          setCookie('user', response.data.user, {
             path: '/',
             sameSite: 'lax',
             secure: process.env.NODE_ENV === 'production'

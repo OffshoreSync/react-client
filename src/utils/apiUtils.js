@@ -790,7 +790,7 @@ const refreshTokenAndRetry = async (originalRequest = null) => {
 
     // If user data is included, update user cookie
     if (user) {
-      setCookie('user', JSON.stringify(user));
+      setCookie('user', user);
     }
     
     // Notify the app that auth state has been refreshed successfully
@@ -917,7 +917,7 @@ api.interceptors.response.use(
       }
       if (response.data.user) {
         // Set user data cookie
-        setCookie('user', JSON.stringify(response.data.user));
+        setCookie('user', response.data.user);
       }
     }
 
@@ -1047,7 +1047,7 @@ api.interceptors.response.use(
 
         // If user data is included, update user cookie
         if (user) {
-          setCookie('user', JSON.stringify(user));
+          setCookie('user', user);
         }
         
         // Notify the app that auth state has been refreshed successfully

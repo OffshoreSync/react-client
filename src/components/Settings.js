@@ -76,7 +76,7 @@ const Settings = () => {
             nextOnBoardDate: updatedUser.workSchedule?.nextOnBoardDate,
             nextOffBoardDate: updatedUser.workSchedule?.nextOffBoardDate
           });
-          setCookie('user', JSON.stringify(updatedUser));
+          setCookie('user', updatedUser);
         }
       } catch (error) {
         console.error('Error fetching user data:', error);

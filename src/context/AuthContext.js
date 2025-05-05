@@ -72,7 +72,7 @@ export const AuthProvider = ({ children }) => {
     setUser(userData);
 
     // Store user data in cookie for persistence
-    setCookie('user', JSON.stringify(userData), {
+    setCookie('user', userData, {
       path: '/',
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax'
@@ -107,7 +107,7 @@ export const AuthProvider = ({ children }) => {
       if (response.data.user) {
         setUser(response.data.user);
         // Update user cookie to ensure consistency
-        setCookie('user', JSON.stringify(response.data.user), {
+        setCookie('user', response.data.user, {
           path: '/',
           sameSite: 'lax',
           secure: process.env.NODE_ENV === 'production'
@@ -216,7 +216,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     if (user) {
       try {
-        const userString = JSON.stringify(user);
+        // No need to stringify the user object, setCookie will handle it
         const currentCookie = getCookie('user');
         
         // Check if we need to update the cookie
@@ -267,7 +267,7 @@ export const AuthProvider = ({ children }) => {
             timestamp: new Date().toISOString()
           });
           
-          setCookie('user', userString, {
+          setCookie('user', user, {
             path: '/',
             sameSite: 'lax',
             secure: process.env.NODE_ENV === 'production'
