@@ -9,9 +9,41 @@ export const AuthProvider = ({ children }) => {
     const userCookie = getCookie('user');
     if (userCookie) {
       try {
+        // Check if it's already an object (this shouldn't happen, but just in case)
+        if (typeof userCookie === 'object' && userCookie !== null) {
+          console.log('📝 User cookie is already an object, no parsing needed');
+          return userCookie;
+        }
+        
+        // Check for the problematic "[object Object]" string
+        if (userCookie === "[object Object]") {
+          console.error('🚨 User cookie contains invalid "[object Object]" string, using empty user');
+          return {};
+        }
+        
+        // Normal parsing
         return JSON.parse(userCookie);
       } catch (e) {
-        console.error('Failed to parse user cookie:', e);
+        console.error('🤦‍♂️ Failed to parse user cookie:', e);
+        
+        // If parsing fails but we have a string that looks like an object, try to recover
+        if (typeof userCookie === 'string' && 
+            userCookie.startsWith('{') && 
+            userCookie.endsWith('}')) {
+          console.warn('🔄 Attempting to recover from JSON parse error with manual cleanup');
+          try {
+            // Try a more lenient parsing approach
+            // This is a last resort attempt
+            const cleanedJson = userCookie
+              .replace(/\\"/g, '"') // Fix escaped quotes
+              .replace(/"{/g, '{').replace(/}"/g, '}') // Fix quoted objects
+              .replace(/\n/g, '\\n'); // Fix newlines
+            
+            return JSON.parse(cleanedJson);
+          } catch (recoveryError) {
+            console.error('🚫 Recovery attempt failed:', recoveryError);
+          }
+        }
       }
     }
     return null;
@@ -153,7 +185,6 @@ export const AuthProvider = ({ children }) => {
       hasToken: !!token,
       hasRefreshToken: !!refreshToken,
       hasCachedUser: !!cachedUser,
-      hasUser: !!user,
       timestamp: new Date().toISOString()
     });
 

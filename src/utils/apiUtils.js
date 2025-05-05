@@ -25,7 +25,9 @@ export function clearAuthAndRedirect(redirectTo = '/login') {
     const cacheKeys = Object.keys(localStorage).filter(key => 
       key.startsWith('offshoresync_cache_') || 
       key.includes('_cache_') ||
-      key.includes('workCycles')
+      key.includes('workCycles') ||
+      key.includes('profile') ||
+      key.includes('user')
     );
     
     cacheKeys.forEach(key => {
@@ -36,15 +38,41 @@ export function clearAuthAndRedirect(redirectTo = '/login') {
     console.error('Error clearing localStorage:', error);
   }
   
+  // Explicitly clear profile cache to prevent stale credentials
+  clearProfileCache();
+  
+  // Clear any fetch API cache entries
+  clearFetchCache();
+  
   // Notify the application that auth state has changed
   window.dispatchEvent(new CustomEvent('auth-state-changed', { 
     detail: { isAuthenticated: false } 
   }));
   
+  // Set a flag in sessionStorage to indicate we're performing a clean logout
+  // This can be used by the login page to know it's a fresh session
+  try {
+    sessionStorage.setItem('clean_logout', 'true');
+  } catch (error) {
+    console.error('Error setting sessionStorage flag:', error);
+  }
+  
   // Redirect to login page if not already there
   if (window.location.pathname !== redirectTo) {
-    console.log(`%c🚪 Redirecting to ${redirectTo}`, 'color: #2196F3');
-    window.location.href = redirectTo;
+    console.log(`%c🚪 Forcing complete page reload to ${redirectTo}`, 'color: #2196F3');
+    
+    // Use location.replace to prevent the current page from being saved in session history
+    if (window.location.pathname === redirectTo) {
+      // If we're already on the login page, force a reload
+      window.location.reload(true); // true forces reload from server, not cache
+    } else {
+      // Add a timestamp parameter to bust any potential cache
+      const cacheBuster = `?logout=${Date.now()}`;
+      window.location.replace(`${redirectTo}${cacheBuster}`);
+    }
+  } else {
+    // If we're already on the target page, force a reload
+    window.location.reload(true);
   }
 }
 
@@ -97,9 +125,37 @@ export const setCookie = (name, value, options = {}) => {
     };
 
     // Ensure value is properly serialized if it's an object
-    const serializedValue = typeof value === 'object' && value !== null 
-      ? JSON.stringify(value) 
-      : value;
+    let serializedValue;
+    
+    // Check if the value is already a string that looks like a stringified object
+    // This prevents double serialization
+    if (typeof value === 'string' && 
+        (value.startsWith('{') || value.startsWith('[')) && 
+        (value.endsWith('}') || value.endsWith(']'))) {
+      try {
+        // Try to parse it to verify it's valid JSON
+        JSON.parse(value);
+        // If it parses successfully, it's already serialized
+        serializedValue = value;
+        console.log(`%c📦 Value for ${name} is already serialized JSON, using as-is`, 'color: #4CAF50');
+      } catch (e) {
+        // If parsing fails, treat it as a regular string
+        serializedValue = value;
+      }
+    } else if (typeof value === 'object' && value !== null) {
+      // Normal object serialization
+      serializedValue = JSON.stringify(value);
+    } else {
+      // Regular value (string, number, etc.)
+      serializedValue = value;
+    }
+
+    // Handle the edge case where we might have "[object Object]" string
+    if (serializedValue === "[object Object]") {
+      console.error(`%c⚠️ Detected "[object Object]" string for ${name}, this indicates improper serialization`, 'color: #FF0000');
+      // Try to recover by using an empty object
+      serializedValue = "{}";
+    }
 
     const mergedOptions = { ...defaultOptions, ...options };
     cookies.set(name, serializedValue, mergedOptions);
@@ -119,9 +175,19 @@ export const setCookie = (name, value, options = {}) => {
     // If cookie fails, try localStorage
     try {
       // Ensure value is properly serialized if it's an object
-      const serializedValue = typeof value === 'object' && value !== null 
-        ? JSON.stringify(value) 
-        : value;
+      let serializedValue;
+      if (typeof value === 'object' && value !== null) {
+        serializedValue = JSON.stringify(value);
+      } else {
+        serializedValue = value;
+      }
+      
+      // Handle the edge case where we might have "[object Object]" string
+      if (serializedValue === "[object Object]") {
+        console.error(`%c⚠️ Detected "[object Object]" string for ${name} in fallback, using empty object`, 'color: #FF0000');
+        serializedValue = "{}";
+      }
+      
       localStorage.setItem(name, serializedValue);
       console.log(`%c💾 Stored ${name} in localStorage after cookie failure`, 'color: #FF9800; font-weight: bold');
     } catch (storageError) {
@@ -361,6 +427,68 @@ export const fetchWithRevalidation = async (url, config = {}) => {
 };
 
 /**
+ * Clears all fetch API caches to ensure fresh data is fetched
+ * This is especially important for auth-related endpoints
+ */
+export const clearFetchCache = () => {
+  console.log('%c🧹 Clearing fetch API caches', 'color: #FF5722; font-weight: bold');
+  
+  // If the Cache API is available, clear all caches
+  if ('caches' in window) {
+    // Get all cache names and delete them
+    caches.keys().then(cacheNames => {
+      console.log('%c📋 Found caches to clear:', 'color: #FF9800', cacheNames);
+      
+      const deletionPromises = cacheNames.map(cacheName => {
+        // For each cache, first check if it contains auth-related requests
+        return caches.open(cacheName)
+          .then(cache => {
+            return cache.keys().then(requests => {
+              // Delete specific auth-related requests
+              const authRequests = requests.filter(request => 
+                request.url.includes('/api/auth/') || 
+                request.url.includes('/profile')
+              );
+              
+              console.log(`%c🗑️ Deleting ${authRequests.length} auth requests from ${cacheName}`, 'color: #FF9800');
+              
+              // Delete each auth request individually
+              return Promise.all(authRequests.map(request => {
+                console.log(`%c🗑️ Deleting: ${request.url}`, 'color: #FF9800');
+                return cache.delete(request);
+              }));
+            });
+          })
+          .catch(err => {
+            console.error(`Error processing cache ${cacheName}:`, err);
+          });
+      });
+      
+      return Promise.all(deletionPromises);
+    })
+    .then(() => {
+      // After clearing individual requests, also try to completely delete the main cache
+      console.log('%c🗑️ Attempting to delete entire application cache', 'color: #FF5722; font-weight: bold');
+      return caches.delete('offshoresync-cache-v2');
+    })
+    .then(() => {
+      // For backward compatibility, try older cache names too
+      console.log('%c🧹 Clearing legacy caches for completeness', 'color: #FF9800');
+      const legacyCaches = ['default-cache', 'offshoresync-api-cache', 'offshoresync-data', 'offshoresync-cache-v1'];
+      
+      return Promise.all(legacyCaches.map(cacheName => 
+        caches.delete(cacheName).catch(() => {
+          // Silently fail for backward compatibility caches
+        })
+      ));
+    })
+    .catch(err => {
+      console.error('Error clearing fetch caches:', err);
+    });
+  }
+};
+
+/**
  * Clears the profile endpoint from browser cache and ensures fresh data is fetched
  * This should be called after operations that modify user data (like setting onboard date)
  * to ensure subsequent profile requests get fresh data
@@ -373,7 +501,8 @@ export const clearProfileCache = () => {
     const cacheKeys = Object.keys(localStorage).filter(key => 
       key.includes('profile') || 
       key.includes('user') ||
-      key.includes('workCycles')
+      key.includes('workCycles') ||
+      key.includes('auth')
     );
     
     cacheKeys.forEach(key => {
@@ -392,8 +521,11 @@ export const clearProfileCache = () => {
           // Delete any cached profile requests
           cache.keys().then(requests => {
             requests.forEach(request => {
-              if (request.url.includes('/api/auth/profile')) {
-                console.log(`%c🗑️ Deleting cached profile request: ${request.url}`, 'color: #FF9800');
+              // Clear profile endpoint and any auth-related endpoints
+              if (request.url.includes('/api/auth/profile') || 
+                  request.url.includes('/api/auth/') ||
+                  request.url.includes('/profile')) {
+                console.log(`%c🗑️ Deleting cached auth request: ${request.url}`, 'color: #FF9800');
                 cache.delete(request);
               }
             });
@@ -402,6 +534,21 @@ export const clearProfileCache = () => {
       });
     }).catch(err => {
       console.error('Error clearing profile from Cache API:', err);
+    });
+  }
+  
+  // Clear any fetch API cache entries for profile
+  if (window.caches) {
+    // Try to clear the application's specific cache
+    caches.delete('offshoresync-cache-v2').catch((err) => {
+      console.warn('Error clearing offshoresync-cache-v2:', err);
+    });
+    
+    // For backward compatibility, try older cache names too
+    ['default-cache', 'offshoresync-api-cache', 'offshoresync-data', 'offshoresync-cache-v1'].forEach(cacheName => {
+      caches.delete(cacheName).catch(() => {
+        // Silently fail for backward compatibility caches
+      });
     });
   }
   
