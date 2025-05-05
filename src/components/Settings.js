@@ -33,7 +33,21 @@ const Settings = () => {
         const response = await api.get('/api/auth/profile');
         if (response.data.user) {
           // Get current user data from cookie
-          const currentUser = getCookie('user') || {};
+          const cookieValue = getCookie('user');
+          let currentUser = {};
+          
+          // Parse the cookie if it's a string
+          if (cookieValue) {
+            if (typeof cookieValue === 'object' && cookieValue !== null) {
+              currentUser = cookieValue;
+            } else if (cookieValue !== "[object Object]") {
+              try {
+                currentUser = JSON.parse(cookieValue);
+              } catch (e) {
+                console.warn('Failed to parse user cookie in Settings:', e);
+              }
+            }
+          }
           
           // Merge the new user data with existing data
           const updatedUser = {
@@ -55,7 +69,14 @@ const Settings = () => {
           };
 
           setUser(updatedUser);
-          setCookie('user', updatedUser);
+          
+          // Properly serialize the user object before storing in cookie
+          console.log('%c🔄 Updating user in cookies from Settings:', 'color: #4CAF50; font-weight: bold', {
+            hasWorkSchedule: !!updatedUser.workSchedule,
+            nextOnBoardDate: updatedUser.workSchedule?.nextOnBoardDate,
+            nextOffBoardDate: updatedUser.workSchedule?.nextOffBoardDate
+          });
+          setCookie('user', JSON.stringify(updatedUser));
         }
       } catch (error) {
         console.error('Error fetching user data:', error);

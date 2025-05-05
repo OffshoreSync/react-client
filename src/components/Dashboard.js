@@ -253,7 +253,19 @@ const Dashboard = () => {
   );
 
   const updateUserInCookies = (updatedUser) => {
-    setCookie('user', updatedUser);
+    // Properly stringify the user object before setting the cookie
+    // This ensures consistent behavior with AuthContext
+    console.log('%c🔄 Updating user in cookies with workSchedule:', 'color: #4CAF50; font-weight: bold', {
+      hasWorkSchedule: !!updatedUser.workSchedule,
+      nextOnBoardDate: updatedUser.workSchedule?.nextOnBoardDate,
+      nextOffBoardDate: updatedUser.workSchedule?.nextOffBoardDate
+    });
+    setCookie('user', JSON.stringify(updatedUser, (key, value) => {
+      if (typeof value === 'function') {
+        return value.toString();
+      }
+      return value;
+    }));
   };
 
   // Calculate days remaining in current cycle

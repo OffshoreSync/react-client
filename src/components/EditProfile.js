@@ -248,7 +248,16 @@ const EditProfile = () => {
 
       // Update user cookie with new data
       const { user } = response.data;
-      setCookie('user', user);
+      
+      // Properly serialize the user object before storing in cookie
+      console.log('%c🔄 Updating user in cookies from EditProfile:', 'color: #4CAF50; font-weight: bold', {
+        hasWorkSchedule: !!user.workSchedule,
+        nextOnBoardDate: user.workSchedule?.nextOnBoardDate,
+        nextOffBoardDate: user.workSchedule?.nextOffBoardDate,
+        company: user.company,
+        unitName: user.unitName
+      });
+      setCookie('user', JSON.stringify(user));
 
       setSuccessMessage(t('register.profileUpdateSuccess'));
       setTimeout(() => {

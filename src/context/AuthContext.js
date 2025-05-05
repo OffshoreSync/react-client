@@ -217,11 +217,56 @@ export const AuthProvider = ({ children }) => {
     if (user) {
       try {
         const userString = JSON.stringify(user);
-        if (userString !== getCookie('user')) {
+        const currentCookie = getCookie('user');
+        
+        // Check if we need to update the cookie
+        let needsUpdate = true;
+        
+        if (currentCookie) {
+          if (typeof currentCookie === 'object' && currentCookie !== null) {
+            // If the cookie is already an object, compare directly
+            const isSameId = currentCookie.id === user.id;
+            const isSameWorkSchedule = 
+              JSON.stringify(currentCookie.workSchedule || {}) === 
+              JSON.stringify(user.workSchedule || {});
+              
+            if (isSameId && isSameWorkSchedule) {
+              needsUpdate = false;
+            }
+          } else if (currentCookie === "[object Object]") {
+            // Always update if we have the problematic string
+            needsUpdate = true;
+          } else {
+            // Try to parse the string cookie
+            try {
+              const parsedCookie = JSON.parse(currentCookie);
+              
+              // Compare the parsed cookie with the current user object
+              const isSameId = parsedCookie.id === user.id;
+              const isSameWorkSchedule = 
+                JSON.stringify(parsedCookie.workSchedule || {}) === 
+                JSON.stringify(user.workSchedule || {});
+                
+              if (isSameId && isSameWorkSchedule) {
+                needsUpdate = false;
+              }
+            } catch (parseError) {
+              // If parsing fails, the cookie is not valid JSON
+              console.warn('Current user cookie is not valid JSON, will update it');
+              // We'll update the cookie since it's not in the expected format
+            }
+          }
+        }
+        
+        if (needsUpdate) {
           console.debug('Updating user cookie:', {
             userId: user.id,
+            hasWorkSchedule: !!user.workSchedule,
+            nextOnBoardDate: user.workSchedule?.nextOnBoardDate,
+            nextOffBoardDate: user.workSchedule?.nextOffBoardDate,
             timestamp: new Date().toISOString()
           });
+          
           setCookie('user', userString, {
             path: '/',
             sameSite: 'lax',
