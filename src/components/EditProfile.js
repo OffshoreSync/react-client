@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, getCookie, setCookie } from '../utils/apiUtils';
+import { api, getCookie, setCookie, clearProfileCache } from '../utils/apiUtils';
 import { useNavigate } from 'react-router-dom';
+import { clearCalendarCache, markOnboardDateChanged } from '../utils/workCyclesUtils';
 import { 
   TextField, 
   Button, 
@@ -249,15 +250,84 @@ const EditProfile = () => {
       // Update user cookie with new data
       const { user } = response.data;
       
+      // Ensure the user object is complete with all necessary data
+      const updatedUser = {
+        ...user
+        // Note: workCycles should already be included in the user object
+      };
+      
       // Properly serialize the user object before storing in cookie
       console.log('%c🔄 Updating user in cookies from EditProfile:', 'color: #4CAF50; font-weight: bold', {
-        hasWorkSchedule: !!user.workSchedule,
-        nextOnBoardDate: user.workSchedule?.nextOnBoardDate,
-        nextOffBoardDate: user.workSchedule?.nextOffBoardDate,
-        company: user.company,
-        unitName: user.unitName
+        hasWorkSchedule: !!updatedUser.workSchedule,
+        nextOnBoardDate: updatedUser.workSchedule?.nextOnBoardDate,
+        nextOffBoardDate: updatedUser.workSchedule?.nextOffBoardDate,
+        company: updatedUser.company,
+        unitName: updatedUser.unitName,
+        hasWorkCycles: !!updatedUser.workCycles,
+        workCyclesCount: updatedUser.workCycles?.length || 0
       });
-      setCookie('user', JSON.stringify(user));
+      
+      // Update the cookie with the complete user data
+      setCookie('user', JSON.stringify(updatedUser));
+      
+      // Clear calendar cache to ensure fresh data when navigating back to dashboard
+      try {
+        console.log('%c🧹 Clearing calendar cache after working regime update', 'color: #FF5722; font-weight: bold');
+        clearCalendarCache();
+        
+        // Force recalculation of work cycles by resetting the onboard date to itself
+        // This is necessary because changing the working regime alone doesn't trigger recalculation
+        try {
+          console.log('%c🔄 Forcing work cycles recalculation with current onboard date', 'color: #4CAF50; font-weight: bold');
+          
+          // Get the current onboard date from the response
+          const currentOnboardDate = updatedUser.workSchedule?.nextOnBoardDate;
+          
+          if (currentOnboardDate) {
+            // Call the set-onboard-date endpoint with the current date to force recalculation
+            const recalculateResponse = await api.put('/auth/set-onboard-date', { 
+              nextOnBoardDate: new Date(currentOnboardDate),
+              allowPastDates: true  // Allow the current date even if it's in the past
+            });
+            
+            console.log('%c✅ Work cycles recalculated successfully', 'color: #4CAF50; font-weight: bold');
+            
+            // Update user with recalculated work cycles
+            if (recalculateResponse.data && recalculateResponse.data.user) {
+              const recalculatedUser = recalculateResponse.data.user;
+              
+              // Update cookie with recalculated user data
+              console.log('%c🔄 Updating user in cookies with recalculated work cycles:', 'color: #4CAF50; font-weight: bold', {
+                workingRegime: recalculatedUser.workingRegime,
+                cyclesCount: recalculatedUser.workCycles?.length || 0,
+                firstCycle: recalculatedUser.workCycles?.[0]
+              });
+              
+              setCookie('user', JSON.stringify(recalculatedUser));
+              
+              // Store recalculated work cycles in localStorage
+              if (recalculatedUser.workCycles && recalculatedUser.workCycles.length > 0) {
+                localStorage.setItem('workCycles', JSON.stringify(recalculatedUser.workCycles));
+                console.log('%c💾 Stored recalculated work cycles in localStorage', 'color: #4CAF50; font-weight: bold');
+              }
+            }
+          } else {
+            console.warn('No onboard date found to recalculate work cycles. This may cause calendar issues.');
+          }
+        } catch (recalculateError) {
+          console.error('Failed to recalculate work cycles:', recalculateError);
+        }
+        
+        // Mark that the schedule was changed - this will trigger a refresh on next dashboard load
+        markOnboardDateChanged();
+        console.log('%c🔖 Marked schedule as changed for future page loads', 'color: #FF5722; font-weight: bold');
+        
+        // Clear profile cache to ensure fresh data on subsequent requests
+        clearProfileCache();
+      } catch (cacheError) {
+        console.warn('Failed to clear calendar cache:', cacheError);
+        // Continue with the flow even if cache clearing fails
+      }
 
       setSuccessMessage(t('register.profileUpdateSuccess'));
       setTimeout(() => {
