@@ -80,7 +80,30 @@ const Settings = () => {
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
+        
+        // Check if we're offline
+        const isOffline = !navigator.onLine;
+        
         if (error.response?.status === 401) {
+          // If we're offline, try to use cached user data instead of redirecting
+          if (isOffline) {
+            console.log('%c📵 Offline mode - using cached user data instead of redirecting', 'color: #FF9800; font-weight: bold');
+            
+            // Try to get user from cookie or localStorage
+            const cachedUser = getCookie('user') || localStorage.getItem('user');
+            if (cachedUser) {
+              try {
+                // Parse the user if it's a string
+                const parsedUser = typeof cachedUser === 'string' ? JSON.parse(cachedUser) : cachedUser;
+                setUser(parsedUser);
+                return; // Don't redirect
+              } catch (parseError) {
+                console.error('Failed to parse cached user data:', parseError);
+              }
+            }
+          }
+          
+          // Only redirect if online or if we couldn't use cached data
           navigate('/login');
         }
       }

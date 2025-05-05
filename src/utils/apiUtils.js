@@ -810,7 +810,9 @@ const refreshTokenAndRetry = async (originalRequest = null) => {
     });
 
     // Update authorization header for the original request
-    originalRequest.headers.Authorization = `Bearer ${token}`;
+    if (originalRequest && originalRequest.headers) {
+      originalRequest.headers.Authorization = `Bearer ${token}`;
+    }
     
     // Notify all subscribers about the new token
     console.log('%c🔔 Notifying subscribers about new token', 'color: #4CAF50; font-weight: bold', {
@@ -831,7 +833,12 @@ const refreshTokenAndRetry = async (originalRequest = null) => {
     }
 
     // Retry the original request with new token
-    return axios(originalRequest);
+    if (originalRequest && originalRequest.headers) {
+      return axios(originalRequest);
+    } else {
+      console.warn('%c⚠️ Cannot retry original request - invalid request object', 'color: #FF9800; font-weight: bold');
+      return Promise.reject(new Error('Invalid original request'));
+    }
 
   } catch (refreshError) {
     console.error('%c❌ Token Refresh Failed:', 'color: #FF5722; font-weight: bold', {
@@ -1088,7 +1095,12 @@ api.interceptors.response.use(
         }
 
         // Retry the original request with new token
-        return axios(originalRequest);
+        if (originalRequest && originalRequest.headers) {
+          return axios(originalRequest);
+        } else {
+          console.warn('%c⚠️ Cannot retry original request - invalid request object', 'color: #FF9800; font-weight: bold');
+          return Promise.reject(new Error('Invalid original request'));
+        }
 
       } catch (refreshError) {
         console.error('%c❌ Token Refresh Failed:', 'color: #FF5722; font-weight: bold', {

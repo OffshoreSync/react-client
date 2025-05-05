@@ -150,8 +150,29 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = () => {
+    // Clear user state
     setUser(null);
     setError(null);
+    
+    // Clear cookies
+    removeCookie('token');
+    removeCookie('refreshToken');
+    removeCookie('user');
+    
+    // Clear localStorage (in case tokens were stored there)
+    localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
+    localStorage.removeItem('user');
+    
+    // Dispatch auth state change event
+    window.dispatchEvent(new CustomEvent('auth-state-changed', { 
+      detail: { 
+        isAuthenticated: false, 
+        user: null 
+      } 
+    }));
+    
+    console.log('🚪 User logged out successfully');
   };
 
   // Listen for auth state changes from token refresh
