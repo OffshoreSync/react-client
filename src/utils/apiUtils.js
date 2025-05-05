@@ -18,8 +18,12 @@ export function clearAuthAndRedirect(redirectTo = '/login') {
   try {
     localStorage.removeItem('token');
     localStorage.removeItem('refreshToken');
+    localStorage.removeItem('token_pwa');
+    localStorage.removeItem('refreshToken_pwa');
     localStorage.removeItem('user');
+    localStorage.removeItem('user_pwa');
     localStorage.removeItem('XSRF-TOKEN');
+    localStorage.removeItem('was_offline');
     
     // Clear any cached API data
     const cacheKeys = Object.keys(localStorage).filter(key => 
@@ -37,6 +41,11 @@ export function clearAuthAndRedirect(redirectTo = '/login') {
   } catch (error) {
     console.error('Error clearing localStorage:', error);
   }
+  
+  // Reset refresh state
+  isRefreshing = false;
+  refreshSubscribers = [];
+  tokenRefreshPromise = null;
   
   // Explicitly clear profile cache to prevent stale credentials
   clearProfileCache();
@@ -64,7 +73,7 @@ export function clearAuthAndRedirect(redirectTo = '/login') {
     // Add a timestamp parameter to bust any potential cache
     const cacheBuster = `?logout=${Date.now()}`;
     
-    // Use history.pushState for smoother navigation without page reload
+    // Use window.location.href for full page reload to clear any React state
     window.location.href = `${redirectTo}${cacheBuster}`;
   }
 }
@@ -605,7 +614,28 @@ api.interceptors.request.use(
       return config;
     }
 
-    const token = await getValidToken();
+    // Try to get token from cookies first, then localStorage as fallback
+    let token = getCookie('token') || getCookie('token_pwa');
+    
+    // If no token in cookies, try localStorage
+    if (!token) {
+      try {
+        token = localStorage.getItem('token') || localStorage.getItem('token_pwa');
+        if (token) {
+          console.log('%c💾 Retrieved token from localStorage fallback', 'color: #4CAF50; font-weight: bold');
+          // Restore the token to cookies if found in localStorage
+          setCookie('token', token);
+        }
+      } catch (err) {
+        console.error('Error accessing localStorage:', err);
+      }
+    }
+    
+    // If we have a token, validate it (unless offline)
+    if (token && !isOffline) {
+      token = await getValidToken();
+    }
+    
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
       
@@ -651,7 +681,7 @@ export const refreshTokenAndRetry = async (originalRequest = null) => {
     console.log('%c📵 Device is offline - skipping token refresh', 'color: #FF9800; font-weight: bold');
     
     // When offline, use whatever token we have cached
-    const cachedToken = getCookie('token') || getCookie('token_pwa');
+    const cachedToken = getCookie('token_pwa') || getCookie('token') || localStorage.getItem('token_pwa') || localStorage.getItem('token');
     
     if (cachedToken && originalRequest) {
       console.log('%c📵 Using cached token for offline request', 'color: #FF9800; font-weight: bold');
@@ -966,7 +996,7 @@ api.interceptors.response.use(
     const originalRequest = error.config;
 
     // Debug error
-    console.error('%c🚨 API Error:', 'color: #FF0000; font-weight: bold', {
+    console.error('%c🔴 API Error:', 'color: #FF0000; font-weight: bold', {
       url: error.config?.url,
       status: error.response?.status,
       message: error.message
@@ -978,222 +1008,47 @@ api.interceptors.response.use(
       return refreshTokenAndRetry(originalRequest);
     }
 
-    // If error is not 401 or request already retried, reject
-    if (!error.response || error.response.status !== 401 || originalRequest._retry || originalRequest.url.includes('/auth/refresh-token')) {
-      if (error.response?.status === 401) {
-        // Don't redirect to login if we're offline - use cached data instead
-        if (isOffline) {
-          console.log('%c📵 Device is offline - skipping auth redirect', 'color: #FF9800; font-weight: bold');
-          return Promise.reject(error);
-        }
-        clearAuthAndRedirect('/login');
-      }
+    // Skip token refresh for refresh token requests themselves
+    if (originalRequest?.url?.includes('/auth/refresh-token')) {
       return Promise.reject(error);
     }
 
-    // Mark this request as retried
-    originalRequest._retry = true;
-
-    if (!isRefreshing) {
-      isRefreshing = true;
-      // Try both regular and PWA refresh tokens
-      const refreshToken = getCookie('refreshToken') || getCookie('refreshToken_pwa');
-      
-      if (!refreshToken) {
-        isRefreshing = false;
-        removeCookie('token');
-        removeCookie('refreshToken');
-        removeCookie('user');
-        window.dispatchEvent(new CustomEvent('auth-state-changed', { detail: { isAuthenticated: false } }));
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
-        }
-        return Promise.reject(new Error('No refresh token available'));
+    // Handle 401 errors (unauthorized) - attempt token refresh
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      // Don't redirect to login if we're offline - use cached data instead
+      if (isOffline) {
+        console.log('%c📵 Device is offline - skipping auth redirect', 'color: #FF9800; font-weight: bold');
+        return Promise.reject(error);
       }
 
-      console.log('%c🔄 Session Validation - Refresh Token Used', 'color: #2196F3; font-weight: bold', {
-        tokenType: 'refresh',
-        source: refreshToken === getCookie('refreshToken_pwa') ? 'pwa_cookie' : 'regular_cookie',
-        timestamp: new Date().toISOString()
-      });
-
+      // Mark this request as retried to prevent infinite loops
+      originalRequest._retry = true;
+      
       try {
-        const response = await axios.post(`${getBackendUrl()}/api/auth/refresh-token`, 
-          { refreshToken },
-          { 
-            withCredentials: true,
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          }
-        );
-
-        if (!response.data.token) {
-          throw new Error('No token received from refresh endpoint');
-        }
-
-        const { token, refreshToken: newRefreshToken, user } = response.data;
-
-        // Debug token received from refresh
-        try {
-          const decodedToken = JSON.parse(atob(token.split('.')[1]));
-          console.debug('%c🔄 Refresh Token Details:', 'color: #9C27B0; font-weight: bold', {
-            exp: decodedToken.exp,
-            expDate: new Date(decodedToken.exp * 1000).toISOString(),
-            currentTime: new Date().toISOString(),
-            timeUntilExpiry: Math.round((decodedToken.exp * 1000 - Date.now()) / 1000) + ' seconds',
-            userId: decodedToken.userId || decodedToken.sub || 'unknown',
-            tokenFirstChars: token.substring(0, 10) + '...'
-          });
-        } catch (e) {
-          console.error('Failed to decode token:', e);
-        }
-
-        // Update cookies with new tokens
-        setCookie('token', token);
-        
-        // CRITICAL: Always store the new refresh token when provided
-        // This handles refresh token rotation where each token can only be used once
-        if (newRefreshToken) {
-          console.log('%c🔄 Storing new refresh token', 'color: #FF9800; font-weight: bold', {
-            hasNewToken: true,
-            tokenFirstChars: newRefreshToken.substring(0, 10) + '...',
-            timestamp: new Date().toISOString()
-          });
-          setCookie('refreshToken', newRefreshToken);
-        } else {
-          console.warn('%c⚠️ No new refresh token provided', 'color: #FF5722; font-weight: bold', {
-            timestamp: new Date().toISOString()
-          });
-        }
-        
-        // Also set PWA cookies for offline use
-        setCookie('token_pwa', token, {
-          path: '/',
-          secure: process.env.NODE_ENV === 'production',
-          sameSite: 'lax',
-          maxAge: 15 * 60 * 1000 // 15 minutes, matching access token expiration
-        });
-        
-        if (newRefreshToken) {
-          setCookie('refreshToken_pwa', newRefreshToken, {
-            path: '/',
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
-            maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
-          });
-        }
-
-        // If user data is included, update user cookie
-        if (user) {
-          setCookie('user', user);
-        }
-        
-        // Notify the app that auth state has been refreshed successfully
-        window.dispatchEvent(new CustomEvent('auth-state-changed', { 
-          detail: { 
-            isAuthenticated: true, 
-            user: user || JSON.parse(getCookie('user') || '{}') 
-          } 
-        }));
-
-        // Log successful token refresh
-        console.log('%c✨ Session Validation - Tokens Refreshed', 'color: #9C27B0; font-weight: bold', {
-          accessTokenUpdated: true,
-          refreshTokenUpdated: !!newRefreshToken,
-          userUpdated: !!user,
-          timestamp: new Date().toISOString()
-        });
-
-        // Update authorization header for the original request
-        originalRequest.headers.Authorization = `Bearer ${token}`;
-        
-        // Notify all subscribers about the new token
-        console.log('%c🔔 Notifying subscribers about new token', 'color: #4CAF50; font-weight: bold', {
-          subscribersCount: refreshSubscribers.length,
-          tokenFirstChars: token.substring(0, 15) + '...'
-        });
-        
-        refreshSubscribers.forEach(callback => callback(token));
-        
-        // Reset refresh state
-        isRefreshing = false;
-        refreshSubscribers = [];
-
-        // If we're on the home page and authenticated, redirect to dashboard
-        if (window.location.pathname === '/' && user) {
-          window.location.href = '/dashboard';
-          return;
-        }
-
-        // Retry the original request with new token
-        if (originalRequest && originalRequest.headers) {
+        // Attempt to refresh the token
+        const newToken = await refreshTokenAndRetry();
+        if (newToken) {
+          // Update the original request with the new token
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
           return axios(originalRequest);
         } else {
-          console.warn('%c⚠️ Cannot retry original request - invalid request object', 'color: #FF9800; font-weight: bold');
-          return Promise.reject(new Error('Invalid original request'));
-        }
-
-      } catch (refreshError) {
-        console.error('%c❌ Token Refresh Failed:', 'color: #FF5722; font-weight: bold', {
-          error: refreshError.message,
-          status: refreshError.response?.status,
-          statusText: refreshError.response?.statusText,
-          data: refreshError.response?.data,
-          timestamp: new Date().toISOString(),
-          subscribersCount: refreshSubscribers.length,
-          tokenSource: 'unknown' // Default value since tokenSource might not be defined in this context
-        });
-
-        // Notify all subscribers about the error
-        console.log('%c🔔 Notifying subscribers about refresh error', 'color: #FF5722; font-weight: bold');
-        refreshSubscribers.forEach(callback => callback(null, refreshError));
-        
-        isRefreshing = false;
-        refreshSubscribers = [];
-
-        // Handle specific error cases
-        if (refreshError.response?.status === 401) {
-          console.warn('%c⚠️ Refresh token was rejected (401 Unauthorized)', 'color: #FF9800; font-weight: bold', {
-            reason: refreshError.response?.data?.message || 'Unknown reason',
-            error: refreshError.response?.data?.error
-          });
-          
-          // If we're online and got a 401, the token is invalid - clear auth and redirect
-          if (!isOffline) {
-            console.log('%c🚪 Redirecting to login due to invalid refresh token', 'color: #FF5722; font-weight: bold');
-            clearAuthAndRedirect('/login');
-            return Promise.reject(new Error('Invalid refresh token'));
-          }
-        }
-        
-        // Only clear tokens and redirect if we are online and the server responded with an error
-        // Network errors usually have !refreshError.response
-        if (!isOffline && refreshError.response) {
-          console.log('%c🚪 Redirecting to login due to refresh failure', 'color: #FF5722; font-weight: bold');
+          // If refresh failed but didn't throw, redirect to login
           clearAuthAndRedirect('/login');
-        } else {
-          // If offline, do not clear tokens or redirect, just reject
-          console.warn('[Offline] Token refresh failed, but user remains authenticated for offline access.');
-          
-          // When offline, try to use whatever token we have cached
-          const cachedToken = getCookie('token') || getCookie('token_pwa');
-          if (cachedToken && originalRequest) {
-            console.log('%c📵 Using cached token for offline request despite refresh failure', 'color: #FF9800; font-weight: bold');
-            originalRequest.headers.Authorization = `Bearer ${cachedToken}`;
-            return api(originalRequest);
-          }
+          return Promise.reject(error);
+        }
+      } catch (refreshError) {
+        // If refresh threw an error, redirect to login
+        if (!isOffline) {
+          clearAuthAndRedirect('/login');
         }
         return Promise.reject(refreshError);
       }
     }
-
-    // If we're already refreshing, wait for the new token
-    return new Promise(resolve => {
-      refreshSubscribers.push(token => {
-        originalRequest.headers.Authorization = `Bearer ${token}`;
-        resolve(axios(originalRequest));
-      });
-    });
+    
+    // For all other errors, just reject
+    return Promise.reject(error);
   }
 );
+
+// Export the api instance
+export default api;
