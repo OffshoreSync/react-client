@@ -5,9 +5,9 @@ const getTheme = (mode) => createTheme({
   palette: {
     mode,
     primary: {
-      main: '#1976d2', // Consistent blue color
-      light: '#4791db',
-      dark: '#115293'
+      main: mode === 'dark' ? '#70B7F1' : '#1976d2', // Blue accent color - #70B7F1 for dark mode
+      light: mode === 'dark' ? '#9DCBF5' : '#4791db',
+      dark: mode === 'dark' ? '#4A9DEE' : '#115293'
     },
     secondary: {
       main: '#dc004e',
@@ -15,7 +15,7 @@ const getTheme = (mode) => createTheme({
       dark: '#9a0036'
     },
     background: {
-      default: mode === 'light' ? '#f5f5f5' : '#121212',
+      default: mode === 'light' ? '#f5f5f5' : '#09090b', // zinc-950 for dark mode
       paper: mode === 'light' ? '#ffffff' : '#1e1e1e'
     }
   },
@@ -30,9 +30,23 @@ const getTheme = (mode) => createTheme({
     },
     MuiPaper: {
       styleOverrides: {
-        root: {
-          transition: 'background-color 0.3s ease'
-        }
+        root: ({ theme, ownerState }) => ({
+          transition: 'background-color 0.3s ease',
+          ...(theme.palette.mode === 'dark' && {
+            backgroundColor: (
+              // Use zinc color palette for dark mode
+              !ownerState.elevation ? '#18181b' : // zinc-900 (default)
+              ownerState.elevation === 1 ? '#27272a' : // zinc-800
+              ownerState.elevation === 2 ? '#27272a' : // zinc-800
+              ownerState.elevation === 3 ? '#3f3f46' : // zinc-700
+              ownerState.elevation === 4 ? '#3f3f46' : // zinc-700
+              ownerState.elevation >= 6 && ownerState.elevation < 16 ? '#3f3f46' : // zinc-700
+              ownerState.elevation >= 16 && ownerState.elevation < 24 ? '#27272a' : // zinc-800
+              ownerState.elevation >= 24 ? '#18181b' : // zinc-900
+              '#18181b' // Default to zinc-900
+            )
+          })
+        })
       }
     },
     MuiSwitch: {

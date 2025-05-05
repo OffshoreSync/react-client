@@ -125,7 +125,7 @@ const Settings = () => {
   return (
     <Container maxWidth="md">
       <Box sx={{ my: 4 }}>
-        <Paper elevation={3} sx={{ p: 3, mb: 3 }}>
+        <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
           <Typography variant="h4" gutterBottom>
             {t('settings.profileSettings')}
           </Typography>

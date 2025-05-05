@@ -159,7 +159,7 @@ const Login = () => {
         }}
       >
         <Paper
-          elevation={3}
+          elevation={2}
           sx={{
             p: 4,
             width: '100%',

@@ -131,7 +131,7 @@ const Donations = () => {
         {Object.entries(donationMethods).map(([key, method]) => (
           <Grid item xs={12} md={6} key={key}>
             <Paper 
-              elevation={3} 
+              elevation={2} 
               sx={{ 
                 p: 3, 
                 height: '100%', 

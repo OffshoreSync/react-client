@@ -864,7 +864,7 @@ useEffect(() => {
         <Grid container spacing={3}>
           <Grid item xs={12}>
             <Card 
-              elevation={4} 
+              elevation={2} 
               sx={{
                 borderRadius: 2,
                 boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
@@ -892,7 +892,9 @@ useEffect(() => {
                       <Typography 
                         variant="body2" 
                         sx={{
-                          color: counterType === 'onBoard' ? '#D32F2F' : '#1976D2',
+                          color: counterType === 'onBoard' 
+                            ? (theme.palette.mode === 'dark' ? '#F170B1' : '#D32F2F')
+                            : (theme.palette.mode === 'dark' ? '#70B7F1' : '#1976D2'),
                           fontWeight: 500,
                           display: 'flex',
                           alignItems: 'center',

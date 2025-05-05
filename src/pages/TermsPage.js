@@ -27,7 +27,7 @@ const TermsPage = () => {
 
   return (
     <Container maxWidth="md" sx={{ py: 4 }}>
-      <Paper elevation={3} sx={{ p: 4 }}>
+      <Paper elevation={2} sx={{ p: 4 }}>
         <Typography variant="h4" component="h1" gutterBottom>
           {t('legal.termsAndConditions.title')}
         </Typography>
