@@ -49,6 +49,15 @@ const getTheme = (mode) => createTheme({
         })
       }
     },
+    MuiDrawer: {
+      styleOverrides: {
+        paper: ({ theme }) => ({
+          ...(theme.palette.mode === 'dark' && {
+            backgroundColor: '#18181b', // zinc-900
+          })
+        })
+      }
+    },
     MuiSwitch: {
       styleOverrides: {
         root: {

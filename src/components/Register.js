@@ -327,8 +327,16 @@ const Register = () => {
         message={snackbarMessage}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       />
-      <Paper elevation={2} sx={{ p: 4, mt: 4 }}>
-        <Typography variant="h4" align="center" gutterBottom>
+      <Paper elevation={2} sx={{ p: 4, mt: 4, mb: 4, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', borderRadius: 2, bgcolor: 'background.paper' }}>
+        <Typography 
+          component="h1" 
+          variant="h5" 
+          sx={{ 
+            mb: 3,
+            fontWeight: 600,
+            color: 'primary.main'
+          }}
+        >
           {isGoogleLogin ? t('register.completeProfile') : t('register.title')}
         </Typography>
 
