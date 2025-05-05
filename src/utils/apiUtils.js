@@ -81,6 +81,15 @@ let isOffline = !navigator.onLine; // fallback for initial load
 window.addEventListener('online', () => {
   console.log('🌐 Device is now online');
   isOffline = false;
+  localStorage.setItem('was_offline', 'true');
+  
+  // Trigger an immediate token validation when coming back online
+  setTimeout(() => {
+    console.log('🔄 Triggering token validation after coming online');
+    getValidToken().catch(err => {
+      console.error('Failed to validate token after coming online:', err);
+    });
+  }, 1000); // Small delay to allow network to stabilize
 });
 
 window.addEventListener('offline', () => {
@@ -100,6 +109,15 @@ try {
       if (event.data.type === 'online') {
         isOffline = false;
         console.log('🌐 Received online status from another tab');
+        localStorage.setItem('was_offline', 'true');
+        
+        // Trigger an immediate token validation when coming back online
+        setTimeout(() => {
+          console.log('🔄 Triggering token validation after coming online (from broadcast)');
+          getValidToken().catch(err => {
+            console.error('Failed to validate token after coming online (from broadcast):', err);
+          });
+        }, 1000); // Small delay to allow network to stabilize
       }
     }
   });
@@ -311,6 +329,36 @@ export const getValidToken = async () => {
       return token;
     }
     return null;
+  }
+  
+  // Track if we recently came back online
+  const wasRecentlyOffline = localStorage.getItem('was_offline') === 'true';
+  if (wasRecentlyOffline) {
+    console.log('%c🔄 Device recently came back online - forcing token refresh', 'color: #FF9800; font-weight: bold');
+    localStorage.removeItem('was_offline');
+    
+    // Force a token refresh when coming back online
+    console.log('%c🔄 Starting forced token refresh after offline period', 'color: #2196F3; font-weight: bold');
+    tokenRefreshPromise = refreshTokenAndRetry();
+    
+    try {
+      const newToken = await tokenRefreshPromise;
+      if (!newToken) {
+        console.error('%c❌ Forced token refresh failed - no new token returned', 'color: #FF5722; font-weight: bold');
+        return null;
+      }
+      console.log('%c✅ Forced token refresh succeeded', 'color: #4CAF50; font-weight: bold', {
+        newTokenFirstChars: newToken.substring(0, 15) + '...'
+      });
+      return newToken;
+    } catch (refreshError) {
+      console.error('%c❌ Forced token refresh error', 'color: #FF5722; font-weight: bold', {
+        error: refreshError.message
+      });
+      return null;
+    } finally {
+      tokenRefreshPromise = null;
+    }
   }
   
   const token = getCookie('token');
@@ -597,7 +645,28 @@ api.interceptors.request.use(
 );
 
 // Function to refresh token and retry original request
-const refreshTokenAndRetry = async (originalRequest = null) => {
+export const refreshTokenAndRetry = async (originalRequest = null) => {
+  // If we're offline, use cached tokens and don't attempt server refresh
+  if (isOffline) {
+    console.log('%c📵 Device is offline - skipping token refresh', 'color: #FF9800; font-weight: bold');
+    
+    // When offline, use whatever token we have cached
+    const cachedToken = getCookie('token') || getCookie('token_pwa');
+    
+    if (cachedToken && originalRequest) {
+      console.log('%c📵 Using cached token for offline request', 'color: #FF9800; font-weight: bold');
+      originalRequest.headers.Authorization = `Bearer ${cachedToken}`;
+      return api(originalRequest);
+    }
+    
+    // If we have a cached token but no original request, just return the token
+    if (cachedToken) {
+      return cachedToken;
+    }
+    
+    return Promise.reject(new Error('No cached token available for offline use'));
+  }
+
   // Check if we're already refreshing to avoid multiple refresh requests
   if (isRefreshing) {
     console.log('%c🔄 Token refresh already in progress', 'color: #FF9800; font-weight: bold', {
@@ -638,77 +707,23 @@ const refreshTokenAndRetry = async (originalRequest = null) => {
   }
 
   isRefreshing = true;
-  
-  // Check offline status first - this is critical
-  if (isOffline) {
-    console.log('%c📵 Device is offline - using cached token for offline access', 'color: #FF9800; font-weight: bold');
-    // When offline, use whatever token we have without attempting refresh
-    const cachedToken = getCookie('token') || getCookie('token_pwa');
-    
-    if (!cachedToken) {
-      console.warn('%c⚠️ No cached token available for offline use', 'color: #FF9800; font-weight: bold');
-      isRefreshing = false;
-      return Promise.reject(new Error('No token available for offline use'));
-    }
-    
-    console.log('%c✅ Using cached token for offline access', 'color: #4CAF50; font-weight: bold', {
-      tokenFirstChars: cachedToken.substring(0, 10) + '...',
-      timestamp: new Date().toISOString()
-    });
-    
-    // Notify subscribers about the offline token
-    refreshSubscribers.forEach((callback) => callback(cachedToken));
-    refreshSubscribers = [];
-    isRefreshing = false;
-    
-    // If we have an original request, update its Authorization header
-    if (originalRequest) {
-      originalRequest.headers.Authorization = `Bearer ${cachedToken}`;
-      return api(originalRequest);
-    }
-    
-    return Promise.resolve(cachedToken);
-  }
-  
-  // We're online, proceed with normal token refresh
-  // Try all possible sources for refresh token with clear logging
-  let refreshToken = getCookie('refreshToken');
-  let tokenSource = 'regular_cookie';
-  
-  if (!refreshToken) {
-    refreshToken = getCookie('refreshToken_pwa');
-    tokenSource = 'pwa_cookie';
-  }
-  
-  if (!refreshToken) {
-    refreshToken = localStorage.getItem('refreshToken');
-    tokenSource = 'localStorage';
-  }
-  
-  if (!refreshToken) {
-    refreshToken = localStorage.getItem('refreshToken_pwa');
-    tokenSource = 'localStorage_pwa';
-  }
-  
-  console.log('%c🔄 Using refresh token', 'color: #FF9800; font-weight: bold', {
-    hasToken: !!refreshToken,
-    tokenSource,
-    tokenFirstChars: refreshToken ? (refreshToken.substring(0, 10) + '...') : 'none',
-    timestamp: new Date().toISOString()
-  });
 
+  // Try both regular and PWA refresh tokens
+  const refreshToken = getCookie('refreshToken') || getCookie('refreshToken_pwa');
+  const tokenSource = refreshToken === getCookie('refreshToken_pwa') ? 'pwa_cookie' : 'regular_cookie';
+  
   if (!refreshToken) {
-    console.error('%c❌ No refresh token available from any source', 'color: #FF5722; font-weight: bold');
+    console.error('%c❌ No refresh token available', 'color: #FF5722; font-weight: bold');
     isRefreshing = false;
-    removeCookie('token');
-    removeCookie('refreshToken');
-    removeCookie('user');
-    window.dispatchEvent(new CustomEvent('auth-state-changed', { detail: { isAuthenticated: false } }));
-    if (window.location.pathname !== '/login') {
-      window.location.href = '/login';
-    }
+    clearAuthAndRedirect('/login');
     return Promise.reject(new Error('No refresh token available'));
   }
+
+  console.log('%c🔄 Session Validation - Refresh Token Used', 'color: #2196F3; font-weight: bold', {
+    tokenType: 'refresh',
+    source: tokenSource,
+    timestamp: new Date().toISOString()
+  });
 
   try {
     console.log('%c🔄 Token Refresh Attempt', 'color: #2196F3; font-weight: bold', {
@@ -910,14 +925,38 @@ api.interceptors.response.use(
       if (response.data.token) {
         // Set token cookie
         setCookie('token', response.data.token);
+        
+        // Also set PWA cookie for offline use
+        setCookie('token_pwa', response.data.token, {
+          path: '/',
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 15 * 60 * 1000 // 15 minutes, matching access token expiration
+        });
       }
       if (response.data.refreshToken) {
         // Set refresh token cookie
         setCookie('refreshToken', response.data.refreshToken);
+        
+        // Also set PWA refresh token for offline use
+        setCookie('refreshToken_pwa', response.data.refreshToken, {
+          path: '/',
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+        });
       }
       if (response.data.user) {
         // Set user data cookie
         setCookie('user', response.data.user);
+        
+        // Also set PWA user data for offline use
+        setCookie('user_pwa', response.data.user, {
+          path: '/',
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+        });
       }
     }
 
