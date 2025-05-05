@@ -59,20 +59,13 @@ export function clearAuthAndRedirect(redirectTo = '/login') {
   
   // Redirect to login page if not already there
   if (window.location.pathname !== redirectTo) {
-    console.log(`%c🚪 Forcing complete page reload to ${redirectTo}`, 'color: #2196F3');
+    console.log(`%c🚪 Navigating to ${redirectTo}`, 'color: #2196F3');
     
-    // Use location.replace to prevent the current page from being saved in session history
-    if (window.location.pathname === redirectTo) {
-      // If we're already on the login page, force a reload
-      window.location.reload(true); // true forces reload from server, not cache
-    } else {
-      // Add a timestamp parameter to bust any potential cache
-      const cacheBuster = `?logout=${Date.now()}`;
-      window.location.replace(`${redirectTo}${cacheBuster}`);
-    }
-  } else {
-    // If we're already on the target page, force a reload
-    window.location.reload(true);
+    // Add a timestamp parameter to bust any potential cache
+    const cacheBuster = `?logout=${Date.now()}`;
+    
+    // Use history.pushState for smoother navigation without page reload
+    window.location.href = `${redirectTo}${cacheBuster}`;
   }
 }
 
