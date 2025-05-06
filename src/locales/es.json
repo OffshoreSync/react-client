@@ -361,6 +361,9 @@
     "thankYou": "Gracias por tu apoyo!",
     "contactUs": "Si tienes alguna pregunta o necesitas ayuda con las donaciones, por favor contacta a soporte@offshoresync.com."
   },
+  "update": {
+    "newVersionAvailable": "Nueva actualización disponible, haz clic para actualizar!"
+  },
   "legal": {
     "privacyPolicy": {
       "title": "Política de Privacidad",

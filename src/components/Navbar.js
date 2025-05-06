@@ -54,6 +54,7 @@ import ReactCountryFlag from 'react-country-flag';
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
 import VersionDisplay from './VersionDisplay';
+import UpdateButton from './UpdateButton';
 
 // Import offline status hook
 import { useOfflineStatus } from '../hooks/useOfflineStatus';
@@ -245,6 +246,9 @@ function Navbar() {
             <Box sx={{ display: 'flex', alignItems: 'center' }}>
               {isSmallScreen ? (
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                  {/* Update Button for Mobile */}
+                  <UpdateButton />
+                  
                   {/* Theme Toggle for Mobile */}
                   <Tooltip title={mode === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}>
                     <IconButton
@@ -295,6 +299,9 @@ function Navbar() {
                 </Box>
               ) : (
                 <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
+                  {/* Update Button for Desktop */}
+                  <UpdateButton />
+                  
                   {/* Theme Toggle Switch */}
                   <Tooltip title={mode === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}>
                     <IconButton
