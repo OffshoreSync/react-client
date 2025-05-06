@@ -1,7 +1,7 @@
 # OffshoreSync Client
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-1.0.3-blue.svg)](https://semver.org)
+[![Version](https://img.shields.io/badge/version-1.0.4-blue.svg)](https://semver.org)
 
 This is the frontend application for OffshoreSync, a comprehensive work schedule management system for offshore professionals.
 
