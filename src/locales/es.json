@@ -22,7 +22,7 @@
     "usernamePlaceholder": "Ingrese su nombre de usuario",
     "password": "Contraseña",
     "passwordPlaceholder": "Ingrese su contraseña",
-    "googleLogin": "Iniciar Sesión con Google",
+    "signInWithGoogle": "Iniciar Sesión con Google",
     "forgotPassword": "¿Olvidaste tu Contraseña?",
     "noAccount": "¿No tienes una cuenta?",
     "or": "o inicie sesión con su cuenta de Google",

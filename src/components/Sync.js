@@ -39,7 +39,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useTranslation } from 'react-i18next';
-import { api } from '../utils/apiUtils';
+import { api, getCookie } from '../utils/apiUtils';
 import { useAuth } from '../context/AuthContext';
 
 // Utility function to format dates consistently
@@ -134,7 +134,7 @@ const Sync = () => {
   const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const { user, loading } = useAuth();
+  const { user, loading } = useAuth(); // Get the authenticated user
   
   const [availableUsers, setAvailableUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([]);
@@ -294,7 +294,43 @@ const Sync = () => {
     borderRadius: 2,
   };
 
-  // Google Calendar event creation
+  // Check if user is already authenticated with Google and has calendar permissions
+  useEffect(() => {
+    // If user is a Google user, we can use their stored token for calendar operations
+    if (user?.isGoogleUser) {
+      // Check if we need to get a token from the server
+      const checkGoogleCalendarAccess = async () => {
+        try {
+          // Get the current token from cookies or localStorage
+          const token = getCookie('token') || getCookie('token_pwa') || localStorage.getItem('token');
+          
+          // Request the token from the server with explicit authorization
+          const response = await api.post('/auth/google-calendar-token', 
+            // Include token in body as fallback
+            { token }, 
+            // Ensure Authorization header is set
+            { 
+              headers: token ? { 'Authorization': `Bearer ${token}` } : undefined,
+              // Add logging for debugging
+              _logRequest: true
+            }
+          );
+          
+          if (response.data?.access_token) {
+            setGoogleAccessToken(response.data.access_token);
+            console.log('Using stored Google Calendar token');
+          }
+        } catch (error) {
+          console.error('Error getting Google Calendar token:', error.response?.data || error.message);
+          // Don't show an error to the user, they can still authenticate if needed
+        }
+      };
+      
+      checkGoogleCalendarAccess();
+    }
+  }, [user]);
+
+  // Google Calendar event creation - only needed for non-Google users
   const handleGoogleLogin = useGoogleLogin({
     flow: 'auth-code',
     scope: 'https://www.googleapis.com/auth/calendar.events',
@@ -330,7 +366,7 @@ const Sync = () => {
     },
     onError: (error) => {
       console.error('Google login error:', error);
-      setSnackbarMessage('Google login failed: ' + error.message);
+      setSnackbarMessage('Google login failed');
       setSnackbarSeverity('error');
       setSnackbarOpen(true);
     },

@@ -953,7 +953,7 @@ api.interceptors.response.use(
     });
 
     // For login endpoint
-    if (response.config.url.includes('/auth/login') || response.config.url.includes('/auth/google-login')) {
+    if (response.config.url.includes('/auth/login') || response.config.url.includes('/auth/google-login') || response.config.url.includes('/auth/google-login-with-calendar')) {
       if (response.data.token) {
         // Set token cookie
         setCookie('token', response.data.token);
