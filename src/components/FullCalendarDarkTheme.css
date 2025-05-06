@@ -94,3 +94,42 @@ body.dark-mode .fc td,
 body.dark-mode .fc th {
   border-color: var(--fc-border-color);
 }
+
+/* Style navigation buttons in dark mode */
+body.dark-mode .fc .fc-prev-button,
+body.dark-mode .fc .fc-next-button {
+  background-color: #4791db !important; /* Light blue accent color */
+  border-color: #4791db !important;
+  color: #ffffff !important;
+}
+
+body.dark-mode .fc .fc-prev-button:hover,
+body.dark-mode .fc .fc-next-button:hover {
+  background-color: #5c9ce0 !important; /* Slightly lighter on hover */
+  border-color: #5c9ce0 !important;
+}
+
+body.dark-mode .fc .fc-prev-button:active,
+body.dark-mode .fc .fc-next-button:active {
+  background-color: #3d84c5 !important; /* Slightly darker when active */
+  border-color: #3d84c5 !important;
+}
+
+/* Style On Board and Off Board days in dark mode */
+body.dark-mode .fc td.on-board-day {
+  background-color: rgba(71, 145, 219, 0.2) !important; /* Light blue with transparency */
+  color: #ffffff !important;
+}
+
+body.dark-mode .fc td.on-board-day:hover {
+  background-color: rgba(71, 145, 219, 0.3) !important; /* Slightly more opaque on hover */
+}
+
+body.dark-mode .fc td.off-board-day {
+  background-color: rgba(241, 112, 177, 0.2) !important; /* Pink with transparency */
+  color: #ffffff !important;
+}
+
+body.dark-mode .fc td.off-board-day:hover {
+  background-color: rgba(241, 112, 177, 0.3) !important; /* Slightly more opaque on hover */
+}

@@ -1,0 +1,43 @@
+/* Calendar Styles for both Light and Dark modes */
+
+/* Light Theme Calendar Event Styles */
+.fc .on-board-event {
+  background-color: #D32F2F !important; /* Red */
+  border-color: #D32F2F !important;
+}
+
+.fc .off-board-event {
+  background-color: #1976D2 !important; /* Blue */
+  border-color: #1976D2 !important;
+}
+
+.fc .get-on-event {
+  background-color: #FFA000 !important; /* Orange */
+  border-color: #FFA000 !important;
+}
+
+.fc .get-off-event {
+  background-color: #388E3C !important; /* Green */
+  border-color: #388E3C !important;
+}
+
+/* Dark Theme Calendar Event Styles */
+body.dark-mode .fc .on-board-event {
+  background-color: #F170B1 !important; /* Pink */
+  border-color: #F170B1 !important;
+}
+
+body.dark-mode .fc .off-board-event {
+  background-color: #70B7F1 !important; /* Light blue */
+  border-color: #70B7F1 !important;
+}
+
+body.dark-mode .fc .get-on-event {
+  background-color: #E255EC !important; /* Purple */
+  border-color: #E255EC !important;
+}
+
+body.dark-mode .fc .get-off-event {
+  background-color: #4CE5B1 !important; /* Light green */
+  border-color: #4CE5B1 !important;
+}

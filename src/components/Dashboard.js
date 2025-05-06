@@ -5,6 +5,7 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import './FullCalendarDarkTheme.css';
+import './CalendarStyles.css';
 import { 
   Container, 
   Typography, 
@@ -1057,11 +1058,17 @@ useEffect(() => {
                   }}
                   viewDidMount={(arg) => {
                     const buttonEls = arg.view.calendar.el.querySelectorAll('.fc-button');
+                    const navButtons = arg.view.calendar.el.querySelectorAll('.fc-prev-button, .fc-next-button');
                     const titleEl = arg.view.calendar.el.querySelector('.fc-toolbar-title');
+                    const isDarkMode = document.body.classList.contains('dark-mode');
                     
-                    // Responsive button styling
+                    // Get the current theme colors
+                    const primaryColor = isDarkMode ? '#1976D2' : '#1976D2'; // Default blue
+                    const primaryColorHover = isDarkMode ? '#1565C0' : '#1565C0'; // Darker blue on hover
+                    
+                    // Responsive button styling for all buttons
                     buttonEls.forEach(button => {
-                      button.style.backgroundColor = '#1976D2';  // Material Blue
+                      button.style.backgroundColor = primaryColor;
                       button.style.color = 'white';
                       button.style.border = 'none';
                       button.style.borderRadius = '4px';
@@ -1073,13 +1080,33 @@ useEffect(() => {
                       button.style.transition = 'background-color 0.3s ease';
                       
                       button.addEventListener('mouseenter', () => {
-                        button.style.backgroundColor = '#1565C0';  // Darker blue on hover
+                        button.style.backgroundColor = primaryColorHover;
                       });
                       
                       button.addEventListener('mouseleave', () => {
-                        button.style.backgroundColor = '#1976D2';
+                        button.style.backgroundColor = primaryColor;
                       });
                     });
+                    
+                    // Special styling for navigation buttons (prev/next)
+                    // Note: In dark mode, these will be overridden by the CSS in FullCalendarDarkTheme.css
+                    if (!isDarkMode) {
+                      navButtons.forEach(button => {
+                        // For light theme, we'll use the same blue color for consistency
+                        button.style.backgroundColor = primaryColor;
+                        button.style.borderColor = primaryColor;
+                        
+                        button.addEventListener('mouseenter', () => {
+                          button.style.backgroundColor = primaryColorHover;
+                          button.style.borderColor = primaryColorHover;
+                        });
+                        
+                        button.addEventListener('mouseleave', () => {
+                          button.style.backgroundColor = primaryColor;
+                          button.style.borderColor = primaryColor;
+                        });
+                      });
+                    }
 
                     // Responsive title styling
                     if (titleEl) {
