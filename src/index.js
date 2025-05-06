@@ -8,6 +8,7 @@ import reportWebVitals from './reportWebVitals';
 import { I18nextProvider } from 'react-i18next';
 import i18n from './i18n';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import { initializeVersionTracking } from './utils/versionUtils';
 
 // Import i18n configuration
 import './i18n';
@@ -72,6 +73,9 @@ const configureAxios = async () => {
 // Ensure axios is configured before rendering
 const renderApp = async () => {
   await configureAxios();
+  
+  // Initialize version tracking
+  await initializeVersionTracking();
   
   const root = ReactDOM.createRoot(document.getElementById('root'));
   root.render(

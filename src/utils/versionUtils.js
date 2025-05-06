@@ -53,6 +53,43 @@ export const setStoredVersion = async (version) => {
   }
 };
 
+/**
+ * Initialize the version tracking system by storing the current version in the cache
+ * This should be called when the app starts
+ */
+export const initializeVersionTracking = async () => {
+  try {
+    console.log('Initializing version tracking...');
+    
+    // Check if we already have a stored version
+    const storedVersion = await getStoredVersion();
+    
+    if (!storedVersion) {
+      console.log('No stored version found, fetching current version...');
+      // Fetch the current version from version.json
+      const response = await fetch(`${VERSION_FILE_PATH}?_=${Date.now()}`, {
+        cache: 'no-store',
+        headers: { 'Pragma': 'no-cache' }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Current version from version.json:', data);
+        
+        // Store the current version in the cache
+        await setStoredVersion(data.gitSha);
+        console.log('Stored initial version in cache:', data.gitSha);
+      } else {
+        console.error('Failed to fetch version.json');
+      }
+    } else {
+      console.log('Found existing stored version:', storedVersion);
+    }
+  } catch (error) {
+    console.error('Error initializing version tracking:', error);
+  }
+};
+
 // Note: checkForNewVersion function has been removed as it's redundant
 // The UpdateButton component already handles version checking directly
 
