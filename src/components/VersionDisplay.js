@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Typography, Tooltip } from '@mui/material';
 
+// Same constants as in versionUtils.js
+const VERSION_KEY = 'offshoresync_version';
+
 const VersionDisplay = ({ variant = "caption", color = "text.secondary", sx = {} }) => {
   const [versionInfo, setVersionInfo] = useState({
     version: '1.0.0', // Default fallback version
@@ -9,29 +12,97 @@ const VersionDisplay = ({ variant = "caption", color = "text.secondary", sx = {}
   });
   
   useEffect(() => {
-    // Fetch version info from version.json
+    // Function to get version info from localStorage and version.json
     const fetchVersionInfo = async () => {
       try {
-        // Use cache-busting to ensure we get the latest version
+        // First, check localStorage for the current running version SHA
+        const storedSha = localStorage.getItem(VERSION_KEY);
+        
+        // Then fetch the version.json file for additional metadata
         const response = await fetch(`/version.json?_=${Date.now()}`);
         if (response.ok) {
           const data = await response.json();
-          setVersionInfo({
-            version: data.version || '1.0.0',
-            shortSha: data.shortSha || '',
-            buildTime: data.buildTime ? new Date(data.buildTime).toLocaleString() : ''
-          });
+          
+          // If we have a stored SHA, use that as the current version
+          // This ensures we show the version the user is actually running
+          if (storedSha) {
+            // Find the matching SHA in the fetched data
+            if (storedSha === data.gitSha) {
+              // User is on the latest version
+              setVersionInfo({
+                version: data.version || '1.0.0',
+                shortSha: data.shortSha || '',
+                buildTime: data.buildTime ? new Date(data.buildTime).toLocaleString() : ''
+              });
+            } else {
+              // User is on an older version, try to find the SHA in localStorage
+              // For now, just show the SHA they're running
+              setVersionInfo({
+                version: data.version || '1.0.0', // Still use the version number from package.json
+                shortSha: storedSha.substring(0, 7), // Use first 7 chars of stored SHA
+                buildTime: ''
+              });
+            }
+          } else {
+            // No stored SHA, must be first run, use the version.json data
+            setVersionInfo({
+              version: data.version || '1.0.0',
+              shortSha: data.shortSha || '',
+              buildTime: data.buildTime ? new Date(data.buildTime).toLocaleString() : ''
+            });
+          }
         }
       } catch (error) {
         console.error('Error fetching version info:', error);
+        
+        // If fetch fails, still try to show the stored SHA if available
+        const storedSha = localStorage.getItem(VERSION_KEY);
+        if (storedSha) {
+          setVersionInfo({
+            version: '1.0.0', // Default version
+            shortSha: storedSha.substring(0, 7),
+            buildTime: ''
+          });
+        }
       }
     };
     
     fetchVersionInfo();
   }, []);
   
+  // Check if we're on an older version by comparing with version.json
+  const [isOldVersion, setIsOldVersion] = useState(false);
+  const [latestVersion, setLatestVersion] = useState(null);
+  
+  useEffect(() => {
+    // Check if we're running an older version
+    const checkLatestVersion = async () => {
+      try {
+        const storedSha = localStorage.getItem(VERSION_KEY);
+        if (!storedSha) return;
+        
+        const response = await fetch(`/version.json?_=${Date.now()}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (storedSha !== data.gitSha) {
+            setIsOldVersion(true);
+            setLatestVersion({
+              version: data.version,
+              shortSha: data.shortSha
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Error checking latest version:', error);
+      }
+    };
+    
+    checkLatestVersion();
+  }, []);
+  
+  // Enhanced tooltip content
   const tooltipContent = versionInfo.shortSha ? 
-    `Build: ${versionInfo.shortSha}${versionInfo.buildTime ? `\nBuilt: ${versionInfo.buildTime}` : ''}` : 
+    `Current Build: ${versionInfo.shortSha}${versionInfo.buildTime ? `\nBuilt: ${versionInfo.buildTime}` : ''}${isOldVersion ? `\n\nNewer version available: ${latestVersion?.version} (${latestVersion?.shortSha})` : ''}` : 
     '';
   
   return (
