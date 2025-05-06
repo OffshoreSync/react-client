@@ -870,12 +870,14 @@ export const refreshTokenAndRetry = async (originalRequest = null) => {
       return;
     }
 
-    // Retry the original request with new token
+    // Retry the original request with new token if provided, otherwise just return the token
     if (originalRequest && originalRequest.headers) {
       return axios(originalRequest);
     } else {
-      console.warn('%c⚠️ Cannot retry original request - invalid request object', 'color: #FF9800; font-weight: bold');
-      return Promise.reject(new Error('Invalid original request'));
+      // If called without an original request (e.g., from periodic token check),
+      // just return the new token without trying to retry a request
+      console.log('%c🔄 Token refreshed successfully without original request', 'color: #4CAF50; font-weight: bold');
+      return token;
     }
 
   } catch (refreshError) {
