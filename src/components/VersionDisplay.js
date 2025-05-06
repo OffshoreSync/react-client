@@ -17,7 +17,10 @@ const VersionDisplay = ({ variant = "caption", color = "text.secondary", sx = {}
         const storedSha = await getStoredVersion();
         
         // Then fetch the version.json file for additional metadata
-        const response = await fetch(`/version.json?_=${Date.now()}`);
+        const response = await fetch(`/version.json?_=${Date.now()}`, {
+          cache: 'no-store',  // Ensure we don't cache this request
+          headers: { 'Pragma': 'no-cache' }
+        });
         if (response.ok) {
           const data = await response.json();
           
@@ -79,7 +82,10 @@ const VersionDisplay = ({ variant = "caption", color = "text.secondary", sx = {}
         const storedSha = await getStoredVersion();
         if (!storedSha) return;
         
-        const response = await fetch(`/version.json?_=${Date.now()}`);
+        const response = await fetch(`/version.json?_=${Date.now()}`, {
+          cache: 'no-store',  // Ensure we don't cache this request
+          headers: { 'Pragma': 'no-cache' }
+        });
         if (response.ok) {
           const data = await response.json();
           if (storedSha !== data.gitSha) {

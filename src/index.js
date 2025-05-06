@@ -4,7 +4,6 @@ import './index.css';
 import App from './App';
 import axios from 'axios';
 import { getBackendUrl } from './utils/apiUtils';
-import { initVersionCheck } from './utils/versionUtils';
 import reportWebVitals from './reportWebVitals';
 import { I18nextProvider } from 'react-i18next';
 import i18n from './i18n';
@@ -73,9 +72,6 @@ const configureAxios = async () => {
 // Ensure axios is configured before rendering
 const renderApp = async () => {
   await configureAxios();
-  
-  // Initialize version checking
-  initVersionCheck();
   
   const root = ReactDOM.createRoot(document.getElementById('root'));
   root.render(

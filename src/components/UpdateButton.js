@@ -22,7 +22,10 @@ const UpdateButton = () => {
         }
         
         // Now check if there's a new version available
-        const response = await fetch(`/version.json?_=${Date.now()}`);
+        const response = await fetch(`/version.json?_=${Date.now()}`, {
+          cache: 'no-store',  // Ensure we don't cache this request
+          headers: { 'Pragma': 'no-cache' }
+        });
         if (response.ok) {
           const data = await response.json();
           // Compare the stored SHA with the one from version.json
@@ -53,8 +56,8 @@ const UpdateButton = () => {
   }, []);
   
   const handleUpdate = () => {
-    // Pass true to bypass the 15-minute cooldown when manually clicking update
-    clearCachesIfNewVersion(true);
+    // Clear caches and update to the latest version
+    clearCachesIfNewVersion();
   };
   
   if (!isUpdateAvailable) {
