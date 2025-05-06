@@ -255,7 +255,7 @@ function Navbar() {
                       onClick={toggleTheme}
                       sx={{ 
                         color: 'white',
-                        mr: 1,
+                        mr: 0.5,
                         '&:hover': { 
                           backgroundColor: 'rgba(255,255,255,0.1)' 
                         }
@@ -289,6 +289,7 @@ function Navbar() {
                     }}
                     sx={{ 
                       color: 'white',
+                      ml: 0.5, /* Added small left margin */
                       '&:hover': { 
                         backgroundColor: 'rgba(255,255,255,0.1)' 
                       }
@@ -298,7 +299,7 @@ function Navbar() {
                   </IconButton>
                 </Box>
               ) : (
-                <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
                   {/* Update Button for Desktop */}
                   <UpdateButton />
                   
@@ -308,7 +309,7 @@ function Navbar() {
                       onClick={toggleTheme}
                       sx={{ 
                         color: 'white',
-                        mr: 1,
+                        mr: 0.5,
                         '&:hover': { 
                           backgroundColor: 'rgba(255,255,255,0.1)' 
                         }
@@ -339,6 +340,7 @@ function Navbar() {
                     onClick={handleLanguageMenu}
                     sx={{ 
                       color: 'white',
+                      ml: 0.5,
                       '&:hover': { 
                         backgroundColor: 'rgba(255,255,255,0.1)' 
                       }
