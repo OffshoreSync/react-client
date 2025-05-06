@@ -7,7 +7,7 @@ const VERSION_FILE_PATH = '/version.json';
 
 /**
  * Gets the stored version from cache
- * @returns {Promise<string|null>} The stored version or null if not found
+ * @returns {Promise<{sha: string, version: string}|null>} The stored version info or null if not found
  */
 export const getStoredVersion = async () => {
   try {
@@ -16,7 +16,7 @@ export const getStoredVersion = async () => {
       const response = await cache.match(VERSION_KEY);
       if (response) {
         const data = await response.json();
-        return data.version;
+        return data;
       }
     }
     return null;
@@ -28,16 +28,17 @@ export const getStoredVersion = async () => {
 
 /**
  * Sets the stored version in cache
- * @param {string} version - The version to store
+ * @param {string} sha - The git SHA to store
+ * @param {string} version - The version number to store
  */
-export const setStoredVersion = async (version) => {
+export const setStoredVersion = async (sha, version = '1.0.0') => {
   try {
     if ('caches' in window) {
       const cache = await caches.open(CACHE_NAME);
-      const versionData = { version, timestamp: Date.now() };
+      const versionData = { sha, version, timestamp: Date.now() };
       const response = new Response(JSON.stringify(versionData));
       await cache.put(VERSION_KEY, response);
-      console.log('%c🔄 Updated stored version in cache to:', 'color: #2196F3; font-weight: bold', version);
+      console.log('%c🔄 Updated stored version in cache to:', 'color: #2196F3; font-weight: bold', `${version} (${sha.substring(0, 7)})`);
     }
   } catch (error) {
     console.error('❌ Error setting stored version:', error);
@@ -63,7 +64,7 @@ export const initializeVersionTracking = async () => {
       if (response.ok) {
         const data = await response.json();
         // Store the current version in the cache
-        await setStoredVersion(data.gitSha);
+        await setStoredVersion(data.gitSha, data.version);
       }
     }
   } catch (error) {
@@ -155,7 +156,7 @@ export const clearCachesIfNewVersion = async () => {
     // Update the stored version in cache
     if (versionData) {
       console.log('%c🔄 Updating stored version to:', 'color: #2196F3; font-weight: bold', versionData.gitSha);
-      await setStoredVersion(versionData.gitSha);
+      await setStoredVersion(versionData.gitSha, versionData.version);
     }
     
     console.log('%c🔄 Reloading application to apply new version...', 'color: #2196F3; font-weight: bold');

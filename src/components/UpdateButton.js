@@ -13,10 +13,10 @@ const UpdateButton = () => {
     const checkForUpdates = async () => {
       try {
         // Get the stored version from cache
-        const storedSha = await getStoredVersion();
+        const storedVersionInfo = await getStoredVersion();
         
-        // If no stored SHA, this might be the first run - don't show update button
-        if (!storedSha) {
+        // If no stored version info, this might be the first run - don't show update button
+        if (!storedVersionInfo) {
           setIsUpdateAvailable(false);
           return;
         }
@@ -29,7 +29,7 @@ const UpdateButton = () => {
         if (response.ok) {
           const data = await response.json();
           // Compare the stored SHA with the one from version.json
-          const newVersionAvailable = storedSha && data.gitSha && (storedSha !== data.gitSha);
+          const newVersionAvailable = storedVersionInfo.sha && data.gitSha && (storedVersionInfo.sha !== data.gitSha);
           
           // Update the state based on the comparison
           setIsUpdateAvailable(newVersionAvailable);

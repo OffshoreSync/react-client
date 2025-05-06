@@ -13,8 +13,8 @@ const VersionDisplay = ({ variant = "caption", color = "text.secondary", sx = {}
     // Function to get version info from cache and version.json
     const fetchVersionInfo = async () => {
       try {
-        // First, check cache for the current running version SHA
-        const storedSha = await getStoredVersion();
+        // First, check cache for the current running version info
+        const storedVersionInfo = await getStoredVersion();
         
         // Then fetch the version.json file for additional metadata
         const response = await fetch(`/version.json?_=${Date.now()}`, {
@@ -24,11 +24,11 @@ const VersionDisplay = ({ variant = "caption", color = "text.secondary", sx = {}
         if (response.ok) {
           const data = await response.json();
           
-          // If we have a stored SHA, use that as the current version
+          // If we have stored version info, use that as the current version
           // This ensures we show the version the user is actually running
-          if (storedSha) {
+          if (storedVersionInfo) {
             // Find the matching SHA in the fetched data
-            if (storedSha === data.gitSha) {
+            if (storedVersionInfo.sha === data.gitSha) {
               // User is on the latest version
               setVersionInfo({
                 version: data.version || '1.0.0',
@@ -36,16 +36,16 @@ const VersionDisplay = ({ variant = "caption", color = "text.secondary", sx = {}
                 buildTime: data.buildTime ? new Date(data.buildTime).toLocaleString() : ''
               });
             } else {
-              // User is on an older version, try to find the SHA in localStorage
-              // For now, just show the SHA they're running
+              // User is on an older version
+              // Use the version number stored in cache
               setVersionInfo({
-                version: data.version || '1.0.0', // Still use the version number from package.json
-                shortSha: storedSha.substring(0, 7), // Use first 7 chars of stored SHA
+                version: storedVersionInfo.version || '1.0.0',
+                shortSha: storedVersionInfo.sha.substring(0, 7), // Use first 7 chars of stored SHA
                 buildTime: ''
               });
             }
           } else {
-            // No stored SHA, must be first run, use the version.json data
+            // No stored version info, must be first run, use the version.json data
             setVersionInfo({
               version: data.version || '1.0.0',
               shortSha: data.shortSha || '',
@@ -56,12 +56,12 @@ const VersionDisplay = ({ variant = "caption", color = "text.secondary", sx = {}
       } catch (error) {
         console.error('Error fetching version info:', error);
         
-        // If fetch fails, still try to show the stored SHA if available
-        const storedSha = await getStoredVersion();
-        if (storedSha) {
+        // If fetch fails, still try to show the stored version info if available
+        const storedVersionInfo = await getStoredVersion();
+        if (storedVersionInfo) {
           setVersionInfo({
-            version: '1.0.0', // Default version
-            shortSha: storedSha.substring(0, 7),
+            version: storedVersionInfo.version || '1.0.0',
+            shortSha: storedVersionInfo.sha.substring(0, 7),
             buildTime: ''
           });
         }
@@ -79,8 +79,8 @@ const VersionDisplay = ({ variant = "caption", color = "text.secondary", sx = {}
     // Check if we're running an older version
     const checkLatestVersion = async () => {
       try {
-        const storedSha = await getStoredVersion();
-        if (!storedSha) return;
+        const storedVersionInfo = await getStoredVersion();
+        if (!storedVersionInfo) return;
         
         const response = await fetch(`/version.json?_=${Date.now()}`, {
           cache: 'no-store',  // Ensure we don't cache this request
@@ -88,7 +88,7 @@ const VersionDisplay = ({ variant = "caption", color = "text.secondary", sx = {}
         });
         if (response.ok) {
           const data = await response.json();
-          if (storedSha !== data.gitSha) {
+          if (storedVersionInfo.sha !== data.gitSha) {
             setIsOldVersion(true);
             setLatestVersion({
               version: data.version,
