@@ -11,13 +11,22 @@ const VERSION_FILE_PATH = '/version.json';
  */
 export const getStoredVersion = async () => {
   try {
+    console.log('getStoredVersion called');
     if ('caches' in window) {
+      console.log('Cache API is available');
       const cache = await caches.open(CACHE_NAME);
+      console.log('Cache opened:', CACHE_NAME);
       const response = await cache.match(VERSION_KEY);
+      console.log('Cache match for VERSION_KEY:', VERSION_KEY, response ? 'found' : 'not found');
       if (response) {
         const data = await response.json();
+        console.log('Stored version data:', data);
         return data.version;
+      } else {
+        console.log('No stored version found in cache');
       }
+    } else {
+      console.log('Cache API not available in this browser');
     }
     return null;
   } catch (error) {
@@ -46,6 +55,37 @@ export const setStoredVersion = async (version) => {
 
 // Note: checkForNewVersion function has been removed as it's redundant
 // The UpdateButton component already handles version checking directly
+
+/**
+ * Initialize the version in cache for testing purposes
+ * This can be called from the browser console: versionUtils.initializeTestVersion()
+ */
+export const initializeTestVersion = async () => {
+  try {
+    // Get current version from version.json
+    const response = await fetch(`${VERSION_FILE_PATH}?_=${Date.now()}`, {
+      cache: 'no-store',
+      headers: { 'Pragma': 'no-cache' }
+    });
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log('Current version from version.json:', data);
+      
+      // Store a slightly different version in the cache to simulate an update being available
+      const testVersion = data.gitSha.replace(/^./, '0'); // Replace first character with '0'
+      console.log('Setting test version in cache:', testVersion);
+      await setStoredVersion(testVersion);
+      
+      return {
+        actualVersion: data.gitSha,
+        storedVersion: testVersion
+      };
+    }
+  } catch (error) {
+    console.error('Error initializing test version:', error);
+  }
+};
 
 /**
  * Clears all application caches and updates to the latest version

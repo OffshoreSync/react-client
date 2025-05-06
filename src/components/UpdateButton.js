@@ -5,10 +5,12 @@ import { useTranslation } from 'react-i18next';
 import { clearCachesIfNewVersion, getStoredVersion } from '../utils/versionUtils';
 
 const UpdateButton = () => {
+  console.log('UpdateButton component mounted');
   const { t } = useTranslation();
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
   
   useEffect(() => {
+    console.log('UpdateButton useEffect running');
     // Check if we're running an older version
     const checkForUpdates = async () => {
       try {
@@ -22,19 +24,23 @@ const UpdateButton = () => {
         }
         
         // Now check if there's a new version available
+        console.log('Fetching version.json...');
         const response = await fetch(`/version.json?_=${Date.now()}`, {
           cache: 'no-store',  // Ensure we don't cache this request
           headers: { 'Pragma': 'no-cache' }
         });
+        console.log('version.json fetch response:', response.status, response.statusText);
         if (response.ok) {
           const data = await response.json();
+          console.log('version.json data:', data);
           // Compare the stored SHA with the one from version.json
           const newVersionAvailable = storedSha !== data.gitSha;
           
           console.log('Update check:', {
             storedVersion: storedSha,
             latestVersion: data.gitSha,
-            updateAvailable: newVersionAvailable
+            updateAvailable: newVersionAvailable,
+            timestamp: new Date().toISOString()
           });
           
           // Update the state based on the comparison
@@ -61,8 +67,11 @@ const UpdateButton = () => {
   };
   
   if (!isUpdateAvailable) {
+    console.log('UpdateButton not rendering - no update available');
     return null; // Don't render anything if no update is available
   }
+  
+  console.log('UpdateButton rendering - update IS available');
   
   return (
     <Tooltip title={t('update.newVersionAvailable')}>
