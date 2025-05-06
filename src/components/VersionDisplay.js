@@ -40,7 +40,7 @@ const VersionDisplay = ({ variant = "caption", color = "text.secondary", sx = {}
               // Use the version number stored in cache
               setVersionInfo({
                 version: storedVersionInfo.version || '1.0.0',
-                shortSha: storedVersionInfo.sha.substring(0, 7), // Use first 7 chars of stored SHA
+                shortSha: storedVersionInfo.sha ? storedVersionInfo.sha.substring(0, 7) : '', // Add null check before using substring
                 buildTime: ''
               });
             }
@@ -61,7 +61,7 @@ const VersionDisplay = ({ variant = "caption", color = "text.secondary", sx = {}
         if (storedVersionInfo) {
           setVersionInfo({
             version: storedVersionInfo.version || '1.0.0',
-            shortSha: storedVersionInfo.sha.substring(0, 7),
+            shortSha: storedVersionInfo.sha ? storedVersionInfo.sha.substring(0, 7) : '',
             buildTime: ''
           });
         }
@@ -88,7 +88,8 @@ const VersionDisplay = ({ variant = "caption", color = "text.secondary", sx = {}
         });
         if (response.ok) {
           const data = await response.json();
-          if (storedVersionInfo.sha !== data.gitSha) {
+          // Make sure both SHA values exist before comparing
+          if (storedVersionInfo.sha && data.gitSha && storedVersionInfo.sha !== data.gitSha) {
             setIsOldVersion(true);
             setLatestVersion({
               version: data.version,
@@ -117,7 +118,6 @@ const VersionDisplay = ({ variant = "caption", color = "text.secondary", sx = {}
         sx={{ fontStyle: 'italic', fontWeight: 'light', cursor: 'help', ...sx }}
       >
         v{versionInfo.version}
-        {versionInfo.shortSha && ` (${versionInfo.shortSha})`}
       </Typography>
     </Tooltip>
   );
