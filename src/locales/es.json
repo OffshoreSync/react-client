@@ -363,7 +363,7 @@
     "copyFailed": "Error al copiar. Por favor, intenta manualmente.",
     "donateVia": "Donar a través de {{method}}",
     "thankYou": "Gracias por tu apoyo!",
-    "contactUs": "Si tienes alguna pregunta o necesitas ayuda con las donaciones, por favor contacta a soporte@offshoresync.com."
+    "contactUs": "Si tienes alguna pregunta o necesitas ayuda con las donaciones, por favor contacta a support@offshoresync.com."
   },
   "update": {
     "newVersionAvailable": "Nueva actualización disponible, haz clic para actualizar!"
