@@ -66,6 +66,14 @@ self.addEventListener('fetch', (event) => {
   }
 
   const url = new URL(event.request.url);
+  
+  // Never cache version endpoint
+  if (url.pathname.includes('/api/version')) {
+    // Pass through to network, never cache
+    event.respondWith(fetch(event.request));
+    return;
+  }
+  
   const isStaticAsset = STATIC_ASSETS.some(asset => url.pathname.includes(asset));
   const isMainComponent = MAIN_COMPONENTS.some(path => url.pathname.includes(path));
   const isAuthApiRoute = url.pathname.startsWith('/api/auth/');

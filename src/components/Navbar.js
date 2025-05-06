@@ -53,6 +53,7 @@ import ReactCountryFlag from 'react-country-flag';
 // Import i18n
 import { useTranslation } from 'react-i18next';
 import i18n from '../i18n';
+import VersionDisplay from './VersionDisplay';
 
 // Import offline status hook
 import { useOfflineStatus } from '../hooks/useOfflineStatus';
@@ -565,14 +566,14 @@ function Navbar() {
                 />
               </ListItemButton>
             </ListItem>
+            
+            {/* Add spacing divider */}
+            <Box sx={{ my: 2 }}>
+              <Divider variant="middle" />
+            </Box>
+            
             <ListItem sx={{ justifyContent: 'center', py: 0 }}>
-              <Typography 
-                variant="caption" 
-                color="text.secondary"
-                sx={{ fontStyle: 'italic' }}
-              >
-                v0.4.0
-              </Typography>
+              <VersionDisplay />
             </ListItem>
             <ListItem sx={{ justifyContent: 'center', py: 1 }}>
               <Typography variant="caption" color="text.secondary">
