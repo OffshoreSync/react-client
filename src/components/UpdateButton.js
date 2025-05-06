@@ -2,10 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { IconButton, Tooltip } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { useTranslation } from 'react-i18next';
-import { clearCachesIfNewVersion } from '../utils/versionUtils';
-
-// Same constant as in versionUtils.js
-const VERSION_KEY = 'offshoresync_version';
+import { clearCachesIfNewVersion, getStoredVersion } from '../utils/versionUtils';
 
 const UpdateButton = () => {
   const { t } = useTranslation();
@@ -15,8 +12,8 @@ const UpdateButton = () => {
     // Check if we're running an older version
     const checkForUpdates = async () => {
       try {
-        // Get the stored version from localStorage
-        const storedSha = localStorage.getItem(VERSION_KEY);
+        // Get the stored version from cache
+        const storedSha = await getStoredVersion();
         
         // If no stored SHA, this might be the first run - don't show update button
         if (!storedSha) {

@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Typography, Tooltip } from '@mui/material';
-
-// Same constants as in versionUtils.js
-const VERSION_KEY = 'offshoresync_version';
+import { getStoredVersion } from '../utils/versionUtils';
 
 const VersionDisplay = ({ variant = "caption", color = "text.secondary", sx = {} }) => {
   const [versionInfo, setVersionInfo] = useState({
@@ -12,11 +10,11 @@ const VersionDisplay = ({ variant = "caption", color = "text.secondary", sx = {}
   });
   
   useEffect(() => {
-    // Function to get version info from localStorage and version.json
+    // Function to get version info from cache and version.json
     const fetchVersionInfo = async () => {
       try {
-        // First, check localStorage for the current running version SHA
-        const storedSha = localStorage.getItem(VERSION_KEY);
+        // First, check cache for the current running version SHA
+        const storedSha = await getStoredVersion();
         
         // Then fetch the version.json file for additional metadata
         const response = await fetch(`/version.json?_=${Date.now()}`);
@@ -56,7 +54,7 @@ const VersionDisplay = ({ variant = "caption", color = "text.secondary", sx = {}
         console.error('Error fetching version info:', error);
         
         // If fetch fails, still try to show the stored SHA if available
-        const storedSha = localStorage.getItem(VERSION_KEY);
+        const storedSha = await getStoredVersion();
         if (storedSha) {
           setVersionInfo({
             version: '1.0.0', // Default version
@@ -78,7 +76,7 @@ const VersionDisplay = ({ variant = "caption", color = "text.secondary", sx = {}
     // Check if we're running an older version
     const checkLatestVersion = async () => {
       try {
-        const storedSha = localStorage.getItem(VERSION_KEY);
+        const storedSha = await getStoredVersion();
         if (!storedSha) return;
         
         const response = await fetch(`/version.json?_=${Date.now()}`);
