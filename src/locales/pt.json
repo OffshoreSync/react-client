@@ -202,6 +202,10 @@
     "logout": "Sair",
     "language": "Idioma",
     "friends": "Amigos",
+    "theme": {
+      "switchToDark": "Mudar para Modo Escuro",
+      "switchToLight": "Mudar para Modo Claro"
+    },
     "languages": {
       "en": "Inglês",
       "es": "Espanhol",

@@ -203,6 +203,10 @@
     "logout": "Cerrar Sesión",
     "language": "Idioma",
     "friends": "Amigos",
+    "theme": {
+      "switchToDark": "Cambiar a Modo Oscuro",
+      "switchToLight": "Cambiar a Modo Claro"
+    },
     "languages": {
       "en": "Inglés",
       "es": "Español",

@@ -250,7 +250,7 @@ function Navbar() {
                   <UpdateButton />
                   
                   {/* Theme Toggle for Mobile */}
-                  <Tooltip title={mode === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}>
+                  <Tooltip title={t(`navbar.theme.${mode === 'light' ? 'switchToDark' : 'switchToLight'}`)}>
                     <IconButton
                       onClick={toggleTheme}
                       sx={{ 
@@ -303,7 +303,7 @@ function Navbar() {
                   <UpdateButton />
                   
                   {/* Theme Toggle Switch */}
-                  <Tooltip title={mode === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}>
+                  <Tooltip title={t(`navbar.theme.${mode === 'light' ? 'switchToDark' : 'switchToLight'}`)}>
                     <IconButton
                       onClick={toggleTheme}
                       sx={{ 
