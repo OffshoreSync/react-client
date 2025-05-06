@@ -106,7 +106,7 @@ const VersionDisplay = ({ variant = "caption", color = "text.secondary", sx = {}
   
   // Enhanced tooltip content
   const tooltipContent = versionInfo.shortSha ? 
-    `Current Build: ${versionInfo.shortSha}${versionInfo.buildTime ? `\nBuilt: ${versionInfo.buildTime}` : ''}${isOldVersion ? `\n\nNewer version available: ${latestVersion?.version} (${latestVersion?.shortSha})` : ''}` : 
+    `Current Build: ${versionInfo.shortSha}${versionInfo.buildTime ? `\nBuilt: ${versionInfo.buildTime}` : ''}${isOldVersion ? `\n\nNext: ${latestVersion?.version} (${latestVersion?.shortSha})` : ''}` : 
     '';
   
   return (
