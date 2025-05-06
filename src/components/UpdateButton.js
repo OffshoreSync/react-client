@@ -5,17 +5,10 @@ import { useTranslation } from 'react-i18next';
 import { clearCachesIfNewVersion, getStoredVersion } from '../utils/versionUtils';
 
 const UpdateButton = () => {
-  console.log('UpdateButton component mounted');
   const { t } = useTranslation();
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
-  const [versionInfo, setVersionInfo] = useState({
-    storedVersion: null,
-    latestVersion: null,
-    lastChecked: null
-  });
   
   useEffect(() => {
-    console.log('UpdateButton useEffect running');
     // Check if we're running an older version
     const checkForUpdates = async () => {
       try {
@@ -29,30 +22,17 @@ const UpdateButton = () => {
         }
         
         // Now check if there's a new version available
-        console.log('Fetching version.json...');
         const response = await fetch(`/version.json?_=${Date.now()}`, {
           cache: 'no-store',  // Ensure we don't cache this request
           headers: { 'Pragma': 'no-cache' }
         });
-        console.log('version.json fetch response:', response.status, response.statusText);
         if (response.ok) {
           const data = await response.json();
-          console.log('version.json data:', data);
           // Compare the stored SHA with the one from version.json
           const newVersionAvailable = storedSha && data.gitSha && (storedSha !== data.gitSha);
           
-          const versionData = {
-            storedVersion: storedSha,
-            latestVersion: data.gitSha,
-            updateAvailable: newVersionAvailable,
-            timestamp: new Date().toISOString()
-          };
-          
-          console.log('Update check:', versionData);
-          
           // Update the state based on the comparison
           setIsUpdateAvailable(newVersionAvailable);
-          setVersionInfo(versionData);
         }
       } catch (error) {
         console.error('Error checking for updates:', error);
@@ -74,31 +54,20 @@ const UpdateButton = () => {
     clearCachesIfNewVersion();
   };
   
-  // For debugging purposes, always render in development mode
-  const isDev = process.env.NODE_ENV === 'development';
-  
-  if (!isUpdateAvailable && !isDev) {
-    console.log('UpdateButton not rendering - no update available');
-    return null; // Don't render anything if no update is available in production
+  if (!isUpdateAvailable) {
+    return null; // Don't render anything if no update is available
   }
-  
-  console.log('UpdateButton rendering - update IS available or in development mode');
-  
-  // Different UI for development mode vs production with update
-  const tooltipTitle = isDev && !isUpdateAvailable
-    ? `Dev Mode - Current: ${versionInfo.storedVersion || 'None'}`
-    : t('update.newVersionAvailable');
     
   return (
-    <Tooltip title={tooltipTitle}>
+    <Tooltip title={t('update.newVersionAvailable')}>
       <IconButton
         onClick={handleUpdate}
         color="inherit"
         size="medium"
         sx={{ 
           mx: 1,
-          color: isDev && !isUpdateAvailable ? 'gray' : 'white',
-          animation: isUpdateAvailable ? 'pulse 2s infinite' : 'none',
+          color: 'white',
+          animation: 'pulse 2s infinite',
           '@keyframes pulse': {
             '0%': { transform: 'rotate(0deg)' },
             '20%': { transform: 'rotate(30deg)' },
