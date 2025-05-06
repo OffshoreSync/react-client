@@ -35,7 +35,7 @@ const ThemeMetaTags = () => {
     if (mode === 'dark') {
       // Dark theme - use a light color for status bar to get BLACK icons
       // This makes the WiFi, battery, and other status icons BLACK in dark mode
-      if (themeColorMeta) themeColorMeta.setAttribute('content', '#BBDEFB'); // Light blue
+      if (themeColorMeta) themeColorMeta.setAttribute('content', '#9DCBF5'); // Light blue
       appleMeta.setAttribute('content', 'default'); // Light status bar with dark icons
       
       // For iOS PWA mode
