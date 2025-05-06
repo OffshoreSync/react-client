@@ -3,10 +3,12 @@ import { IconButton, Tooltip } from '@mui/material';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import { useTranslation } from 'react-i18next';
 import { clearCachesIfNewVersion, getStoredVersion } from '../utils/versionUtils';
+import { useOfflineStatus } from '../hooks/useOfflineStatus';
 
 const UpdateButton = () => {
   const { t } = useTranslation();
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
+  const isOffline = useOfflineStatus();
   
   useEffect(() => {
     // Check if we're running an older version
@@ -54,8 +56,9 @@ const UpdateButton = () => {
     clearCachesIfNewVersion();
   };
   
-  if (!isUpdateAvailable) {
-    return null; // Don't render anything if no update is available
+  // Don't render if no update is available or if offline
+  if (!isUpdateAvailable || isOffline) {
+    return null;
   }
     
   return (
