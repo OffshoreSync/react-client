@@ -541,8 +541,7 @@ function Navbar() {
 
             <ListItem disablePadding>
               <ListItemButton 
-                component="a" 
-                href="/privacy-policy"
+                onClick={() => handleNavigation('/privacy-policy')}
                 sx={{ textDecoration: 'none', color: 'inherit' }}
               >
                 <ListItemIcon>
@@ -559,8 +558,7 @@ function Navbar() {
             </ListItem>
             <ListItem disablePadding>
               <ListItemButton 
-                component="a" 
-                href="/terms"
+                onClick={() => handleNavigation('/terms')}
                 sx={{ textDecoration: 'none', color: 'inherit' }}
               >
                 <ListItemIcon>
