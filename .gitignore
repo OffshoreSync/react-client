@@ -21,6 +21,9 @@
 # build versioning
 /public/version.json
 
+# PWA builder
+android-settings.json
+
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
