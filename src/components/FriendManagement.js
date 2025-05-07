@@ -235,7 +235,12 @@ const FriendManagement = () => {
       </Snackbar>
 
       <Paper elevation={2} sx={{ p: 3, mt: 3 }}>
-        <Typography variant="h5" gutterBottom>
+        <Typography 
+          variant="h5" 
+          gutterBottom
+          color="primary"
+          sx={{ fontWeight: 700 }}
+        >
           {t('friendManagement.title')}
         </Typography>
 

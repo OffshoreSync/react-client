@@ -133,3 +133,26 @@ body.dark-mode .fc td.off-board-day {
 body.dark-mode .fc td.off-board-day:hover {
   background-color: rgba(241, 112, 177, 0.3) !important; /* Slightly more opaque on hover */
 }
+
+/* Mobile-specific styles for calendar navigation buttons in dark mode */
+@media (max-width: 768px) {
+  body.dark-mode .fc .fc-prev-button,
+  body.dark-mode .fc .fc-next-button {
+    background-color: #70B7F1 !important; /* Match the Off Board event light blue color */
+    border-color: #70B7F1 !important;
+    color: #121212 !important; /* Dark text for better contrast */
+    font-weight: bold !important;
+  }
+  
+  body.dark-mode .fc .fc-prev-button:hover,
+  body.dark-mode .fc .fc-next-button:hover {
+    background-color: #8FC5F5 !important; /* Lighter blue on hover */
+    border-color: #8FC5F5 !important;
+  }
+  
+  body.dark-mode .fc .fc-prev-button:active,
+  body.dark-mode .fc .fc-next-button:active {
+    background-color: #5AA9EE !important; /* Slightly darker when active */
+    border-color: #5AA9EE !important;
+  }
+}

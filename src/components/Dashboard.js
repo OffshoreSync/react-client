@@ -904,7 +904,7 @@ useEffect(() => {
                         variant="body2" 
                         sx={{
                           color: counterType === 'onBoard' 
-                            ? (theme.palette.mode === 'dark' ? '#F170B1' : '#D32F2F')
+                            ? (theme.palette.mode === 'dark' ? '#F87171' : '#D32F2F')
                             : (theme.palette.mode === 'dark' ? '#70B7F1' : '#1976D2'),
                           fontWeight: 500,
                           display: 'flex',
@@ -937,13 +937,12 @@ useEffect(() => {
                   fontWeight: 600
                 }}
                 sx={{
-                  borderBottom: '1px solid rgba(0,0,0,0.12)',
                   paddingBottom: 2
                 }}
               />
               <CardContent sx={{ flexGrow: 1, padding: 2 }}>
                 <FullCalendar
-                  key={`calendar-${theme.palette.mode}`} /* Force re-render on theme change */
+                  key={`calendar-${theme.palette.mode}-${user?.workCycles?.length || 0}-${user?.workCycles?.[0]?.startDate || 'none'}`} /* Force re-render on theme change or work cycle updates */
                   themeSystem="standard"
                   plugins={[dayGridPlugin, interactionPlugin]}
                   initialView="dayGridMonth"
@@ -1035,8 +1034,10 @@ useEffect(() => {
                       if (todayCell) {
                         const dayNumber = todayCell.querySelector('a');
                         if (dayNumber) {
-                          // Style the day number with a circle
-                          dayNumber.style.backgroundColor = theme.palette.primary.main;
+                          // Style the day number with a circle based on counterType (from daysCounter)
+                          dayNumber.style.backgroundColor = counterType === 'onBoard' 
+                            ? (theme.palette.mode === 'dark' ? '#F87171' : '#D32F2F')
+                            : (theme.palette.mode === 'dark' ? '#70B7F1' : '#1976D2');
                           dayNumber.style.color = '#ffffff';
                           dayNumber.style.borderRadius = '50%';
                           dayNumber.style.width = '22px';

@@ -585,7 +585,12 @@ const Sync = () => {
               px: { xs: 2, md: 4 }
             }}
           >
-            <Typography variant="h4" gutterBottom sx={{ fontSize: { xs: '1.5rem', md: '2.125rem' } }}>
+            <Typography 
+              variant="h5" 
+              color="primary"
+              gutterBottom 
+              sx={{ fontWeight: 700 }}
+            >
               {t('sync.title')}
             </Typography>
             <Typography 

@@ -68,7 +68,7 @@ const UpdateButton = () => {
         color="inherit"
         size="medium"
         sx={{ 
-          mx: 1,
+          mx: { xs: 0.25, md: 1 },
           color: 'white',
           animation: 'pulse 2s infinite',
           '@keyframes pulse': {

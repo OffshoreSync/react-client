@@ -255,7 +255,7 @@ function Navbar() {
                       onClick={toggleTheme}
                       sx={{ 
                         color: 'white',
-                        mr: 0.5,
+                        mx: 0.25, // Reduced margin on both sides
                         '&:hover': { 
                           backgroundColor: 'rgba(255,255,255,0.1)' 
                         }
@@ -289,7 +289,7 @@ function Navbar() {
                     }}
                     sx={{ 
                       color: 'white',
-                      ml: 0.5, /* Added small left margin */
+                      ml: 0.25, // Reduced margin on left side
                       '&:hover': { 
                         backgroundColor: 'rgba(255,255,255,0.1)' 
                       }
@@ -340,7 +340,7 @@ function Navbar() {
                     onClick={handleLanguageMenu}
                     sx={{ 
                       color: 'white',
-                      ml: 0.5,
+                      mx: 0.5,
                       '&:hover': { 
                         backgroundColor: 'rgba(255,255,255,0.1)' 
                       }
@@ -410,7 +410,7 @@ function Navbar() {
                   onClick={handleMenu}
                   sx={{ 
                     padding: 0,
-                    marginLeft: 2,
+                    marginLeft: 1, // Reduced from 2 to 1 to bring icons closer to avatar
                     '&:hover': {
                       backgroundColor: 'rgba(255, 255, 255, 0.1)'
                     }
@@ -449,7 +449,7 @@ function Navbar() {
                   <IconButton
                     onClick={handleMenu}
                     sx={{ 
-                      marginLeft: 2,
+                      marginLeft: 0.5, // Reduced from 2 to 0.5 to bring icons closer to avatar
                       color: mode === 'dark' ? 'black' : 'white',
                       '&:hover': {
                         backgroundColor: mode === 'dark' ? 'rgba(0,0,0,0.1)' : 'rgba(255, 255, 255, 0.1)'

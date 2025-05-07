@@ -12,55 +12,32 @@
 }
 
 .fc .get-on-event {
-  background-color: #FFA000 !important; /* Orange */
-  border-color: #FFA000 !important;
+  background-color: #EA580C !important; /* Orange */
+  border-color: #EA580C !important;
 }
 
 .fc .get-off-event {
-  background-color: #388E3C !important; /* Green */
-  border-color: #388E3C !important;
+  background-color: #059669 !important; /* Emerald */
+  border-color: #059669 !important;
 }
 
 /* Dark Theme Calendar Event Styles */
 body.dark-mode .fc .on-board-event {
-  background-color: #F170B1 !important; /* Pink */
-  border-color: #F170B1 !important;
+  background-color: #F87171 !important; /* Red */
+  border-color: #F87171 !important;
 }
 
 body.dark-mode .fc .off-board-event {
-  background-color: #70B7F1 !important; /* Light blue */
+  background-color: #70B7F1 !important; /* Blue */
   border-color: #70B7F1 !important;
 }
 
 body.dark-mode .fc .get-on-event {
-  background-color: #E255EC !important; /* Purple */
-  border-color: #E255EC !important;
+  background-color: #FB923C !important; /* Orange */
+  border-color: #FB923C !important;
 }
 
 body.dark-mode .fc .get-off-event {
-  background-color: #4CE5B1 !important; /* Light green */
+  background-color: #4CE5B1 !important; /* Emerald */
   border-color: #4CE5B1 !important;
-}
-
-/* Mobile-specific styles for calendar navigation buttons in dark mode */
-@media (max-width: 768px) {
-  body.dark-mode .fc .fc-prev-button,
-  body.dark-mode .fc .fc-next-button {
-    background-color: #70B7F1 !important; /* Match the Off Board event light blue color */
-    border-color: #70B7F1 !important;
-    color: #121212 !important; /* Dark text for better contrast */
-    font-weight: bold !important;
-  }
-  
-  body.dark-mode .fc .fc-prev-button:hover,
-  body.dark-mode .fc .fc-next-button:hover {
-    background-color: #8FC5F5 !important; /* Lighter blue on hover */
-    border-color: #8FC5F5 !important;
-  }
-  
-  body.dark-mode .fc .fc-prev-button:active,
-  body.dark-mode .fc .fc-next-button:active {
-    background-color: #5AA9EE !important; /* Slightly darker when active */
-    border-color: #5AA9EE !important;
-  }
 }

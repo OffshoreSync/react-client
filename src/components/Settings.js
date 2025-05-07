@@ -170,80 +170,97 @@ const Settings = () => {
     <Container maxWidth="md">
       <Box sx={{ my: 4 }}>
         <Paper elevation={2} sx={{ p: 3, mb: 3 }}>
-          <Typography variant="h4" gutterBottom>
+          <Typography 
+            variant="h5" 
+            gutterBottom
+            color="primary"
+            sx={{ fontWeight: 700 }}
+          >
             {t('settings.profileSettings')}
           </Typography>
 
           {user ? (
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
-                <Typography variant="h6">
-                  {t('settings.personalInformation')}
-                </Typography>
-                <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                  <Typography variant="body1">
-                    <strong>{t('settings.fullName')}:</strong> {user.fullName || t('settings.notSet')}
+                <Paper elevation={3} sx={{ p: 3, height: '100%' }}>
+                  <Typography 
+                    variant="h6" 
+                    color="primary"
+                    sx={{ fontWeight: 600, mb: 2 }}
+                  >
+                    {t('settings.personalInformation')}
                   </Typography>
-                  <Typography variant="body1">
-                    <strong>{t('settings.username')}:</strong> {user.username || t('settings.notSet')}
-                  </Typography>
-                  <Typography variant="body1">
-                    <strong>{t('settings.email')}:</strong> {user.email || t('settings.notSet')}
-                  </Typography>
-                  {user.country ? (
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Typography variant="body1">
-                        <strong>{t('settings.country')}:</strong> {t(`countries.${user.country}`)}
-                      </Typography>
-                      <ReactCountryFlag
-                        countryCode={user.country}
-                        svg
-                        style={{
-                          width: '2em',
-                          height: '1.5em',
-                          borderRadius: '4px'
-                        }}
-                        title={t(`countries.${user.country}`)}
-                      />
-                    </Box>
-                  ) : (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                     <Typography variant="body1">
-                      <strong>{t('settings.country')}:</strong> {t('settings.noCountrySelected')}
+                      <strong>{t('settings.fullName')}:</strong> {user.fullName || t('settings.notSet')}
                     </Typography>
-                  )}
-                </Box>
+                    <Typography variant="body1">
+                      <strong>{t('settings.username')}:</strong> {user.username || t('settings.notSet')}
+                    </Typography>
+                    <Typography variant="body1">
+                      <strong>{t('settings.email')}:</strong> {user.email || t('settings.notSet')}
+                    </Typography>
+                    {user.country ? (
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                        <Typography variant="body1">
+                          <strong>{t('settings.country')}:</strong> {t(`countries.${user.country}`)}
+                        </Typography>
+                        <ReactCountryFlag
+                          countryCode={user.country}
+                          svg
+                          style={{
+                            width: '2em',
+                            height: '1.5em',
+                            borderRadius: '4px'
+                          }}
+                          title={t(`countries.${user.country}`)}
+                        />
+                      </Box>
+                    ) : (
+                      <Typography variant="body1">
+                        <strong>{t('settings.country')}:</strong> {t('settings.noCountrySelected')}
+                      </Typography>
+                    )}
+                  </Box>
+                </Paper>
               </Grid>
               
               <Grid item xs={12} md={6}>
-                <Typography variant="h6">
-                  {t('settings.professionalDetails')}
-                </Typography>
-                <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                  <Typography variant="body1">
-                    <strong>{t('settings.offshoreRole')}:</strong> {
-                      user.offshoreRole 
-                        ? t(`offshoreRoles.${user.offshoreRole.toLowerCase()}`) 
-                        : t('settings.notSet')
-                    }
+                <Paper elevation={3} sx={{ p: 3, height: '100%' }}>
+                  <Typography 
+                    variant="h6" 
+                    color="primary"
+                    sx={{ fontWeight: 600, mb: 2 }}
+                  >
+                    {t('settings.professionalDetails')}
                   </Typography>
-                  <Typography variant="body1">
-                    <strong>{t('settings.workingRegime')}:</strong> {
-                      user.workingRegime 
-                        ? formatWorkingRegime(user.workingRegime) 
-                        : t('settings.notSet')
-                    }
-                  </Typography>
-                  {user.company && (
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                     <Typography variant="body1">
-                      <strong>{t('settings.company')}:</strong> {user.company}
+                      <strong>{t('settings.offshoreRole')}:</strong> {
+                        user.offshoreRole 
+                          ? t(`offshoreRoles.${user.offshoreRole.toLowerCase()}`) 
+                          : t('settings.notSet')
+                      }
                     </Typography>
-                  )}
-                  {user.unitName && (
                     <Typography variant="body1">
-                      <strong>{t('settings.unitName')}:</strong> {user.unitName}
+                      <strong>{t('settings.workingRegime')}:</strong> {
+                        user.workingRegime 
+                          ? formatWorkingRegime(user.workingRegime) 
+                          : t('settings.notSet')
+                      }
                     </Typography>
-                  )}
-                </Box>
+                    {user.company && (
+                      <Typography variant="body1">
+                        <strong>{t('settings.company')}:</strong> {user.company}
+                      </Typography>
+                    )}
+                    {user.unitName && (
+                      <Typography variant="body1">
+                        <strong>{t('settings.unitName')}:</strong> {user.unitName}
+                      </Typography>
+                    )}
+                  </Box>
+                </Paper>
               </Grid>
             </Grid>
           ) : (
