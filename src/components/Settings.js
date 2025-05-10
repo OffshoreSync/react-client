@@ -160,7 +160,7 @@ const Settings = () => {
       return 'Invalid Regime';
     }
 
-    return `${regime.onDutyDays} Days On / ${regime.offDutyDays} Days Off (Custom)`;
+    return `${regime.onDutyDays} ${t('settings.daysOn')} / ${regime.offDutyDays} ${t('settings.daysOff')}`;
   };
 
   // If no user, return null to prevent rendering

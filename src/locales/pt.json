@@ -154,6 +154,8 @@
     "cancel": "Cancelar",
     "confirmDelete": "Confirmar Exclusão",
     "notSet": "Não Definido",
+    "daysOn": "Dias de Serviço",
+    "daysOff": "Dias de Folga",
     "errors": {
       "updateFailed": "Falha ao atualizar o perfil. Por favor, tente novamente."
     }

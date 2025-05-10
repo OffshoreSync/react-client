@@ -155,6 +155,8 @@
     "cancel": "Cancel",
     "confirmDelete": "Confirm Delete",
     "notSet": "Not Set",
+    "daysOn": "Days On",
+    "daysOff": "Days Off",
     "errors": {
       "updateFailed": "Failed to update profile. Please try again."
     }
